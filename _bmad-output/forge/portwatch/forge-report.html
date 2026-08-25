@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Portwatch — Forge Report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1c2438; --text:#e7ebf3; --muted:#93a0b8;
+    --accent:#4fd1c5; --gold:#d4af37; --line:#2a334a; --lock:#2f7a4f; --kill:#8a3b3b;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f4f1ea; --panel:#ffffff; --panel2:#f7f5ef; --text:#1c2130; --muted:#5b6478;
+    --accent:#0f766e; --gold:#a9781f; --line:#e2ddce; --lock:#1f7a45; --kill:#a13f3f; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;line-height:1.55}
+  .wrap{max-width:840px;margin:0 auto;padding:48px 24px 96px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:8px}
+  h1{font-size:2.1rem;margin:0 0 4px;letter-spacing:.01em}
+  .tag{color:var(--muted);font-style:italic;margin:0 0 32px;font-size:1.05rem}
+  .seal{width:150px;height:150px;flex-shrink:0}
+  section{margin:36px 0}
+  h2{font-size:1.05rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:14px}
+  .card h3{margin:0 0 8px;font-size:1.05rem}
+  .card p{margin:0;color:var(--text)}
+  .meta{color:var(--muted);font-size:.85rem;margin-top:8px;font-style:italic}
+  .voices{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .voice{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.85rem;color:var(--text)}
+  .weak{border-left:3px solid var(--gold)}
+  ul{margin:8px 0 0;padding-left:20px}
+  li{margin-bottom:6px}
+  footer{margin-top:56px;text-align:center;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>Portwatch</h1>
+    <p class="tag">Forge session — pressure-tested for PSA Code Sprint hackathon viability</p>
+  </div>
+  <svg class="seal" viewBox="0 0 200 200" role="img" aria-label="HARDENED seal">
+    <defs>
+      <radialGradient id="g" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#e8c96a"/>
+        <stop offset="60%" stop-color="#c9a227"/>
+        <stop offset="100%" stop-color="#8a6d1a"/>
+      </radialGradient>
+    </defs>
+    <g transform="rotate(-8 100 100)">
+      <circle cx="100" cy="100" r="88" fill="url(#g)" stroke="#6b5314" stroke-width="3"/>
+      <circle cx="100" cy="100" r="72" fill="none" stroke="#6b5314" stroke-width="2" stroke-dasharray="2 4"/>
+      <path id="ring" fill="none" d="M 100 20 A 80 80 0 1 1 99.9 20"/>
+      <text font-size="11" fill="#3f2f08" font-family="Georgia,serif" letter-spacing="3">
+        <textPath href="#ring" startOffset="2%">PRESSURE TESTED · PRESSURE TESTED · PRESSURE TESTED</textPath>
+      </text>
+      <text x="100" y="94" text-anchor="middle" font-size="26" font-weight="bold" fill="#3f2f08" font-family="Georgia,serif">HARDENED</text>
+      <text x="100" y="118" text-anchor="middle" font-size="12" fill="#3f2f08" font-family="Georgia,serif" font-style="italic">Portwatch</text>
+    </g>
+  </svg>
+</header>
+
+<section>
+  <h2>Outcome</h2>
+  <div class="card">
+    <p>Portwatch survived pressure-testing and came out sharper. The original 31-section proposal had real strengths (tiered autonomy, policy engine separate from the LLM, an execution trace) but three load-bearing claims were unexamined: whether it was actually agentic or a single agent with an if-statement, where the "confidence" numbers came from, and whether "scalable" and "original" were earned or just asserted. All three now have concrete answers baked into the design, plus a build schedule sized to a 6-day, 4-person team.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Locked decisions</h2>
+
+  <div class="card">
+    <h3>Genuine multi-agent architecture</h3>
+    <p>3 core specialist agents (Berth/Vessel, Crane, Yard) + optional cut-first 4th (AGV/Gate), each an independent LLM call with scoped least-privilege tools, run in <strong>parallel</strong> with per-agent timeouts. Portwatch itself is a separate <strong>arbiter agent</strong> that synthesizes conflicting specialist outputs into Options A/B/C. Deterministic policy engine unchanged, gates the chosen option outside LLM authority.</p>
+    <div class="voices"><span class="voice">😤 Grumbal — The Adversary</span><span class="voice">🚢 Dana — The Pragmatist</span><span class="voice">🧑‍⚖️ Judge Marcus (generated)</span><span class="voice">🌶️ Boundary — Edge-Case Hunter</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Confidence score is computed, not self-reported</h3>
+    <p><code>100 − staleness − missing_data − disagreement − variance</code> penalties, deterministic and traceable in the execution log — not an LLM guessing a percentage. Mirrors the policy-engine trust story. Weights are tunable heuristics, defensibly so, not claimed to be precisely calibrated.</p>
+    <div class="voices"><span class="voice">📏 Level — Claim Checker</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Headline differentiator: DG segregation</h3>
+    <p>Promoted from buried section 14 to the demo's central beat. Portwatch's own recommended option gets rejected live by the deterministic IMDG segregation check, forcing a re-plan — the one moment that's genuinely maritime-specific rather than a relabeled generic incident-response template.</p>
+    <div class="voices"><span class="voice">🪵 Splinter — Consensus Challenger</span><span class="voice">🧑‍✈️ Captain Reyes (generated)</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Scalability shown, not just claimed</h3>
+    <p>Stateless-per-incident workers from Day 1–2 so concurrency is structural. Day 5 stretch goal: trigger two independent incidents live and show both resolve without blocking. Approval-bottleneck-at-scale left as a stated limitation with a ready future-work answer, not built.</p>
+    <div class="voices"><span class="voice">😤 Grumbal — The Adversary</span><span class="voice">📏 Level — Claim Checker</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Team &amp; schedule, 4 people / 6 days</h3>
+    <p>A: orchestration core · B: mock services + timeout injection · C: frontend wired to real backend · D: integration, demo scripting, DG layer, pitch prep. Golden path (Three-Way Disruption) hard-frozen after Day 3; Day 5 is additive stretch only; Day 6 is rehearsal plus a recorded backup run.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Rejected along the way</h2>
+  <div class="card">
+    <ul>
+      <li>Single agent + if-engine pretending to be "orchestration" — didn't earn the name.</li>
+      <li>LLM self-reported confidence percentages — not defensible under judge questioning.</li>
+      <li>Agent-to-agent direct messaging between specialists — too much build risk for a hackathon window, replaced with a synthesis arbiter.</li>
+      <li>Berth/crane/yard coordination alone as the "innovation" story — too generic, sounds like any incident-response system.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Weak point that survived scrutiny</h2>
+  <div class="card weak">
+    <p><strong>Presentation &amp; Clarity</strong> was flagged but not worked through this session. The source proposal is 31 dense sections; no pass was made on what actually goes on pitch slides versus what stays as backup material for Q&amp;A. Recommended as the next thing to pressure-test before the pitch deck is finalized.</p>
+  </div>
+</section>
+
+<footer>
+  Forged for the PSA Code Sprint hackathon · state recorded in <code>.memlog.md</code> · idea file: <code>forged-idea.md</code>
+</footer>
+
+</div>
+</body>
+</html>
