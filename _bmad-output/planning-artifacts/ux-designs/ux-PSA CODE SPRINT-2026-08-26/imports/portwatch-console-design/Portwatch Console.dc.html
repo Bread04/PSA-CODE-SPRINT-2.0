@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-127bd5d7-e6a6-46a7-9cad-527153ed6890/styles.css">
+<script src="_ds/industry-127bd5d7-e6a6-46a7-9cad-527153ed6890/_ds_bundle.js"></script>
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<style>
+html, body { height: 100%; margin: 0; }
+@keyframes pw-pulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
+.pw-scroll::-webkit-scrollbar { width: 8px }
+.pw-scroll::-webkit-scrollbar-thumb { background: var(--color-neutral-400) }
+</style>
+</helmet>
+<div style="height:100vh;display:grid;grid-template-rows:auto 1fr;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);overflow-y:hidden;overflow-x:auto;min-width:1280px">
+
+  <a href="#pw-main" style="position:absolute;left:-9999px;top:0;z-index:30;background:var(--color-bg);color:var(--color-text);padding:8px 12px;border:1px solid var(--color-accent);font-family:var(--font-heading);font-size:12px;letter-spacing:.1em;text-transform:uppercase" style-focus="left:8px;top:8px">Skip to incident detail</a>
+
+  <header role="banner" style="display:flex;align-items:center;gap:20px;padding:0 20px;height:54px;border-bottom:1px solid var(--color-divider);flex:none;min-width:1280px">
+    <div style="display:flex;align-items:baseline;gap:10px;margin-right:auto">
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:20px;letter-spacing:.02em">PORTWATCH</span>
+      <span style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Tuas Port · Disruption Orchestration</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-heading);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-700)">
+      <span>Clock</span><span style="font-size:14px;color:var(--color-text);letter-spacing:.04em">{{ clock }}</span>
+    </div>
+    <div style="width:1px;height:22px;background:var(--color-divider)"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn btn-secondary" onClick="{{ toggleRun }}" aria-pressed="{{ isPlaying }}" style="min-width:96px;min-height:44px">{{ runLabel }}</button>
+      <button class="btn btn-secondary" onClick="{{ reset }}" style="min-height:44px">Reset</button>
+    </div>
+    <div style="width:1px;height:22px;background:var(--color-divider)"></div>
+    <label class="radio" style="gap:10px;font-family:var(--font-heading);font-size:12px;letter-spacing:.1em;text-transform:uppercase">
+      <input type="checkbox" role="switch" aria-checked="{{ killSwitch }}" checked="{{ killSwitch }}" onChange="{{ toggleKill }}">
+      <span class="dot"></span>
+      <span>Kill switch</span>
+    </label>
+    <div style="display:flex;align-items:center;gap:8px;padding-left:6px;border-left:1px solid var(--color-divider)">
+      <span style="font-family:var(--font-heading);font-size:12px;letter-spacing:.06em">{{ operatorName }}</span>
+      <span class="tag tag-neutral">Ops Duty Manager</span>
+    </div>
+  </header>
+
+  <sc-if value="{{ killSwitch }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="position:absolute;top:54px;left:0;right:0;z-index:5;padding:7px 20px;background:var(--color-accent-900);color:var(--color-bg);font-family:var(--font-heading);font-size:12px;letter-spacing:.12em;text-transform:uppercase">Kill switch engaged — all autonomous execution disabled. Human approval still available.</div>
+  </sc-if>
+
+  <div style="display:grid;grid-template-columns:296px minmax(0,1fr) 400px;min-height:0;min-width:1280px">
+
+    <aside class="pw-scroll" aria-label="Incident feed and yard status" style="border-right:1px solid var(--color-divider);overflow-y:auto;padding:16px 14px;scroll-padding-block:10px;display:flex;flex-direction:column;gap:16px">
+      <div>
+        <div style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:10px">Incident feed</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ feed }}" as="row" hint-placeholder-count="2">
+            <button type="button" onClick="{{ row.select }}" aria-label="{{ row.aria }}" aria-pressed="{{ row.isActive }}" style="cursor:pointer;padding:11px 12px;border:1px solid var(--color-divider);display:flex;flex-direction:column;align-items:stretch;gap:7px;background:transparent;width:100%;text-align:left;font:inherit;color:inherit;border-radius:0;outline-offset:-2px" style-hover="background:var(--color-accent-100)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:7px;height:7px;background:var(--color-accent)"></span>
+                <span style="font-family:var(--font-heading);font-size:13px;letter-spacing:.06em">{{ row.id }}</span>
+                <span style="margin-left:auto;font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">{{ row.tierLabel }}</span>
+              </div>
+              <div style="font-size:13px;line-height:1.35">{{ row.title }}</div>
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-heading);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">
+                <span>{{ row.statusLabel }}</span><span>·</span><span>Conf {{ row.confidence }}</span><span>·</span><span>{{ row.stageLabel }}</span>
+              </div>
+              <div style="height:2px;background:var(--color-neutral-300)"><div style="height:2px;background:var(--color-accent);width:{{ row.progress }}"></div></div>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:10px">Yard utilization</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span style="font-family:var(--font-heading);font-size:12px;letter-spacing:.06em">{{ b.name }}</span>
+                <span style="margin-left:auto;font-family:var(--font-heading);font-size:15px">{{ b.pct }}</span>
+              </div>
+              <div style="height:8px;border:1px solid var(--color-divider)"><div style="height:6px;background:var(--color-accent);width:{{ b.pct }}"></div></div>
+              <div style="font-size:11px;color:var(--color-neutral-700)">{{ b.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:10px">Mock services</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{ services }}" as="s" hint-placeholder-count="7">
+            <span class="tag tag-outline" style="font-family:var(--font-heading);letter-spacing:.06em">{{ s.name }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+
+    <main id="pw-main" class="pw-scroll" aria-label="Incident detail" style="overflow-y:auto;padding:18px 22px 40px;scroll-padding-block:10px;display:flex;flex-direction:column;gap:20px;min-width:0">
+
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+        <div style="min-width:0">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">{{ active.id }}</span>
+            <span class="tag tag-neutral">{{ active.statusLabel }}</span>
+            <span class="tag tag-accent">{{ active.tierLabel }}</span>
+          </div>
+          <h2 style="margin:0 0 6px;font-size:29px">{{ active.title }}</h2>
+          <div style="font-size:13px;color:var(--color-neutral-700)">{{ active.entityLine }}</div>
+        </div>
+        <div style="margin-left:auto;flex:none;display:flex;gap:16px">
+          <div class="blueprint" style="padding:12px 16px;min-width:118px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Confidence</div>
+            <div style="font-family:var(--font-heading);font-size:38px;line-height:1.05">{{ active.confidence }}</div>
+            <div style="font-size:11px;color:var(--color-neutral-700)">computed · not self-reported</div>
+          </div>
+          <div class="blueprint" style="padding:12px 16px;min-width:150px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:6px">Penalties</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <sc-for list="{{ active.penalties }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;gap:8px;font-size:11.5px"><span style="color:var(--color-neutral-700)">{{ p.label }}</span><span style="margin-left:auto;font-family:var(--font-heading)">{{ p.value }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showApproval }}" hint-placeholder-val="{{ true }}">
+        <div class="blueprint" role="region" aria-labelledby="pw-appr-h" aria-live="assertive" style="padding:18px;display:flex;flex-direction:column;gap:14px">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:9px;height:9px;background:var(--color-accent);animation:{{ pulseAnim }}"></span>
+            <span id="pw-appr-h" style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase">Tier 3 — human approval required</span>
+            <span style="margin-left:auto;font-family:var(--font-heading);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">execution blocked</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:22px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div>
+                <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:3px">Situation</div>
+                <div style="font-size:13.5px;line-height:1.45">{{ approval.situation }}</div>
+              </div>
+              <div>
+                <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:3px">Recommendation</div>
+                <div style="font-size:13.5px;line-height:1.45">{{ approval.recommendation }}</div>
+              </div>
+              <div>
+                <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700);margin-bottom:3px">Why it escalated</div>
+                <div style="font-size:13.5px;line-height:1.45">{{ approval.why }}</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Predicted impact</div>
+              <sc-for list="{{ approval.impact }}" as="i" hint-placeholder-count="5">
+                <div style="display:flex;gap:10px;font-size:12.5px;padding-bottom:5px;border-bottom:1px solid var(--color-neutral-200)"><span style="color:var(--color-neutral-700)">{{ i.k }}</span><span style="margin-left:auto;font-family:var(--font-heading);letter-spacing:.03em">{{ i.v }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding-top:4px">
+            <button class="btn btn-primary" onClick="{{ approve }}" disabled="{{ approveDisabled }}" style="padding:13px 24px;min-height:48px">Approve {{ approval.optionLabel }}</button>
+            <button class="btn btn-secondary" onClick="{{ reject }}" style="padding:13px 20px;min-height:48px">Reject</button>
+            <span style="font-size:12px;color:var(--color-neutral-700);max-width:280px;line-height:1.35">{{ approveHint }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Correlated impact</span>
+          <span style="font-size:11.5px;color:var(--color-neutral-700)">{{ mapNote }}</span>
+        </div>
+        <div style="display:grid;gap:14px;grid-template-columns:{{ mapCols }}">
+          <div class="blueprint" style="padding:10px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <x-import component-from-global-scope="pw-plan-view" from="./pw-map.js" state="{{ planState }}" hint-size="100%,250px" style="display:block;height:230px"></x-import>
+            <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-700);padding-top:6px">{{ planCaption }}</div>
+          </div>
+          <sc-if value="{{ showStrait }}" hint-placeholder-val="{{ true }}">
+            <div class="blueprint" style="padding:10px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <x-import component-from-global-scope="pw-strait-map" from="./pw-map.js" state="{{ straitState }}" hint-size="100%,250px" style="display:block;height:230px"></x-import>
+              <div style="font-family:var(--font-heading);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-700);padding-top:6px">Western approach — mocked track</div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+          <sc-for list="{{ active.graph }}" as="n" hint-placeholder-count="5">
+            <div style="display:flex;align-items:baseline;gap:7px;padding:5px 10px;border:1px solid var(--color-divider)">
+              <span style="font-family:var(--font-heading);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-700)">{{ n.kind }}</span>
+              <span style="font-family:var(--font-heading);font-size:13px;letter-spacing:.03em">{{ n.name }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-700)">{{ n.note }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasOptions }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Recovery options</span>
+          <span style="font-size:11.5px;color:var(--color-neutral-700)">{{ optionsNote }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px">
+          <sc-for list="{{ active.options }}" as="o" hint-placeholder-count="3">
+            <button type="button" class="blueprint" onClick="{{ o.pick }}" disabled="{{ o.locked }}" aria-label="{{ o.aria }}" aria-pressed="{{ o.isSel }}" style="padding:13px 14px;display:flex;flex-direction:column;align-items:stretch;gap:9px;background:{{ o.bg }};width:100%;text-align:left;font:inherit;color:inherit;border-radius:0;outline-offset:-2px;opacity:1;cursor:{{ o.cursor }}" style-hover="background:{{ o.hoverBg }}" style-active="background:{{ o.activeBg }}">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-family:var(--font-heading);font-size:15px;letter-spacing:.06em">{{ o.label }}</span>
+                <span style="margin-left:auto">{{ o.badge }}</span>
+              </div>
+              <div style="font-size:12.5px;line-height:1.4;min-height:56px">{{ o.description }}</div>
+              <div style="display:flex;flex-direction:column;gap:3px;padding-top:8px;border-top:1px solid var(--color-divider)">
+                <sc-for list="{{ o.rows }}" as="r" hint-placeholder-count="4">
+                  <div style="display:flex;gap:8px;font-size:11.5px"><span style="color:var(--color-neutral-700)">{{ r.k }}</span><span style="margin-left:auto;font-family:var(--font-heading);letter-spacing:.03em">{{ r.v }}</span></div>
+                </sc-for>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+
+    </main>
+
+    <aside aria-label="Execution trace and status query" style="border-left:1px solid var(--color-divider);display:grid;grid-template-rows:1fr auto;min-height:0">
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div style="display:flex;align-items:center;gap:8px;padding:14px 16px 10px;flex:none">
+          <span style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Execution trace</span>
+          <span style="margin-left:auto;font-family:var(--font-heading);font-size:11px;letter-spacing:.08em;color:var(--color-neutral-700)">{{ traceCount }} entries</span>
+        </div>
+        <div class="pw-scroll" role="log" aria-live="polite" aria-label="Execution trace" ref="{{ traceRef }}" style="overflow-y:auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:0">
+          <sc-for list="{{ trace }}" as="e" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:58px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--color-neutral-200)">
+              <div style="font-family:var(--font-heading);font-size:11px;letter-spacing:.04em;color:var(--color-neutral-700);padding-top:2px">{{ e.t }}</div>
+              <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <sc-if value="{{ e.isError }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:6px;height:6px;background:var(--color-accent-900)"></span>
+                  </sc-if>
+                  <span style="font-family:var(--font-heading);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--color-accent-700)">{{ e.stage }}</span>
+                  <sc-if value="{{ e.tag }}" hint-placeholder-val="{{ false }}">
+                    <span class="tag tag-neutral" style="font-size:11px;padding:1px 7px">{{ e.tag }}</span>
+                  </sc-if>
+                </div>
+                <div style="font-size:12px;line-height:1.4;color:var(--color-neutral-900)">{{ e.text }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--color-divider);padding:14px 16px;display:flex;flex-direction:column;gap:10px;flex:none">
+        <div style="font-family:var(--font-heading);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)">Ask Portwatch</div>
+        <div style="display:flex;gap:8px">
+          <input class="input" aria-label="Ask Portwatch about live incident state" placeholder="What's the status of MSC Anna?" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onQKey }}" style="min-height:44px">
+          <button class="btn btn-secondary" onClick="{{ ask }}" style="min-height:44px">Ask</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
+            <button class="btn btn-ghost" onClick="{{ s.pick }}" style="font-size:12px;letter-spacing:.04em;border:1px solid var(--color-divider);padding:10px 12px;min-height:44px">{{ s.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ answer }}" hint-placeholder-val="{{ false }}">
+          <div role="status" aria-live="polite" style="padding:11px 12px;border:1px solid var(--color-divider);font-size:12.5px;line-height:1.45;background:var(--color-accent-100)">{{ answer }}</div>
+        </sc-if>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;speed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1.6,&quot;min&quot;:0.5,&quot;max&quot;:4,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;autoPlay&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;operatorName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Priya Raman&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;reducedMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Accessibility&quot;}}">
+const START = 14 * 3600 + 10 * 60; // 14:10:00 SGT — the wall clock the whole console reads from
+const HMS = (secs) => {
+  const t = Math.floor(START + secs);
+  return [Math.floor(t / 3600) % 24, Math.floor(t / 60) % 60, t % 60].map((v) => String(v).padStart(2, "0")).join(":");
+};
+
+const OPTIONS = {
+  A: { id: "opt-a", label: "Option A", description: "Hold MSC ANNA at berth C7-3 and absorb the full +95 min on the existing crane set (C7, C9). No reassignment, no yard movement.", delay: 95, cost: "Low", yard: "No change", risk: "Medium", reversible: true, dg: false },
+  B: { id: "opt-b", label: "Option B", description: "Reassign C4 workload to C7 + C9 and stage the 340-box overflow into Tuas yard block C7-B12. Berth window held at +40 min.", delay: 40, cost: "Medium", yard: "C7-B12 → 99%", risk: "Medium", reversible: true, dg: true },
+  B2: { id: "opt-b2", label: "Option B′", description: "Reassign C4 workload to C7 + C9 and route the 340-box overflow to Pasir Panjang P2 (61% util) over IGT. Berth window held at +45 min.", delay: 45, cost: "Medium", yard: "C7-B12 94% held · P2 → 73%", risk: "Medium", reversible: true, dg: true },
+  C: { id: "opt-c", label: "Option C", description: "Shift MSC ANNA to berth C7-5 and fully re-sequence SGP-4471 and CMA LYRA behind it.", delay: 25, cost: "High", yard: "C7-B04 → 88%", risk: "High", reversible: false, dg: false },
+  G1: { id: "opt-g1", label: "Option A", description: "Refresh the appointment grid for 14:00–15:00 and shift the 18 oversubscribed slots to 15:00–15:30. Fully reversible, no berth or crane touch.", delay: 0, cost: "Low", yard: "No change", risk: "Low", reversible: true, dg: false },
+  G2: { id: "opt-g2", label: "Option B", description: "Open receiving lane 4 at C7-B04 and hold the appointment grid as booked — absorbs the queue with labour instead of rescheduling.", delay: 0, cost: "Medium", yard: "C7-B04 lane 4 opened", risk: "Low", reversible: true, dg: false }
+};
+
+const GRAPH_A = [
+  { kind: "Vessel", name: "MSC ANNA", note: "ETA 14:20 → 15:50 (+90 min) · Malacca congestion" },
+  { kind: "Berth", name: "C7-3", note: "Window collision with SGP-4471 at 16:30" },
+  { kind: "Crane", name: "C4 · C7", note: "C4 hydraulic fault ≥4h · C7 telemetry stale 340s" },
+  { kind: "Yard", name: "C7-B12", note: "94% util · IMDG 5.1 vs Class 3 conflict in B12-04" },
+  { kind: "SLA", name: "SGP-4471", note: "Departure slot at risk — 38 min margin" }
+];
+
+const GRAPH_B = [
+  { kind: "Gate", name: "G2", note: "Truck dwell 11.4 min vs 9.0 threshold" },
+  { kind: "Appointments", name: "14:00–14:30", note: "Oversubscribed by 18 slots" },
+  { kind: "Yard", name: "C7-B04", note: "Receiving lane queue 6 deep" }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+    this.traceEl = null;
+  }
+
+  fresh() {
+    return {
+      elapsed: 0,
+      playing: this.props.autoPlay !== false,
+      kill: false,
+      activeId: "INC-4471",
+      emitted: 0,
+      extra: [],
+      approvalStatus: "n/a",
+      selected: "B",
+      tierA: null, tierB: null,
+      confA: 100, confB: 100,
+      optionsShown: false, optionsShownB: false, replanned: false, dgRejected: false,
+      resolvedA: false, resolvedB: false,
+      q: "", answer: ""
+    };
+  }
+
+  componentDidMount() {
+    this.wall = Date.now();
+    window.__pwHost = this;
+    if (window.__pwLoop) clearInterval(window.__pwLoop);
+    window.__pwLoop = setInterval(() => {
+      const h = window.__pwHost;
+      if (h) h.tick();
+    }, 100);
+  }
+
+  componentDidUpdate() {
+    if (this.traceEl) this.traceEl.scrollTop = this.traceEl.scrollHeight;
+    if (window.__pwHost !== this) { window.__pwHost = this; this.wall = Date.now(); }
+  }
+
+  script() {
+    return [
+      { at: 0.4, inc: "A", stage: "INGEST", tag: "signal", text: "Vessel ETA change normalized — MSC ANNA 14:20 → 15:50 (+90 min). Source: MPA strait advisory. entity_refs: vessel:MSC-ANNA, berth:C7-3." },
+      { at: 1.0, inc: "B", stage: "INGEST", tag: "signal", text: "Gate queue metric normalized — gate:G2 truck dwell 11.4 min (threshold 9.0)." },
+      { at: 1.8, inc: "A", stage: "INGEST", tag: "signal", text: "Equipment alert normalized — crane:C4 hydraulic pressure fault, quay 3, estimated out ≥4h." },
+      { at: 2.6, inc: "A", stage: "CORRELATE", text: "2 signals share berth:C7-3 inside the 15-min rolling window → single incident INC-4471. 5 entities correlated.", eff: { confA: 91 } },
+      { at: 3.0, inc: "B", stage: "CORRELATE", text: "1 signal, no correlation partner inside window → incident INC-4472, entity gate:G2.", eff: { confB: 96 } },
+      { at: 3.8, inc: "A", stage: "AGENT_CALL", tag: "berth", text: "Berth agent (tos.query_berth_window): hold C7-3, shift MSC ANNA window +95 min. Flags SGP-4471 slot conflict at 16:30." },
+      { at: 4.4, inc: "A", stage: "AGENT_CALL", tag: "crane", text: "Crane agent (crane_scheduler.query_status): C4 unavailable ≥4h. Proposes reassigning C4 workload to C7 + C9." },
+      { at: 5.0, inc: "A", stage: "AGENT_CALL", tag: "crane", isError: true, text: "crane_scheduler.telemetry(C7) timed out after 3000ms. Retry 1 of 1." },
+      { at: 4.6, inc: "B", stage: "AGENT_CALL", tag: "gate", text: "Gate agent (gate.query_appointments): 14:00–14:30 window oversubscribed by 18 slots. Reshuffle available." },
+      { at: 5.8, inc: "A", stage: "AGENT_CALL", tag: "crane", isError: true, text: "Retry failed. Falling back to last-known C7 state — telemetry age 340s. fallback_used = true." },
+      { at: 6.4, inc: "A", stage: "AGENT_CALL", tag: "yard", text: "Yard agent (yard_manager.block_utilization): Tuas C7-B12 at 94%. Pasir Panjang P2 at 61%. IMDG 5.1 inbound flagged." },
+      { at: 5.6, inc: "B", stage: "CONFIDENCE", text: "100 − staleness 4 − missing_data 0 − disagreement 0 − variance 0 = 96." },
+      { at: 7.0, inc: "A", stage: "CONFIDENCE", text: "100 − staleness 14 (C7 telemetry 340s) − missing_data 15 (crane load matrix cached) − disagreement 0 − variance 4 = 67. Down from 91.", eff: { confA: 67 } },
+      { at: 6.4, inc: "B", stage: "SYNTHESIZE", text: "Arbiter: 2 ranked options. Recommends appointment reshuffle + schedule refresh, reversible, no SLA exposure.", eff: { optionsShownB: true } },
+      { at: 7.8, inc: "A", stage: "SYNTHESIZE", text: "Arbiter: 3 ranked options (A / B / C). Recommends Option B — 40 min delay, medium cost, reversible.", eff: { optionsShown: true, selected: "B" } },
+      { at: 7.2, inc: "B", stage: "POLICY_DECISION", text: "Tier 1 — reversible, no SLA breach, safety LOW, confidence 96 ≥ 85, cost LOW, no DG. Silent auto-execute.", eff: { tierB: 1 } },
+      { at: 8.8, inc: "A", stage: "DG_CHECK", isError: true, text: "IMDG segregation violation — Option B stages 12 × IMDG 5.1 boxes adjacent to Class 3 flammables already in slot B12-04. Hard gate: Option B rejected, re-plan forced.", eff: { dgRejected: true } },
+      { at: 8.0, inc: "B", stage: "EXECUTE", tag: "gate", text: "gate.refresh_schedule() → ok. Appointment grid rebuilt for 14:00–15:00." },
+      { at: 9.8, inc: "A", stage: "SYNTHESIZE", tag: "re-plan", text: "Re-plan: Option B′ routes the 340-box overflow to Pasir Panjang P2 (61%) over IGT instead of C7-B12. DG re-check passed.", eff: { replanned: true, selected: "B2" } },
+      { at: 8.6, inc: "B", stage: "EXECUTE", tag: "gate", text: "gate.adjust_appointments(shift=18) → ok. 18 slots moved to 15:00–15:30." },
+      { at: 9.2, inc: "B", stage: "VERIFY", text: "Verified: projected G2 dwell 8.1 min. Notification sent to yard supervisor, already marked resolved. Incident closed with no human prompt.", eff: { resolvedB: true } },
+      { at: 10.8, inc: "A", stage: "POLICY_DECISION", text: "Tier 3 — confidence 67 < 70 AND predicted SLA breach on SGP-4471. Autonomous execution blocked; structured approval card issued to operator.", eff: { tierA: 3, approvalStatus: "pending" }, halt: true }
+    ];
+  }
+
+  phase2(t0) {
+    const o = OPTIONS[this.state.selected] || OPTIONS.B2;
+    return [
+      { at: t0 + 0.4, inc: "A", stage: "APPROVAL", text: "Approved by " + this.operator() + " (Ops Duty Manager) — " + o.label + ". Approval recorded against option " + o.id + "." },
+      { at: t0 + 1.2, inc: "A", stage: "EXECUTE", tag: "tos", text: "tos.update_berth_window(C7-3, +45m) → ok. Verified against TOS read-back." },
+      { at: t0 + 1.9, inc: "A", stage: "EXECUTE", tag: "crane", text: "crane_scheduler.reassign(C4 → C7, C9) → ok. C4 marked out-of-service, 2 moves re-queued." },
+      { at: t0 + 2.6, inc: "A", stage: "EXECUTE", tag: "yard", text: "yard_manager.route_overflow(340 boxes → Pasir Panjang P2) → ok. P2 utilization 61% → 73%." },
+      { at: t0 + 3.3, inc: "A", stage: "EXECUTE", tag: "agv", text: "agv_manager.rebalance(pool 12 → quay 3) → ok." },
+      { at: t0 + 4.0, inc: "A", stage: "EXECUTE", tag: "notify", text: "notification.send(recipients: Ops Control, MSC line desk, MPA) → ok." },
+      { at: t0 + 4.7, inc: "A", stage: "VERIFY", text: "All 5 actions verified individually. SGP-4471 slot retained with 11 min margin. Incident resolved.", eff: { resolvedA: true, approvalStatus: "approved" } }
+    ];
+  }
+
+  operator() { return this.props.operatorName || "Priya Raman"; }
+  speed() { return this.props.speed || 1.6; }
+
+  tick() {
+    const now = Date.now();
+    const dt = Math.min(0.5, (now - (this.wall || now)) / 1000);
+    this.wall = now;
+    if (!this.state.playing) return;
+    const elapsed = this.state.elapsed + dt * this.speed();
+    const all = this.script().concat(this.state.extra).sort((a, b) => a.at - b.at);
+    const due = all.filter((e) => e.at <= elapsed);
+    if (due.length === this.state.emitted) { this.setState({ elapsed }); return; }
+    const next = { elapsed, emitted: due.length };
+    let halt = false;
+    due.slice(this.state.emitted).forEach((e) => {
+      Object.assign(next, e.eff || {});
+      if (e.halt) halt = true;
+    });
+    if (halt) next.playing = false;
+    this.setState(next);
+  }
+
+  entries() {
+    const all = this.script().concat(this.state.extra).sort((a, b) => a.at - b.at);
+    return all.slice(0, this.state.emitted);
+  }
+
+  stageOf(inc) {
+    const es = this.entries().filter((e) => e.inc === inc);
+    return es.length ? es[es.length - 1].stage : "QUEUED";
+  }
+
+  answerFor(text) {
+    const q = (text || "").toLowerCase();
+    const a = this.entries().filter((e) => e.inc === "A");
+    const stage = this.stageOf("A");
+    if (q.includes("anna") || q.includes("4471") || q.includes("vessel")) {
+      if (this.state.resolvedA) return "MSC ANNA — resolved. Berthed at C7-3 on a +45 min window, C4 workload reassigned to C7 + C9, 340-box overflow routed to Pasir Panjang P2 (now 73%). SGP-4471 kept its slot with 11 min margin. Approved by " + this.operator() + "; 5 executed actions all verified.";
+      if (this.state.approvalStatus === "pending") return "MSC ANNA — INC-4471, open, awaiting your approval. Cause: +90 min ETA slip (Malacca congestion) correlated with the crane:C4 hydraulic fault. Recommended plan is Option B′ (Option B was rejected by the IMDG segregation gate). Confidence 67 — Tier 3 because confidence is under 70 and SGP-4471 faces an SLA breach. Yard C7-B12 is at 94%.";
+      return "MSC ANNA — INC-4471, open, currently at stage " + stage + ". ETA slipped +90 min and correlated with the crane:C4 fault. Confidence " + this.state.confA + ". No plan approved yet.";
+    }
+    if (q.includes("confidence")) return "Confidence on INC-4471 is " + this.state.confA + ", computed deterministically: 100 − staleness 14 (C7 telemetry 340s old) − missing_data 15 (crane load matrix served from cache) − disagreement 0 − variance 4. Never an LLM self-report.";
+    if (q.includes("dg") || q.includes("imdg") || q.includes("dangerous")) return this.state.dgRejected ? "The IMDG gate rejected Option B: it would have staged 12 × class 5.1 boxes adjacent to Class 3 flammables already in slot B12-04. The gate is deterministic and independent of tier, so the arbiter re-planned into Option B′, routing overflow to Pasir Panjang P2 instead." : "No DG conflict has been raised yet on the open incidents.";
+    if (q.includes("gate") || q.includes("4472") || q.includes("congestion")) return this.state.resolvedB ? "INC-4472 (gate:G2 congestion) resolved silently as Tier 1 — schedule refresh plus 18 appointment slots shifted to 15:00–15:30. Projected dwell 8.1 min. No approval was requested; the yard supervisor got a notification already marked resolved." : "INC-4472 (gate:G2 congestion) is at stage " + this.stageOf("B") + ", confidence " + this.state.confB + ", tracking toward Tier 1 auto-execute.";
+    if (q.includes("yard") || q.includes("pasir") || q.includes("utilization")) return "Tuas C7-B12 is at 94% and held. Pasir Panjang P2 is at " + (this.state.resolvedA ? "73% after taking the 340-box overflow over IGT" : "61% and is the re-plan target for 340 boxes of overflow") + ".";
+    if (q.includes("tier") || q.includes("approval") || q.includes("policy")) return "INC-4471 is Tier " + (this.state.tierA || "—") + " (approval " + this.state.approvalStatus + "); INC-4472 is Tier " + (this.state.tierB || "—") + ", auto-executed. Tier is set by the deterministic policy engine, outside LLM authority.";
+    return "I answer from live incident state only. Two incidents are in scope: INC-4471 (MSC ANNA, " + (this.state.resolvedA ? "resolved" : "open, " + stage) + ") and INC-4472 (gate:G2, " + (this.state.resolvedB ? "resolved" : "open") + "). Ask about a vessel, confidence, DG, tier or yard utilization.";
+  }
+
+  approve() {
+    if (this.state.kill || this.state.approvalStatus !== "pending") return;
+    this.setState({ extra: this.state.extra.concat(this.phase2(this.state.elapsed)), playing: true, approvalStatus: "approving" });
+  }
+
+  reject() {
+    if (this.state.approvalStatus !== "pending") return;
+    this.setState({
+      approvalStatus: "rejected",
+      extra: this.state.extra.concat([{ at: this.state.elapsed + 0.3, inc: "A", stage: "APPROVAL", text: "Rejected by " + this.operator() + ". No actions executed. Incident held open for manual handling; full trace retained." }]),
+      playing: true
+    });
+  }
+
+  pick(key) {
+    if (this.state.approvalStatus !== "pending") return;
+    if (key === "B" && this.state.dgRejected) return;
+    this.setState({
+      selected: key,
+      extra: this.state.extra.concat([{ at: this.state.elapsed + 0.2, inc: "A", stage: "APPROVAL", tag: "modify", text: "select_alternative(" + OPTIONS[key].id + ") — operator changed the pending recommendation to " + OPTIONS[key].label + "." }]),
+      playing: true
+    });
+    setTimeout(() => this.setState({ playing: false }), 400);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const entries = this.entries();
+    const active = s.activeId === "INC-4471" ? "A" : "B";
+    const conf = active === "A" ? s.confA : s.confB;
+    const tier = active === "A" ? s.tierA : s.tierB;
+    const resolved = active === "A" ? s.resolvedA : s.resolvedB;
+
+    const shown = active === "A" ? s.optionsShown : s.optionsShownB;
+    const optKeys = active === "A" ? (s.replanned ? ["A", "B2", "C"] : ["A", "B", "C"]) : ["G1", "G2"];
+    const options = !shown ? [] : optKeys.map((k) => {
+      const o = OPTIONS[k];
+      const isSel = active === "A" ? s.selected === k : k === "G1";
+      const rejected = k === "B" && s.dgRejected;
+      return {
+        label: o.label,
+        description: o.description,
+        badge: rejected ? "DG REJECTED" : isSel ? (active === "B" ? "AUTO-EXECUTED" : s.resolvedA ? "APPROVED · EXECUTED" : s.approvalStatus === "rejected" ? "REJECTED BY OPERATOR" : "RECOMMENDED") : "",
+        locked: !(active === "A" && s.approvalStatus === "pending" && !rejected),
+        isSel: isSel,
+        cursor: active === "A" && s.approvalStatus === "pending" && !rejected ? "pointer" : "default",
+        hoverBg: active === "A" && s.approvalStatus === "pending" && !rejected ? "var(--color-accent-100)" : (isSel && s.approvalStatus !== "pending" ? "var(--color-accent-100)" : "transparent"),
+        activeBg: active === "A" && s.approvalStatus === "pending" && !rejected ? "var(--color-accent-200)" : (isSel && s.approvalStatus !== "pending" ? "var(--color-accent-100)" : "transparent"),
+        bg: isSel && s.approvalStatus !== "pending" ? "var(--color-accent-100)" : "transparent",
+        aria: o.label + (rejected ? ", rejected by the dangerous-goods gate, not selectable" : isSel ? ", currently recommended" : ", select as alternative") + ". " + o.description + " Delay " + o.delay + " minutes, cost " + o.cost + ", risk " + o.risk + ", " + (o.reversible ? "reversible" : "not reversible") + ".",
+        pick: () => { if (active === "A") this.pick(k); },
+        rows: [
+          { k: "Delay", v: o.delay + " min" },
+          { k: "Cost", v: o.cost },
+          { k: "Yard", v: o.yard },
+          { k: "Risk", v: o.risk },
+          { k: "Reversible", v: o.reversible ? "Yes" : "No" },
+          { k: "DG involved", v: o.dg ? "Yes" : "No" }
+        ]
+      };
+    });
+
+    const graph = (active === "A" ? GRAPH_A : GRAPH_B).map((n, i, arr) => ({ ...n, hasNext: i < arr.length - 1 }));
+
+    const penalties = active === "A"
+      ? (s.confA === 100
+        ? [{ label: "not yet computed", value: "—" }]
+        : s.confA === 91
+          ? [{ label: "Staleness", value: "−9" }, { label: "Missing data", value: "0" }, { label: "Variance", value: "0" }]
+          : [{ label: "Staleness", value: "−14" }, { label: "Missing data", value: "−15" }, { label: "Disagreement", value: "0" }, { label: "Variance", value: "−4" }])
+      : [{ label: "Staleness", value: "−4" }, { label: "Missing data", value: "0" }, { label: "Variance", value: "0" }];
+
+    const feed = [
+      { key: "A", id: "INC-4471", title: "MSC ANNA ETA slip correlated with crane C4 hydraulic fault", tierLabel: s.tierA ? "Tier " + s.tierA : "Tier —", statusLabel: s.resolvedA ? "Resolved" : s.approvalStatus === "pending" ? "Awaiting approval" : s.approvalStatus === "rejected" ? "Held — rejected" : "Open", confidence: s.confA, stageLabel: this.stageOf("A"), progress: Math.min(100, Math.round(entries.filter((e) => e.inc === "A").length / 20 * 100)) + "%", select: () => this.setState({ activeId: "INC-4471" }), isActive: s.activeId === "INC-4471", aria: "Open incident INC-4471 — MSC ANNA ETA slip correlated with crane C4 hydraulic fault. " + (s.resolvedA ? "Resolved" : s.approvalStatus === "pending" ? "Awaiting your approval" : "Open") + ", confidence " + s.confA + ", stage " + this.stageOf("A") + "." },
+      { key: "B", id: "INC-4472", title: "Gate G2 truck dwell above threshold — appointment oversubscription", tierLabel: s.tierB ? "Tier " + s.tierB : "Tier —", statusLabel: s.resolvedB ? "Resolved · auto" : "Open", confidence: s.confB, stageLabel: this.stageOf("B"), progress: Math.min(100, Math.round(entries.filter((e) => e.inc === "B").length / 8 * 100)) + "%", select: () => this.setState({ activeId: "INC-4472" }), isActive: s.activeId === "INC-4472", aria: "Open incident INC-4472 — gate G2 truck dwell above threshold. " + (s.resolvedB ? "Resolved automatically at Tier 1" : "Open") + ", confidence " + s.confB + ", stage " + this.stageOf("B") + "." }
+    ];
+
+    const p2Pct = s.resolvedA ? "73%" : "61%";
+
+    return {
+      clock: HMS(s.elapsed * 6) + " SGT",
+      runLabel: s.playing ? "Pause" : s.emitted === 0 ? "Run scenario" : "Resume",
+      toggleRun: () => this.setState({ playing: !s.playing }),
+      reset: () => this.setState(this.fresh()),
+      killSwitch: s.kill,
+      toggleKill: () => this.setState({
+        kill: !s.kill,
+        extra: s.kill ? s.extra : s.extra.concat([{ at: s.elapsed + 0.1, inc: s.activeId === "INC-4471" ? "A" : "B", stage: "POLICY_DECISION", tag: "kill switch", text: "Global kill switch engaged — all autonomous execution disabled immediately. Pending Tier-3 approval remains visible but cannot be executed." }])
+      }),
+      operatorName: this.operator(),
+
+      feed,
+      blocks: [
+        { name: "Tuas C7-B12", pct: "94%", note: "IMDG 5.1 inbound · segregation constraint active" },
+        { name: "Pasir Panjang P2", pct: p2Pct, note: s.resolvedA ? "Absorbed 340-box overflow over IGT" : "Spare capacity — IGT re-route candidate" }
+      ],
+      services: [{ name: "TOS" }, { name: "Crane Sched" }, { name: "Yard Mgr" }, { name: "AGV Mgr" }, { name: "Gate Mgr" }, { name: "Notification" }, { name: "DG Checker" }],
+
+      active: {
+        id: s.activeId,
+        title: active === "A" ? "Three-way disruption — MSC ANNA / crane C4 / yard C7-B12" : "Gate G2 congestion — appointment oversubscription",
+        statusLabel: resolved ? "Resolved" : "Open",
+        tierLabel: tier ? "Tier " + tier + (tier === 1 ? " · silent auto-execute" : " · human approval") : "Tier pending",
+        entityLine: active === "A" ? "vessel:MSC-ANNA · berth:C7-3 · crane:C4 · crane:C7 · yard:C7-B12 — correlated in a 15-min window" : "gate:G2 · yard:C7-B04 — single signal, no correlation partner",
+        confidence: conf,
+        penalties,
+        graph,
+        options
+      },
+
+      mapNote: active === "A" ? "terminal plan · strait approach — mocked positions, no live AIS" : "gate complex plan — mocked positions",
+      showStrait: active === "A",
+      mapCols: active === "A" ? "1.55fr 1fr" : "1fr",
+      planCaption: active === "A" ? "Terminal plan — Tuas Phase 1" : "Gate complex — lanes and appointment grid",
+      planState: JSON.stringify({
+        mode: active === "A" ? "berth" : "gate",
+        replanned: s.replanned,
+        resolved: active === "A" ? s.resolvedA : s.resolvedB,
+        delay: (OPTIONS[s.selected] || OPTIONS.B2).delay,
+        b12: "94%",
+        p2: p2Pct
+      }),
+      straitState: JSON.stringify({ progress: Math.min(1, s.elapsed / 12) }),
+      hasOptions: options.length > 0,
+      optionsNote: active === "A" ? "arbiter synthesis · ranked" : "arbiter synthesis · Tier 1, no approval requested",
+      showApproval: s.approvalStatus === "pending" && active === "A",
+      approval: {
+        situation: "MSC ANNA's ETA slipped 90 minutes on a Malacca Strait advisory; five minutes later crane C4 reported a hydraulic fault. Portwatch correlated both into one incident across berth, crane and yard, and lost C7 telemetry mid-analysis.",
+        recommendation: (OPTIONS[s.selected] || OPTIONS.B2).description,
+        why: "Confidence 67 is below the Tier-2 floor of 70, and the plan still carries an SLA-breach risk on SGP-4471. Option B was rejected outright by the IMDG segregation gate before this card was issued.",
+        optionLabel: (OPTIONS[s.selected] || OPTIONS.B2).label,
+        impact: [
+          { k: "Berth delay", v: (OPTIONS[s.selected] || OPTIONS.B2).delay + " min" },
+          { k: "Cost", v: (OPTIONS[s.selected] || OPTIONS.B2).cost },
+          { k: "Yard", v: (OPTIONS[s.selected] || OPTIONS.B2).yard },
+          { k: "Safety risk", v: (OPTIONS[s.selected] || OPTIONS.B2).risk },
+          { k: "Reversible", v: (OPTIONS[s.selected] || OPTIONS.B2).reversible ? "Yes" : "No" },
+          { k: "SGP-4471 margin", v: "11 min retained" },
+          { k: "Systems touched", v: "TOS · Crane · Yard · AGV · Notify" }
+        ]
+      },
+      approve: () => this.approve(),
+      reject: () => this.reject(),
+      isPlaying: s.playing,
+      pulseAnim: this.props.reducedMotion ? "none" : "pw-pulse 1.4s infinite",
+      approveDisabled: s.kill,
+      approveHint: s.kill ? "Kill switch engaged — execution is disabled. Disengage it to approve." : "Modify = select an alternative option above",
+
+      trace: entries.filter((e) => e.inc === active).map((e) => ({ t: HMS(e.at * 6), stage: e.stage, tag: e.tag || "", text: e.text, isError: !!e.isError })),
+      traceCount: entries.filter((e) => e.inc === active).length,
+      traceRef: (el) => { this.traceEl = el; },
+
+      q: s.q,
+      answer: s.answer,
+      onQ: (ev) => this.setState({ q: ev.target.value }),
+      onQKey: (ev) => { if (ev.key === "Enter") this.setState({ answer: this.answerFor(this.state.q) }); },
+      ask: () => this.setState({ answer: this.answerFor(this.state.q) }),
+      suggestions: [
+        { label: "Status of MSC Anna?", pick: () => this.setState({ q: "What's the status of MSC Anna?", answer: this.answerFor("msc anna") }) },
+        { label: "Why confidence 67?", pick: () => this.setState({ q: "Why is confidence 67?", answer: this.answerFor("confidence") }) },
+        { label: "What did the DG gate reject?", pick: () => this.setState({ q: "What did the DG gate reject?", answer: this.answerFor("dg") }) },
+        { label: "Gate incident?", pick: () => this.setState({ q: "What happened with the gate incident?", answer: this.answerFor("gate") }) }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

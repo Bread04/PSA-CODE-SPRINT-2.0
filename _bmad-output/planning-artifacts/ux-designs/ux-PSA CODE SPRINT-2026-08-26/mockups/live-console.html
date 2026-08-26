@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Portwatch Console — Live Console (key screen mock)</title>
+<style>
+/*
+  Governed by: DESIGN.md (Colors, Typography, Layout & Spacing, Shapes, Components) — EXACT match to
+               the team's Portwatch Console.dc.html design canvas (Barlow Condensed/Barlow, square
+               blueprint panels with crosshair corner marks, steel-blue accent ramp, no traffic-light color).
+               EXPERIENCE.md (Information Architecture > Live Console; Component Patterns:
+               Incident feed, Incident detail, Approval banner, Execution trace, Ask Portwatch, Kill switch;
+               Key Flows > Flow 1 — Priya, escalation and approval, mid-flow: DG re-plan already happened,
+               approval banner pending).
+  State shown: Tier 3 incident selected, awaiting approval.
+  Offline mock: inline CSS, system font fallback for Barlow Condensed/Barlow, no JS, no network calls.
+*/
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f2f2f3;
+  --surface: #e9e9ea;
+  --divider: rgba(29,31,32,0.16);
+  --text: #1d1f20;
+  --accent-100: #eef6ff;
+  --accent-300: #b5d9fd;
+  --accent-400: #94bce3;
+  --accent-600: #597ea3;
+  --accent-700: #416180;
+  --accent-800: #2c455d;
+  --accent-900: #1d2d3d;
+  --neutral-100: #f5f5f8;
+  --neutral-300: #dfe1e4;
+  --font-heading: "Barlow Condensed", "Oswald", "Arial Narrow", sans-serif;
+  --font-body: Barlow, Arial, sans-serif;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 400;
+  min-width: 1280px;
+}
+.app { display: flex; flex-direction: column; height: 100vh; }
+.header {
+  height: 54px; flex: none;
+  background: var(--surface); border-bottom: 1px solid var(--divider);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+}
+.brand { font-family: var(--font-heading); font-weight: 600; font-size: 20px; text-transform: uppercase; letter-spacing: 0.08em; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.killswitch {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  border: 1px solid var(--divider); padding: 6px 12px;
+}
+.killswitch .dot { width: 8px; height: 8px; border-radius: 9999px; background: var(--accent-400); }
+.tabs { display: flex; gap: 4px; font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+.tab { padding: 6px 12px; color: var(--text); opacity: 0.55; }
+.tab.active { background: var(--accent-100); color: var(--accent-800); opacity: 1; }
+
+.columns { flex: 1; display: grid; grid-template-columns: 296px minmax(0,1fr) 400px; gap: 13.6px; padding: 13.6px; overflow: hidden; }
+.col { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10.2px; }
+
+.panel-title { font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); opacity: 0.6; margin-bottom: 3.4px; }
+
+/* Blueprint panel: square, hairline border, crosshair corner marks */
+.blueprint { position: relative; background: var(--surface); border: 1px solid var(--divider); padding: 13.6px; }
+.blueprint .corner { position: absolute; width: 11px; height: 11px; }
+.blueprint .corner::before, .blueprint .corner::after { content: ""; position: absolute; background: var(--text); opacity: 0.35; }
+.blueprint .corner.tl { top: -6px; left: -6px; }
+.blueprint .corner.tr { top: -6px; right: -6px; }
+.blueprint .corner.bl { bottom: -6px; left: -6px; }
+.blueprint .corner.br { bottom: -6px; right: -6px; }
+.blueprint .corner::before { width: 11px; height: 1px; top: 5px; left: 0; }
+.blueprint .corner::after { width: 1px; height: 11px; top: 0; left: 5px; }
+
+/* Feed */
+.feed-row { position: relative; background: var(--surface); border: 1px solid var(--divider); padding: 10.2px 13.6px; }
+.feed-row.selected { border-color: var(--accent-400); }
+.feed-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3.4px; }
+.status-dot { width: 7px; height: 7px; flex: none; }
+.status-dot.tier3 { background: var(--accent-900); }
+.status-dot.tier1 { background: var(--accent-300); }
+.feed-title { font-family: var(--font-heading); font-weight: 600; font-size: 14px; }
+.feed-sub { font-size: 12px; color: var(--text); opacity: 0.6; margin-left: 15px; }
+.tag { display: inline-block; font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 10px; margin-left: 15px; margin-top: 6px; background: var(--neutral-100); }
+.progress-track { height: 2px; background: var(--neutral-300); margin-top: 6px; margin-left: 15px; }
+.progress-fill { height: 2px; background: var(--accent-600); width: 60%; }
+
+/* Incident detail */
+.incident-title { font-family: var(--font-heading); font-weight: 600; font-size: 29px; margin-bottom: 3.4px; }
+.incident-meta { font-size: 12px; color: var(--text); opacity: 0.6; margin-bottom: 13.6px; }
+
+.approval-banner { position: relative; }
+.approval-banner .dot-pulse { width: 7px; height: 7px; background: var(--accent-900); display: inline-block; margin-right: 6px; }
+.approval-banner h3 { font-family: var(--font-heading); font-weight: 600; font-size: 16px; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 10.2px; }
+.approval-row { display: grid; grid-template-columns: 130px 1fr; gap: 6.8px; font-size: 13px; margin-bottom: 6.8px; }
+.approval-row .label { font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.6; }
+.confidence { font-family: var(--font-heading); font-weight: 600; font-size: 38px; line-height: 1; }
+.struck { text-decoration: line-through; opacity: 0.5; }
+.reason { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+.actions { display: flex; gap: 8px; margin-top: 13.6px; }
+.btn { min-height: 44px; padding: 0 18px; font-family: var(--font-heading); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; border: none; display: inline-flex; align-items: center; }
+.btn-primary { background: var(--accent-700); color: #ffffff; }
+.btn-secondary { background: transparent; border: 1px solid var(--divider); color: var(--text); }
+
+.map-caption { font-size: 11px; opacity: 0.6; margin-top: 6.8px; }
+.map-box { background: var(--surface); border: 1px solid var(--divider); height: 150px; display: flex; align-items: center; justify-content: center; opacity: 0.5; font-size: 12px; }
+
+/* Trace */
+.trace-entry { display: grid; grid-template-columns: 60px 1fr; gap: 8px; padding: 6.8px 0; border-bottom: 1px solid var(--divider); font-size: 12px; }
+.trace-time { opacity: 0.55; font-variant-numeric: tabular-nums; }
+.trace-stage { font-family: var(--font-heading); font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-700); }
+.trace-desc { color: var(--text); }
+.trace-entry.error .trace-stage { color: var(--accent-900); }
+.trace-entry.error .trace-desc::before { content: "■ "; color: var(--accent-900); }
+
+.ask-box { display: flex; gap: 6.8px; margin-top: 6.8px; }
+.ask-input { flex: 1; border: 1px solid var(--divider); padding: 8px 10px; font-size: 13px; opacity: 0.5; background: var(--bg); }
+.chip { display: inline-block; font-family: var(--font-heading); font-weight: 600; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--divider); padding: 4px 10px; margin: 6px 6px 0 0; color: var(--accent-700); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="brand">Portwatch</div>
+    <div class="header-right">
+      <div class="tabs">
+        <div class="tab active">Live Console</div>
+        <div class="tab">Incident Archive</div>
+      </div>
+      <div class="killswitch"><span class="dot"></span> Autonomous execution: enabled</div>
+    </div>
+  </div>
+
+  <div class="columns">
+    <!-- Incident feed -->
+    <div class="col">
+      <div class="panel-title">Incidents</div>
+      <div class="feed-row selected">
+        <div class="feed-row-top">
+          <span class="status-dot tier3"></span>
+          <span class="feed-title">MSC Anna — ETA slip + crane fault</span>
+        </div>
+        <div class="feed-sub">Needs approval</div>
+      </div>
+      <div class="feed-row">
+        <div class="feed-row-top">
+          <span class="status-dot tier1"></span>
+          <span class="feed-title">Gate G2 — congestion</span>
+        </div>
+        <div class="tag">Auto-resolved</div>
+      </div>
+    </div>
+
+    <!-- Incident detail -->
+    <div class="col">
+      <div class="incident-title">MSC Anna — ETA slip + crane fault</div>
+      <div class="incident-meta">Berth C7 · Correlated from vessel ETA change + Crane #4 hydraulic alert · 15-min window</div>
+
+      <div class="blueprint approval-banner">
+        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+        <h3><span class="dot-pulse"></span>Approval needed</h3>
+        <div class="approval-row"><span class="label">Situation</span><span>MSC Anna's ETA slipped 90 min due to Malacca Strait congestion; Crane #4 reports a hydraulic fault five minutes later.</span></div>
+        <div class="approval-row"><span class="label">Recommendation</span><span>Reassign MSC Anna to Berth C7, slot 5 — reroute affected yard moves through Crane #6.</span></div>
+        <div class="approval-row"><span class="label">Considered, rejected</span><span class="struck">Reassign to Berth C7, slot 3 (Option B)</span></div>
+        <div class="reason" style="margin-left:130px;">Rejected — DG/IMDG segregation conflict. Re-planned automatically.</div>
+        <div class="approval-row"><span class="label">Predicted impact</span><span>+35 min berth delay, no SLA breach, yard utilization +4%</span></div>
+        <div class="approval-row"><span class="label">Confidence</span><span class="confidence">67%</span></div>
+        <div class="reason" style="margin-left:130px;">Down from 91% — Crane #7 telemetry timed out; using last known state.</div>
+        <div class="actions">
+          <button class="btn btn-primary">Approve</button>
+          <button class="btn btn-secondary">Modify</button>
+          <button class="btn btn-secondary">Reject</button>
+        </div>
+      </div>
+
+      <div class="map-caption">Tuas yard plan — illustrative, not live positions</div>
+      <div class="map-box">Yard / berth plan view</div>
+    </div>
+
+    <!-- Execution trace + Ask Portwatch -->
+    <div class="col">
+      <div class="blueprint">
+        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+        <div class="panel-title">Execution trace</div>
+        <div class="trace-entry error">
+          <div class="trace-time">08:14:02</div>
+          <div><div class="trace-stage">AGENT_CALL</div><div class="trace-desc">Crane #7 telemetry timeout — retried once, then last-known-state fallback</div></div>
+        </div>
+        <div class="trace-entry">
+          <div class="trace-time">08:14:05</div>
+          <div><div class="trace-stage">SYNTHESIZE</div><div class="trace-desc">3 recovery options generated, Option B recommended</div></div>
+        </div>
+        <div class="trace-entry">
+          <div class="trace-time">08:14:06</div>
+          <div><div class="trace-stage">DG_CHECK</div><div class="trace-desc">Option B rejected — IMDG segregation conflict. Re-planned.</div></div>
+        </div>
+        <div class="trace-entry">
+          <div class="trace-time">08:14:07</div>
+          <div><div class="trace-stage">POLICY_DECISION</div><div class="trace-desc">Tier 3 — SLA-adjacent, confidence below auto-execute threshold</div></div>
+        </div>
+        <div class="trace-entry">
+          <div class="trace-time">08:14:07</div>
+          <div><div class="trace-stage">APPROVAL</div><div class="trace-desc">Awaiting operator decision</div></div>
+        </div>
+      </div>
+
+      <div class="blueprint">
+        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+        <div class="panel-title">Ask Portwatch</div>
+        <div class="ask-box">
+          <div class="ask-input">Ask about this incident…</div>
+          <button class="btn btn-primary">Ask</button>
+        </div>
+        <div>
+          <span class="chip">What's the SLA risk?</span>
+          <span class="chip">Why was Option B rejected?</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

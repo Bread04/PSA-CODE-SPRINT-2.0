@@ -83,13 +83,17 @@ Judging criteria targeted: Agentic AI Design & Technical Execution; Innovation &
 
 ### I. Inter-Gateway load balancing — Day-5 stretch, not core MVP
 
-- FR17. The Yard Manager mock service models a second terminal cluster (Pasir Panjang Block P2) alongside Tuas Block C7. When Tuas yard utilization is high, the arbiter's synthesized recovery options include routing a portion of container flow to Pasir Panjang instead of further loading Tuas — reusing the existing Yard Agent, arbiter, and policy engine unchanged; no new agent or infrastructure. Dashboard shows both blocks' utilization and names the terminal in the recommended option's description. Demonstrates the architecture extends to a new signal/option type without redesign — direct evidence for the Scalability judging criterion. Competes with the AGV/Gate agent, the 2-concurrent-incidents demo, FR19, and FR18 for Day-5 time; build only if higher-ranked items are on track.
+- FR17. The Yard Manager mock service models a second terminal cluster (Pasir Panjang Block P2) alongside Tuas Block C7. When Tuas yard utilization is high, the arbiter's synthesized recovery options include routing a portion of container flow to Pasir Panjang instead of further loading Tuas — reusing the existing Yard Agent, arbiter, and policy engine unchanged; no new agent or infrastructure. Dashboard shows both blocks' utilization and names the terminal in the recommended option's description. Demonstrates the architecture extends to a new signal/option type without redesign — direct evidence for the Scalability judging criterion. Competes with FR20 (AGV/Gate agent), the 2-concurrent-incidents demo, FR19, and FR18 for Day-5 time; build only if higher-ranked items are on track.
 
-### J. Environmental resilience — Day-5 stretch, not core MVP, ranked below AGV/Gate agent and the 2-concurrent-incidents demo
+### J. Gate/AGV congestion handling — Day-5 stretch, not core MVP, ranked below FR17
 
-- FR18. A mocked meteorological-radar feed can signal severe convective weather (e.g. a Sumatra squall) within a 30-minute detection window. On detection, a Weather agent — reusing the existing specialist-agent pattern (FR3) and routed through the same policy engine and DG-independent hard-gate style check as FR9 — proposes: locking anti-typhoon pins on affected Tuas cranes, rerouting AGVs to flood-safe staging zones, and a natural-language schedule-adjustment notice to affected shipping lines. Tiered like any other recovery option (FR7) — high safety-risk actions (crane pin lock, AGV reroute) route to Tier 3 for human approval, not silent auto-execute, given the physical-safety stakes. `[NOTE FOR PM]` Source: Jing Yi's tropical micro-climate research. Ranked last of the Day-5 stretch items — build only if FR17, the AGV/Gate agent, and the 2-concurrent-incidents demo are already on track.
+- FR20. An AGV/Gate specialist agent, reusing the existing specialist-agent pattern (FR3), analyzes gate-queue and AGV-congestion signals (FR1 ingestion) and proposes recovery options — e.g. adjusting gate appointment slots, rerouting AGV traffic — using the existing AGV Manager and Gate Manager mocks already named in FR13. Recommendations pass through the same confidence formula (FR6), policy engine (FR7), and execution/verification path (FR13) unchanged — no new pipeline stage, no new agent-orchestration mechanics. `[NOTE FOR PM]` Named in the original Day-5 ranking (Section 10) and in Out-of-Scope (Section 9) as "AGV/Gate agent," but had no FR number until this pass — flagged and closed during epic/story decomposition, 2026-08-27. Ranked third of the Day-5 stretch items — build only if FR17 is already on track, and before the 2-concurrent-incidents demo, FR19, and FR18.
 
-### K. Compliance interoperability — Day-5 stretch, not core MVP, ranked below FR18
+### K. Environmental resilience — Day-5 stretch, not core MVP, ranked below FR20 and the 2-concurrent-incidents demo
+
+- FR18. A mocked meteorological-radar feed can signal severe convective weather (e.g. a Sumatra squall) within a 30-minute detection window. On detection, a Weather agent — reusing the existing specialist-agent pattern (FR3) and routed through the same policy engine and DG-independent hard-gate style check as FR9 — proposes: locking anti-typhoon pins on affected Tuas cranes, rerouting AGVs to flood-safe staging zones, and a natural-language schedule-adjustment notice to affected shipping lines. Tiered like any other recovery option (FR7) — high safety-risk actions (crane pin lock, AGV reroute) route to Tier 3 for human approval, not silent auto-execute, given the physical-safety stakes. `[NOTE FOR PM]` Source: Jing Yi's tropical micro-climate research. Ranked last of the Day-5 stretch items — build only if FR17, FR20, and the 2-concurrent-incidents demo are already on track.
+
+### L. Compliance interoperability — Day-5 stretch, not core MVP, ranked below FR18
 
 - FR19. A mocked MPA-clearance-check mock service, modeled on the real digitalPORT@SG workflow's shape (request → clearance status → conditions), added to the existing mock-service roster alongside the DG Checker (FR13). No live API calls to digitalPORT@SG or any real MPA system — mocked only, consistent with the Out-of-Scope exclusion of real PSA/external integrations. Lets the pitch state the compliance layer is *designed to be compatible with* digitalPORT@SG's real clearance workflow, without claiming live integration. `[NOTE FOR PM]` Source: Jing Yi, noting MPA's digitalPORT@SG is a real, already-implemented system — real integration was considered and rejected for this build: no realistic path to authorized API access in the remaining build time, and a live external dependency is unacceptable demo risk (if digitalPORT@SG is slow or unreachable during judging, the golden path breaks with it). Ranked last of the Day-5 stretch items.
 
@@ -130,7 +134,7 @@ Judging criteria targeted: Agentic AI Design & Technical Execution; Innovation &
 - Real PSA API integrations (mocked services only) — this explicitly includes digitalPORT@SG: FR19 is a mocked clearance-check service styled on its workflow, never a live call to the real system.
 - Certified DG/legal compliance implementation.
 - Built (not just stated) handling of approval-bottleneck-at-scale.
-- AGV/Gate agent and gate congestion handling — Day-5-only stretch, additive, cuts first under time pressure.
+- FR20 (AGV/Gate agent and gate congestion handling) — Day-5-only stretch, additive, cuts first under time pressure if FR17 isn't already on track.
 - Production auth, persistence beyond the demo session, mobile surface.
 - Real meteorological radar integration — FR18's radar feed is mocked, same as every other signal source.
 
@@ -148,7 +152,7 @@ Named explicitly here so the pitch can state ambition honestly rather than imply
 **Day 1–2:** architecture + scaffolding, no UI.
 **Day 3:** golden path (the Three-Way Disruption scenario) runs end-to-end for real. **Hard freeze on the golden path after this point.**
 **Day 4:** dashboard wired to the real backend.
-**Day 5:** stretch only, strictly additive, must not touch the golden path. Ranked by value/hour, cut from the bottom if time runs short: (1) DG re-plan beat polish, (2) FR17 Inter-Gateway load balancing, (3) AGV/Gate agent, (4) 2-concurrent-incidents demo, (5) FR19 mocked MPA/digitalPORT@SG-style clearance check, (6) FR18 Weather Circuit-Breaker agent.
+**Day 5:** stretch only, strictly additive, must not touch the golden path. Ranked by value/hour, cut from the bottom if time runs short: (1) DG re-plan beat polish, (2) FR17 Inter-Gateway load balancing, (3) FR20 AGV/Gate agent, (4) 2-concurrent-incidents demo, (5) FR19 mocked MPA/digitalPORT@SG-style clearance check, (6) FR18 Weather Circuit-Breaker agent.
 **Day 6:** rehearsal + a recorded backup run of the demo, protecting against live LLM latency/flakiness during judging.
 
 ## Open Items

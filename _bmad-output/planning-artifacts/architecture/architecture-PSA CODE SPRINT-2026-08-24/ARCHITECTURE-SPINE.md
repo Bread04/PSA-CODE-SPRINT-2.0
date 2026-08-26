@@ -7,10 +7,10 @@ paradigm: 'single-writer orchestrated pipeline (actor-per-incident)'
 scope: 'Portwatch multi-agent disruption orchestration system — full initiative, 6-day hackathon build'
 status: final
 created: '2026-08-24'
-updated: '2026-08-24'
+updated: '2026-08-27'
 binds: [FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17]
-sources: ['_bmad-output/planning-artifacts/prds/prd-PSA-CODE-SPRINT-2026-08-24/prd.md']
-companions: []
+sources: ['_bmad-output/planning-artifacts/prds/prd-PSA-CODE-SPRINT-2026-08-24/prd.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/EXPERIENCE.md']
+companions: ['_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/EXPERIENCE.md']
 ---
 
 # Architecture Spine — Portwatch
@@ -129,6 +129,19 @@ graph TD
 - **Prevents:** a mock-service or agent-call failure being swallowed and the pipeline proceeding as if it succeeded
 - **Rule:** every stage transition writes a trace entry (AD-4) regardless of outcome; a failed verification, timeout, or fallback is recorded with `error`/`fallback_used` set (per the error-shape convention below), never omitted. On an unrecoverable failure the incident's confidence degrades (FR6) and the incident continues in a reduced-confidence state — it does not crash the orchestrator task.
 
+### AD-15 — Kill-switch-blocked Tier 1/2 decisions are marked, never silently dropped
+
+- **Binds:** FR10, AD-7, AD-4, AD-11
+- **Prevents:** a Tier 1/2 incident sitting silently unresolved with no operator-visible signal while the kill switch is engaged
+- **Rule:** if the kill switch is engaged at the AD-7 enforcement point and the decision was Tier 1 or 2 (would have auto-executed), the orchestrator does not execute. It appends a trace entry marked `blocked_by_kill_switch: true` (extends the AD-14 error/fallback shape) and sets a new `Incident.blocked_by_kill_switch: bool` field (default `false`). The `tier` field is never reclassified to 3 — that would corrupt FR7's tier semantics; `blocked_by_kill_switch` is the separate signal the frontend uses to render the incident as needing manual attention (EXPERIENCE.md's kill-switch-engaged state pattern). Re-enabling the kill switch does not auto-resume execution — the operator triggers re-evaluation via the existing approval endpoint's `approve` action (AD-11), which re-checks the flag and executes if now clear. No new endpoint.
+
+### AD-16 — Per-agent demo-safety mock override (defense-in-depth beyond FR5)
+
+- **Binds:** FR3, FR5, NFR1, NFR3
+- **Prevents:** a single live-LLM hiccup (latency spike, transient API error, rate limit) during judging cascading past FR5's automatic retry/fallback into a stalled or visibly-broken golden-path run, with no way for the operator to intervene mid-demo
+- **Rule:** each specialist agent call and the arbiter call reads a config-level override (one static map, e.g. `MOCK_AGENTS: {berth: bool, crane: bool, yard: bool, arbiter: bool}`, settable via env var or a single startup config value — no new UI control) that, when set for that agent, short-circuits the Messages API call and returns a canned, structurally-identical response (same shape as a real specialist/arbiter output) instead. This is a manual, pre-emptive override distinct from FR5: FR5 handles automatic in-incident recovery from a single failed call; AD-16 lets the operator take a misbehaving agent out of the live-LLM path entirely before or between demo runs, without touching correlation, policy, or execution — those stages consume the mocked output exactly as they would a real one. Source: competitive research recommendation (`research/competitive-psa-code-sprint-past-finalists-2026-08-26/research.md`, extending the PRD's existing Day-6 recorded-backup-run mitigation to per-agent granularity).
+- **Honesty requirement (closed 2026-08-27, party-mode review):** a mock-forced response must never be indistinguishable from a real one in the trace or confidence — that would contradict FR6's "confidence is never an LLM self-report" and the "LLM proposes, deterministic engine disposes" invariant above. Whenever `MOCK_AGENTS` short-circuits a call, the resulting `AGENT_CALL` trace entry's `detail` includes `mock_forced: true`, and the confidence formula (FR6) applies the same -15pt missing-data penalty it uses for a fallback/cached-state field — a canned response is treated as missing real data, not as equivalent to one. The frontend surfaces this via the same plain, non-alarmist microcopy as any other trace annotation (UX-DR12), e.g. a small "response mocked for demo stability" tag — never a hidden or silent substitution.
+
 ## Consistency Conventions
 
 | Concern | Convention |
@@ -185,6 +198,7 @@ Incident:
   recommended_option_id: str | null   # points into `options`
   options: list[RecoveryOption]       # the arbiter's 2-3 ranked outputs (FR4)
   approval_status: "n/a" | "pending" | "approved" | "rejected"
+  blocked_by_kill_switch: bool   # true if a Tier 1/2 decision was blocked from executing by the kill switch (AD-15)
   trace: list[TraceEntry]    # append-only (AD-4)
 
 RecoveryOption:               # arbiter output, shared by Policy Engine, DG Gate, ApprovalPanel (AD-11)
@@ -208,8 +222,12 @@ GET  /incidents                 -> list[Incident summary]
 GET  /incidents/{incident_id}   -> Incident (full, incl. trace)          # polled by dashboard, AD-6
 POST /incidents/{incident_id}/approval
      body: {action: "approve" | "reject" | "select_alternative", option_id?: str}   # AD-11
-GET  /incidents/query?q={natural language text}
-     -> {answer: str}           # FR12, grounded by injecting current Incident state as context (AD-2)
+GET  /incidents/query?q={natural language text}&incident_id={optional}
+     -> {answer: str}           # FR12, grounded by injecting current Incident state as context (AD-2).
+                                 # incident_id is an OPTIONAL hint the frontend may pass when an incident
+                                 # is selected (UX spine convenience) -- the backend always resolves the
+                                 # relevant incident from `q` itself when omitted; never required (UJ-2:
+                                 # the planner asks by vessel name without selecting anything first).
 POST /kill-switch  {enabled: bool}   # AD-7
 ```
 
@@ -237,7 +255,12 @@ backend/
   models/             # Incident, TraceEntry data shapes
 frontend/
   src/
-    components/       # IncidentFeed, ImpactGraph, ApprovalPanel, ExecutionTrace, StatusQuery
+    routes/            # LiveConsole (default), IncidentArchive (session-scoped list, filters GET /incidents
+                       # client-side to resolved incidents -- no separate archive endpoint, per UX spine)
+    components/       # IncidentFeed, IncidentDetail, ApprovalBanner, ExecutionTrace, AskPortwatch,
+                       # MapPanel (strait/yard), KillSwitchControl, IncidentArchiveList
+                       # -- names and visual/behavioral spec owned by the UX spine (DESIGN.md/EXPERIENCE.md,
+                       # companions above); component set supersedes the earlier placeholder list
 ```
 
 ## Capability → Architecture Map
@@ -246,8 +269,8 @@ frontend/
 | --- | --- | --- |
 | A — Signal ingestion & correlation (FR1-2) | `ingestion/`, `registry/` | AD-5 |
 | B — Multi-agent analysis (FR3-4) | `agents/`, `orchestrator/` | AD-2, AD-3, AD-4 |
-| C — Uncertainty & failure handling (FR5-6) | `policy/confidence.py` | AD-4 (trace capture) |
-| D — Policy & autonomy (FR7-10) | `policy/policy_engine.py`, `policy/dg_gate.py` | AD-7, AD-8 |
+| C — Uncertainty & failure handling (FR5-6) | `policy/confidence.py` | AD-4 (trace capture), AD-16 (per-agent mock override) |
+| D — Policy & autonomy (FR7-10) | `policy/policy_engine.py`, `policy/dg_gate.py` | AD-7, AD-8, AD-15 |
 | E — Human interaction (FR11-12) | `api/` approval + query endpoints, status-query handler | AD-2, AD-6, AD-11 |
 | F — Execution & verification (FR13) | `mock_services/`, orchestrator execute stage | AD-7, AD-14 |
 | G — Audit & traceability (FR14-15) | `Incident.trace`, `api/` | AD-4, AD-14 |

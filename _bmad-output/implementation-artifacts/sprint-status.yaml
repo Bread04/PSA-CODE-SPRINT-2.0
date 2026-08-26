@@ -1,0 +1,72 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 08-27-2026 12:00
+last_updated: 08-27-2026 12:00
+project: PSA CODE SPRINT
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+development_status:
+  epic-1: backlog
+  1-1-signal-ingestion-normalization: backlog
+  1-2-incident-correlation-via-15-minute-window: backlog
+  1-3-specialist-agent-analysis-berth-crane-yard: backlog
+  1-4-arbiter-synthesis-of-recovery-options: backlog
+  1-5-tool-retry-fallback-on-failure: backlog
+  1-6-deterministic-confidence-scoring: backlog
+  1-7-policy-tier-classification: backlog
+  1-8-tier-based-execution-behavior: backlog
+  1-9-dg-imdg-hard-gate-re-plan-loop: backlog
+  1-10-global-kill-switch: backlog
+  1-11-mock-service-execution-verification: backlog
+  1-12-execution-trace-recording: backlog
+  1-13-per-agent-demo-safety-mock-override: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-design-token-system: backlog
+  2-2-blueprint-panel-primitive: backlog
+  2-3-incidentfeed: backlog
+  2-4-incidentdetail-approvalbanner: backlog
+  2-5-executiontrace-viewer: backlog
+  2-6-askportwatch-natural-language-query: backlog
+  2-7-mappanel: backlog
+  2-8-killswitchcontrol: backlog
+  2-9-incident-archive-route: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-concurrent-incident-proof: backlog
+  3-2-pasir-panjang-load-balancing: backlog
+  3-3-agv-gate-specialist-agent: backlog
+  3-4-mocked-mpa-clearance-check: backlog
+  3-5-weather-circuit-breaker-agent: backlog
+  epic-3-retrospective: optional

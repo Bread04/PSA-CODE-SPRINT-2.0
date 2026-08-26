@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSA Code Sprint Past Finalists — Competitive Research</title>
+<style>
+:root{
+  --bg:#f7f7f5; --surface:#ffffff; --border:#e2e0da; --text:#1d1d1b; --text-dim:#5b5a54;
+  --accent:#5980a6; --accent-dim:#e8f0f6;
+  --high:#2e7d4f; --high-bg:#e7f5ec;
+  --medium:#8a6d1f; --medium-bg:#faf3df;
+  --low:#8a3b1f; --low-bg:#f9e9e2;
+  --unverified:#7a1f2e; --unverified-bg:#fbe6e9;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#17181a; --surface:#1f2124; --border:#33353a; --text:#eceae4; --text-dim:#a3a29b;
+    --accent:#8fb4d6; --accent-dim:#233241;
+    --high:#7fd9a3; --high-bg:#173625;
+    --medium:#e0c46b; --medium-bg:#3a301a;
+    --low:#e69b7c; --low-bg:#3a2419;
+    --unverified:#f19aa6; --unverified-bg:#3a1a20;
+  }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Inter,sans-serif;line-height:1.6;}
+.wrap{max-width:920px;margin:0 auto;padding:24px 20px 80px;}
+header.top{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:20px;}
+header.top h1{margin:0 0 10px;font-size:22px;}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--text-dim);}
+.meta strong{color:var(--text);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:20px;}
+h2{font-size:18px;margin-top:0;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;color:var(--accent);}
+a{color:var(--accent);}
+.toc{position:sticky;top:12px;z-index:5;}
+.toc ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px;}
+.toc a{font-size:13px;text-decoration:none;}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:9999px;white-space:nowrap;}
+.badge.high{color:var(--high);background:var(--high-bg);}
+.badge.medium{color:var(--medium);background:var(--medium-bg);}
+.badge.low{color:var(--low);background:var(--low-bg);}
+.badge.unverified{color:var(--unverified);background:var(--unverified-bg);font-weight:700;}
+.rec{border-left:3px solid var(--accent);padding:10px 16px;margin:12px 0;background:var(--accent-dim);border-radius:0 8px 8px 0;}
+.rec .conf{margin-top:6px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+table.sources td{border-bottom:1px solid var(--border);padding:8px 6px;vertical-align:top;}
+table.sources td:first-child{white-space:nowrap;color:var(--text-dim);}
+table.stale td,table.stale th{border-bottom:1px solid var(--border);padding:8px 6px;text-align:left;font-size:13px;}
+details summary{cursor:pointer;font-weight:600;padding:6px 0;}
+.oq{border-left:3px solid var(--low);padding:8px 16px;margin:10px 0;background:var(--low-bg);border-radius:0 8px 8px 0;}
+.callout{border-left:3px solid var(--unverified);padding:10px 16px;background:var(--unverified-bg);border-radius:0 8px 8px 0;margin:14px 0;font-size:14px;}
+.small{font-size:12px;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Competitive Research: PSA Code Sprint Past Finalists</h1>
+  <div class="meta">
+    <span><strong>Type:</strong> Competitive (adapted for hackathon finalists)</span>
+    <span><strong>Decision:</strong> Sharpen Portwatch's execution/pitch/demo craft without copying past concepts</span>
+    <span><strong>Date:</strong> 2026-08-26</span>
+    <span><strong>Depth:</strong> standard preset, 1 round per dimension</span>
+    <span><strong>Validation:</strong> normal (spot-checked load-bearing claims + citation check)</span>
+  </div>
+</header>
+
+<nav class="card toc">
+  <ul>
+    <li><a href="#summary">Executive Summary</a></li>
+    <li><a href="#build">Build &amp; Demo Scope</a></li>
+    <li><a href="#pitch">Pitch &amp; Presentation</a></li>
+    <li><a href="#reception">Reception &amp; Trajectory</a></li>
+    <li><a href="#cross">Cross-Dimension</a></li>
+    <li><a href="#recs">Recommendations</a></li>
+    <li><a href="#oq">Open Questions</a></li>
+    <li><a href="#sources">Sources</a></li>
+    <li><a href="#stale">Staleness Map</a></li>
+  </ul>
+</nav>
+
+<section class="card" id="summary">
+  <h2>Executive Summary</h2>
+  <p>Public data on past PSA Code Sprint finalists is <strong>thin</strong> — no pitch decks, no judge quotes, and only one edition (2023) has real technical detail, from two participant-published GitHub READMEs rather than official sources. The one thing verified <em>directly</em> and with high confidence is the official judging rubric: four equally-billed categories — Innovation &amp; Creativity, UI/UX, Technology, Presentation — with <strong>no disclosed weighting</strong> <a href="#src-5">[5]</a><a href="#src-6">[6]</a> <span class="badge high">verified</span>.</p>
+  <p>That single fact is more actionable than anything found about specific past teams: presentation polish is not a tiebreaker, it's a quarter of the score.</p>
+  <p>The best-evidenced data point, 2023 champion <strong>opPORTunity</strong>, is instructive on craft: it isolated its riskiest component (an LLM chatbot) into its own simple Streamlit shell rather than deeply integrating it everywhere <a href="#src-1">[1]</a> <span class="badge high">verified</span> — an instinct Portwatch's own build plan already shares. Confirmed champions across editions solved <strong>named, visible, real operational pain points</strong> with a clear before/after story, not abstract tech showcases.</p>
+  <div class="callout"><strong>Biggest caveat:</strong> no judge quotes, scored rubrics, or post-mortems were found for any edition — treat "what past winners built" as scoping/craft inspiration only, never as proof of what judges specifically valued. The verified rubric is the reliable signal.</div>
+</section>
+
+<section class="card" id="build">
+  <h2>Build &amp; Demo Scope</h2>
+  <p>Only 2023 yielded real technical detail. 2023 champion Team ByTheSea's <strong>opPORTunity</strong> was an HR-transformation portal with three named AI modules (PortBOT, LightHouse, PortConnections), built on Vue.js, FastAPI, MySQL, and a LangChain + ChromaDB + OpenAI AI layer, orchestrated via Docker Compose <a href="#src-1">[1]</a> <span class="badge high">high</span>. A separate, simpler Streamlit app handled the chatbot-facing demo — the team isolated its highest-risk component rather than fully integrating it <a href="#src-1">[1]</a> <span class="badge medium">medium — inferred from architecture</span>. A second 2023 finalist, HR-Gen2, independently built a similar AI-HR concept on React/Firebase/GPT-4 <a href="#src-2">[2]</a> <span class="badge high">high</span>.</p>
+  <p>The official results archive names champions/runners-up for 2022–2025 by team and institution, but publishes <strong>no project descriptions</strong> for any year beyond what participants separately posted on GitHub <a href="#src-3">[3]</a><a href="#src-4">[4]</a> <span class="badge high">high</span>. No Devpost page, technical writeup, or retrospective blog was found — a genuine thin-data result, not a search failure.</p>
+</section>
+
+<section class="card" id="pitch">
+  <h2>Pitch &amp; Presentation Craft</h2>
+  <p>Official judging categories, verified by direct fetch: <strong>Innovation &amp; Creativity</strong> (uniqueness), <strong>UI/UX</strong> (appeal, ease of interaction), <strong>Technology</strong> (functionality, technical difficulty), <strong>Presentation</strong> (clarity/flow/organisation, communication style) <a href="#src-5">[5]</a> <span class="badge high">high — directly verified</span>. No numeric weighting is disclosed <a href="#src-6">[6]</a> <span class="badge high">high — directly verified</span>.</p>
+  <p>opPORTunity's naming pattern is worth noting: each module got a memorable name tied to one pain point, mapped to a business theme (Talent/Experience/Engagement) <a href="#src-1">[1]</a> <span class="badge high">high</span>. No pitch deck, time limit, or Q&amp;A format was found; the event runs briefings → problem statements → build → a live "FINALS" presentation, confirmed at the format level only <a href="#src-1">[1]</a><a href="#src-9">[9]</a> <span class="badge low">low — metadata only</span>.</p>
+  <p class="small">Generic enterprise-hackathon judging patterns recur across marketing blogs <a href="#src-13">[13]</a><a href="#src-14">[14]</a><a href="#src-15">[15]</a> <span class="badge low">low — explicitly not PSA-specific</span> — included only as a fallback, kept separate from the verified PSA rubric above.</p>
+</section>
+
+<section class="card" id="reception">
+  <h2>Judge/Audience Reception &amp; Trajectory</h2>
+  <p>Confirmed champions: 2022 "Long Ken Kai My" (NUS) — team/institution confirmed officially <a href="#src-3">[3]</a> <span class="badge high">high</span>, project described as <strong>PSAccess</strong> (a PON-digitization portal cutting paper waste) at <span class="badge medium">medium</span> confidence since that description rests only on a participant page and a PSA social post <a href="#src-7">[7]</a><a href="#src-8">[8]</a>; 2023 "ByTheSea" for opPORTunity <a href="#src-1">[1]</a> <span class="badge high">high</span>; 2024 "TELETUBBIES" (NYP), project details unpublished <a href="#src-4">[4]</a>. 2025's winner could not be confirmed (Facebook login wall) <a href="#src-10">[10]</a><a href="#src-11">[11]</a> <span class="badge unverified">unverified</span>; 2021 unconfirmed.</p>
+  <p><strong>No judge quotes, scored criteria, or post-mortem commentary</strong> were found for any edition <span class="badge unverified">unverified — clean absence</span>. An inferred (not judge-stated) pattern across the two well-evidenced champions: both solved a visible, real PSA-operational problem rather than a generic tech demo <a href="#src-1">[1]</a><a href="#src-7">[7]</a><a href="#src-8">[8]</a> — flagged as inference, not a sourced judging-criteria claim.</p>
+  <p class="small">Trajectory: one 2023 team member's LinkedIn title suggests a possible post-hackathon hire, unconfirmed (profile blocked) <a href="#src-12">[12]</a> <span class="badge unverified">unverified</span>. No evidence any winning project was piloted/adopted in production, or continued as a startup.</p>
+</section>
+
+<section class="card" id="cross">
+  <h2>Cross-Dimension Insight</h2>
+  <p>The three dimensions combine into one insight none alone would give: the verified rubric treats Presentation and UI/UX as <strong>equal</strong> to Technology, and both well-evidenced champions' actual winning trait, as best as public evidence shows, was a clearly-told, visibly-real operational story rather than technical ambition — while the one team with visible engineering discipline (opPORTunity's demo-isolation pattern) also happened to win. Read together: judges likely reward <strong>legible, reliable, real-world-framed execution</strong> over raw technical scope.</p>
+</section>
+
+<section class="card" id="recs">
+  <h2>Recommendations</h2>
+  <div class="rec">
+    <strong>1. Invest real prep time in the demo narrative and deck clarity, not just backend depth.</strong> Presentation is a quarter of the verified rubric, not a tiebreaker.
+    <div class="small">Feeds: presentation deck (PRD already flags <code>bmad-cis-agent-presentation-master</code> as next step).</div>
+    <div class="conf"><span class="badge high">high confidence — direct rubric verification</span></div>
+  </div>
+  <div class="rec">
+    <strong>2. Extend the golden-path-freeze instinct to the demo's most fragile component specifically.</strong> opPORTunity isolated its riskiest LLM component; consider a per-agent-call fallback/mock toggle for Portwatch so one live-LLM hiccup during judging doesn't cascade.
+    <div class="small">Feeds: build-plan risk mitigation (PRD §10).</div>
+    <div class="conf"><span class="badge medium">medium confidence — single-source pattern, inferred</span></div>
+  </div>
+  <div class="rec">
+    <strong>3. Open the pitch on the named, concrete operational story (Priya/MSC Anna), not the architecture.</strong> Matches the framing pattern of the two well-evidenced past champions.
+    <div class="small">Feeds: presentation narrative structure.</div>
+    <div class="conf"><span class="badge medium">medium confidence — pattern across 2 well-evidenced data points</span></div>
+  </div>
+  <div class="rec">
+    <strong>4. Don't treat "what past finalists built" as a proxy for "what judges want."</strong> No judge feedback was found for any edition; the rubric is the only directly-verified signal. This also protects Portwatch's Innovation &amp; Originality standing — no evidence surfaced of a prior finalist attempting multi-agent disruption orchestration.
+    <div class="conf"><span class="badge high">high confidence (rubric)</span> <span class="badge low">low confidence (comparison to unconfirmed 2021/2025 editions)</span></div>
+  </div>
+</section>
+
+<section class="card" id="oq">
+  <h2>Open Questions</h2>
+  <div class="oq">What did the 2021 and 2025 editions produce? Both unconfirmed — 2025 blocked by a Facebook login wall, 2021 not indexed in this run.</div>
+  <div class="oq">Is there a numeric weighting behind the four rubric categories, even if undisclosed publicly? Would require asking organizers directly (PSAC-PSACODESPRINT@globalpsa.com) — not pursued, research-only scope.</div>
+  <div class="oq">Were any past winning projects piloted or adopted inside PSA? Thin public data; likely answerable only by asking PSA directly.</div>
+</section>
+
+<section class="card" id="sources">
+  <h2>Source Appendix</h2>
+  <details open>
+    <summary>15 sources</summary>
+    <table class="sources"><thead><tr><th>#</th><th>Finding it supports</th><th>Publisher</th><th>Pub. date</th><th>Accessed</th><th>Confidence</th></tr></thead>
+    <tbody><tr id="src-1"><td>[1]</td><td>opPORTunity build/tech-stack/naming pattern</td><td><a href="https://github.com/xavierkoo/psa-codesprint-2023" target="_blank" rel="noopener">github.com/xavierkoo/psa-codesprint-2023</a></td><td>undated (2023)</td><td>2026-08-26</td><td><span class="badge high">high</span></td></tr><tr id="src-2"><td>[2]</td><td>HR-Gen2 build/tech-stack</td><td><a href="https://github.com/SlothKai/psa-codesprint" target="_blank" rel="noopener">github.com/SlothKai/psa-codesprint</a></td><td>undated (2023)</td><td>2026-08-26</td><td><span class="badge high">high</span></td></tr><tr id="src-3"><td>[3]</td><td>Official winners list, no project descriptions</td><td><a href="https://www.psacodesprint.com/past-events" target="_blank" rel="noopener">psacodesprint.com/past-events</a></td><td>undated</td><td>2026-08-26</td><td><span class="badge high">high</span></td></tr><tr id="src-4"><td>[4]</td><td>2024 champion/runners-up</td><td><a href="https://www.psacodesprint.com/code-sprint-2024" target="_blank" rel="noopener">psacodesprint.com/code-sprint-2024</a></td><td>undated</td><td>2026-08-26</td><td><span class="badge high">high</span></td></tr><tr id="src-5"><td>[5]</td><td>Official judging rubric (4 categories)</td><td><a href="https://www.psacodesprint.com/home" target="_blank" rel="noopener">psacodesprint.com/home</a></td><td>undated</td><td>2026-08-26 (directly verified)</td><td><span class="badge high">high</span></td></tr><tr id="src-6"><td>[6]</td><td>No numeric weighting disclosed</td><td><a href="https://www.psacodesprint.com/faq" target="_blank" rel="noopener">psacodesprint.com/faq</a></td><td>undated</td><td>2026-08-26 (directly verified)</td><td><span class="badge high">high</span></td></tr><tr id="src-7"><td>[7]</td><td>2022 champion PSAccess</td><td><a href="https://reignnz.github.io/psa-codesprint-2022/" target="_blank" rel="noopener">reignnz.github.io/psa-codesprint-2022</a></td><td>undated (2022)</td><td>2026-08-26</td><td><span class="badge medium">medium</span></td></tr><tr id="src-8"><td>[8]</td><td>2022 champion corroboration</td><td>PSA Singapore LinkedIn post</td><td>undated (2022)</td><td>2026-08-26</td><td><span class="badge medium">medium</span></td></tr><tr id="src-9"><td>[9]</td><td>Event format (finals presentation)</td><td>PSA Singapore Facebook (2023 finals video, metadata only)</td><td>2023</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr><tr id="src-10"><td>[10]</td><td>2025 finals date</td><td>PSA Singapore Facebook (2025 finals post, login-walled)</td><td>2025-10-24</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr><tr id="src-11"><td>[11]</td><td>2025 finals (unconfirmed winner)</td><td><a href="https://www.instagram.com/p/DQYJWHhjUJa/" target="_blank" rel="noopener">instagram.com/p/DQYJWHhjUJa</a></td><td>2025</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr><tr id="src-12"><td>[12]</td><td>Possible post-hackathon hire</td><td>LinkedIn (Aaron Kwah, snippet only, profile blocked)</td><td>undated</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr><tr id="src-13"><td>[13]</td><td>General enterprise-hackathon pattern (non-PSA)</td><td><a href="https://taikai.network/en/blog/hackathon-judging" target="_blank" rel="noopener">taikai.network/en/blog/hackathon-judging</a></td><td>undated</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr><tr id="src-14"><td>[14]</td><td>General enterprise-hackathon pattern (non-PSA)</td><td>eventflare.io</td><td>undated</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr><tr id="src-15"><td>[15]</td><td>General enterprise-hackathon pattern (non-PSA)</td><td>theinnovationmode.com</td><td>undated</td><td>2026-08-26</td><td><span class="badge low">low</span></td></tr></tbody></table>
+  </details>
+</section>
+
+<section class="card" id="stale">
+  <h2>Staleness Map</h2>
+  <table class="stale">
+    <thead><tr><th>Claim</th><th>Class</th><th>Pub. date</th><th>Re-check by</th></tr></thead>
+    <tbody>
+      <tr><td>opPORTunity build/tech-stack detail</td><td>build-scope</td><td>2023-08</td><td>2024-08-01 (past due — re-check if reused)</td></tr>
+      <tr><td>HR-Gen2 build/tech-stack detail</td><td>build-scope</td><td>2023-08</td><td>2024-08-01 (past due)</td></tr>
+      <tr><td>opPORTunity's narrative framing</td><td>pitch-structure</td><td>2023-08</td><td>2024-08-01 (past due)</td></tr>
+      <tr><td>Confirmed champions 2022–2024</td><td>winner</td><td>2024-08</td><td>2025-08-01 (past due — 2025 winner should be re-checked)</td></tr>
+      <tr><td>Official rubric, no weighting</td><td>judging-criteria</td><td>2026-08 (verified today)</td><td>2027-02-01</td></tr>
+      <tr><td>Official past-events page structure</td><td>build-scope</td><td>2026-08</td><td>2027-08-01</td></tr>
+      <tr><td>Absence of judge feedback</td><td>judge-feedback</td><td>2026-08</td><td>2027-08-01</td></tr>
+    </tbody>
+  </table>
+  <p class="small"><strong>Earliest re-check: 2024-08-01.</strong> These are historical facts about a past edition and won't change on their own — the re-check date matters only if this research is reused to infer the next edition's likely rubric/problem statement. The one item worth an actual follow-up now is <strong>2025's winner</strong>, still unconfirmed. Use Refresh/Deepen on this run folder to act on this map.</p>
+</section>
+
+</div>
+</body>
+</html>
