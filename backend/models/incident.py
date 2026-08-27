@@ -20,6 +20,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from models.recovery import RecoveryOption
+
 
 class TraceEntry(BaseModel):
     """One append-only step in an incident's execution trace.
@@ -65,7 +67,9 @@ class Incident(BaseModel):
         default=None,
         description="Arbiter's chosen recovery-option id (Story 1.4), or None.",
     )
-    options: list[Any] = Field(default_factory=list, description="Ranked RecoveryOptions (Story 1.4).")
+    options: list[RecoveryOption] = Field(
+        default_factory=list, description="Ranked RecoveryOptions, best first (Story 1.4)."
+    )
     approval_status: Literal["n/a", "pending", "approved", "rejected"] = Field(
         default="n/a",
         description="'n/a' | 'pending' | 'approved' | 'rejected'.",

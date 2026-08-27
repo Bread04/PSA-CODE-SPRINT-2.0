@@ -209,6 +209,9 @@ class TestScopedToolsPerAgent:
         for name, module in _MODULES.items():
             assert by_agent[name]["tools"] == module.TOOL_MANIFEST
             assert by_agent[name]["system"] == module.SYSTEM_PROMPT
+            # Post-`bounded_json_call` refactor: a non-empty manifest must still
+            # ride with tool_choice "none" so the model may not call the tools.
+            assert by_agent[name]["tool_choice"] == {"type": "none"}
 
 
 # ---------------------------------------------------------------------------

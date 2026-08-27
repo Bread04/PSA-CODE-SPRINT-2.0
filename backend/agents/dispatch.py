@@ -23,6 +23,8 @@ from typing import Any
 
 from models.incident import Incident
 
+from agents.arbiter import ArbiterResult
+from agents.arbiter import synthesize_options as _arbiter_synthesize
 from agents.base import (
     AgentName,
     SpecialistBundle,
@@ -103,3 +105,40 @@ async def run_specialists(incident: Incident, *, client: Any | None = None) -> S
         raise err
 
     return SpecialistBundle(recommendations=list(results))
+
+
+async def synthesize_options(
+    incident: Incident,
+    bundle: SpecialistBundle,
+    *,
+    client: Any | None = None,
+) -> ArbiterResult:
+    """Run the arbiter over one incident + its `SpecialistBundle`, returning 1-3 ranked recovery options.
+
+    Mirrors `run_specialists`: the incident brief is rendered ONCE here with
+    `_incident_summary` (no mutable `Incident` reference reaches the arbiter -
+    AD-4), and `client` is injected in tests. When omitted, one
+    `AsyncAnthropic()` is built here, a constructor failure is wrapped as
+    `SpecialistError("dispatch", ...)`, and the client is best-effort closed
+    afterwards. Any synthesis failure propagates as `SpecialistError("arbiter",
+    ...)`; retry/fallback is Story 1.5.
+    """
+    owns_client = client is None
+    if owns_client:
+        try:
+            from anthropic import AsyncAnthropic
+
+            client = AsyncAnthropic()
+        except Exception as exc:  # noqa: BLE001 - no raw construction error may escape
+            raise SpecialistError(
+                "dispatch",
+                f"could not construct AsyncAnthropic client: {type(exc).__name__}: {exc}",
+            ) from exc
+
+    brief = _incident_summary(incident)
+
+    try:
+        return await _arbiter_synthesize(brief, bundle, client=client)
+    finally:
+        if owns_client:
+            await _maybe_close(client)
