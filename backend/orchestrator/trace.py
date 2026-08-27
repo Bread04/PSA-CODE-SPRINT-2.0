@@ -14,17 +14,22 @@ from datetime import datetime, timezone
 
 from models.incident import Incident, TraceEntry
 
-# The canonical pipeline stages, in order (Story 1.12).
+# The canonical pipeline stages, in order (Story 1.12). `POLICY_START` and
+# `NOTIFY` are the internal bookkeeping stages the orchestrator also emits
+# (epic-1 retro action item 1); the frontend ExecutionTrace renders any stage,
+# known or not, so this list stays the authoritative producer-side vocabulary.
 STAGES = (
     "INGEST",
     "CORRELATE",
     "AGENT_CALL",
     "SYNTHESIZE",
     "CONFIDENCE",
+    "POLICY_START",
     "POLICY_DECISION",
     "DG_CHECK",
     "APPROVAL",
     "EXECUTE",
+    "NOTIFY",
     "VERIFY",
 )
 

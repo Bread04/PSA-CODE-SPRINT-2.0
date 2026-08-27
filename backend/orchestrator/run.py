@@ -45,7 +45,16 @@ from mock_services.services import build_registry, execute_action
 
 
 class ExecutionError(RuntimeError):
-    """Raised when an action's execution fails, so Story 1.5 retry/fallback fires."""
+    """Raised when an action's execution fails, so Story 1.5 retry/fallback fires.
+
+    Carries the per-call `results` from the failed attempt on `.results` so the
+    caller can still surface `{ok: False}` rows even when the retry is exhausted
+    (Story 1.12 — a failed EXECUTE must not read as an empty result set).
+    """
+
+    def __init__(self, message: str, results: list[dict] | None = None) -> None:
+        super().__init__(message)
+        self.results: list[dict] = results or []
 
 
 async def _execute_action_with_failures(action: dict, registry: Any) -> list[dict]:
@@ -54,11 +63,15 @@ async def _execute_action_with_failures(action: dict, registry: Any) -> list[dic
     Per-call outcomes are still recorded by `execute_action` (it never swallows a
     failure) - this wrapper only converts an action-level failure into a raise that
     `with_retry` recognizes, instead of letting the action read as a silent success.
+    The raised `ExecutionError` carries the per-call results so the caller keeps
+    the failure detail after the retry is exhausted.
     """
     results = await execute_action(action, registry)
     failed = [r for r in results if not r.get("ok")]
     if failed:
-        raise ExecutionError(f"{len(failed)} of {len(results)} call(s) failed to execute")
+        raise ExecutionError(
+            f"{len(failed)} of {len(results)} call(s) failed to execute", results=results
+        )
     return results
 
 
@@ -179,8 +192,26 @@ async def _execute_selected(
 
     action = _option_to_action(selected)
     registry = execute_registry if execute_registry is not None else build_registry()
-    result: RetryResult = await with_retry(lambda: _execute_action_with_failures(action, registry))
-    results: list[dict[str, Any]] = result.value if result.value is not None else []
+
+    # Capture the last attempt's per-call results so an exhausted retry still
+    # surfaces the {ok: False} rows instead of an empty list (Story 1.12).
+    last_results: list[dict[str, Any]] = []
+
+    async def _attempt() -> list[dict[str, Any]]:
+        nonlocal last_results
+        last_results = await execute_action(action, registry)
+        failed = [r for r in last_results if not r.get("ok")]
+        if failed:
+            raise ExecutionError(
+                f"{len(failed)} of {len(last_results)} call(s) failed to execute",
+                results=last_results,
+            )
+        return last_results
+
+    result: RetryResult = await with_retry(_attempt)
+    results: list[dict[str, Any]] = (
+        result.value if result.value is not None else last_results
+    )
 
     append_trace(
         incident,
@@ -295,28 +326,49 @@ async def approve_incident(
     *,
     execute_registry: Any | None = None,
 ) -> dict[str, Any]:
-    """Approve a held Tier 3 action (Story 1.8). Re-checks the kill switch first (Story 1.10)."""
-    if incident.tier != 3:
-        return {"approved": False, "reason": "only tier 3 requires approval"}
+    """Approve a held action and execute it (Story 1.8 / 1.10 / AD-15).
 
-    if incident.blocked_by_kill_switch:
-        if is_kill_switch_engaged():
-            append_trace(
-                incident,
-                "EXECUTE",
-                {"blocked": True},
-                error=error_shape("EXECUTE", "kill switch still engaged on approve", retried=False, fallback_used=False),
-            )
-            return {"approved": False, "reason": "kill switch engaged"}
-        # Switch was disengaged after blocking; clear the flag and proceed.
-        incident.blocked_by_kill_switch = False
+    Handles two operator-approvable states, per epic-2 UX (EXPERIENCE.md
+    kill-switch-engaged pattern):
+      - a held Tier 3 recommendation (`approval_status == "pending"`), and
+      - a Tier 1/2 execution the kill switch blocked
+        (`blocked_by_kill_switch is True`, tier NOT reclassified — AD-15).
 
-    incident.approval_status = "approved"
-    selected = next((opt for opt in incident.options if opt.option_id == incident.recommended_option_id), None)
+    The kill switch is re-checked here unconditionally (Story 1.10 / epic-1
+    retro F2): if it is engaged at approve time the action does not execute,
+    even for a Tier 3 card that was `pending` rather than already blocked.
+    """
+    approvable = incident.tier == 3 or incident.blocked_by_kill_switch
+    if not approvable:
+        return {"approved": False, "reason": "only tier 3 or kill-switch-blocked incidents require approval"}
+
+    if is_kill_switch_engaged():
+        incident.blocked_by_kill_switch = True
+        append_trace(
+            incident,
+            "EXECUTE",
+            {"blocked": True},
+            error=error_shape(
+                "EXECUTE", "kill switch engaged on approve", retried=False, fallback_used=False
+            ),
+        )
+        return {"approved": False, "reason": "kill switch engaged", "execution_results": []}
+
+    # Switch is clear — a prior block is now lifted.
+    incident.blocked_by_kill_switch = False
+
+    tier = incident.tier if incident.tier in (1, 2, 3) else 3
+    if tier == 3:
+        incident.approval_status = "approved"
+
+    selected = next(
+        (opt for opt in incident.options if opt.option_id == incident.recommended_option_id),
+        None,
+    )
     if selected is None:
         return {"approved": True, "execution_results": []}
 
     results = await _execute_selected(
-        incident, selected, 3, execute_registry=execute_registry, fallback_field_count=0, mock_forced=False
+        incident, selected, tier, execute_registry=execute_registry, fallback_field_count=0, mock_forced=False
     )
     return {"approved": True, "execution_results": results}
