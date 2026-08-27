@@ -61,6 +61,20 @@
   opacity: 0.5;
 }
 
+.kill-switch__dot:not(:disabled):hover {
+  border-color: var(--accent-700);
+}
+
+.kill-switch__confirm:not(:disabled):hover {
+  background: var(--accent-800);
+  border-color: var(--accent-800);
+}
+
+.kill-switch__confirm:not(:disabled):active {
+  background: var(--accent-900);
+  border-color: var(--accent-900);
+}
+
 /* Visible AA-contrast focus ring (UX-DR11 / Accessibility Floor). */
 .kill-switch__dot:focus-visible,
 .kill-switch__confirm:focus-visible {

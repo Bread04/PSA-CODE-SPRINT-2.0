@@ -61,4 +61,3 @@ export function IncidentArchive({ incidents }: IncidentArchiveProps) {
   );
 }
 
-export default IncidentArchive;

@@ -1,2 +1,2 @@
-export { ExecutionTrace, default } from './ExecutionTrace';
+export { ExecutionTrace } from './ExecutionTrace';
 export type { ExecutionTraceProps } from './ExecutionTrace';

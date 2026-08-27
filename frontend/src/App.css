@@ -12,6 +12,12 @@
   min-width: 1280px;
 }
 
+/* Programmatic focus target on route change — no visible ring (the view's own
+   content and landmarks carry the context). */
+.app-route:focus {
+  outline: none;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -49,6 +55,10 @@
 .app-nav__link {
   color: var(--text-muted);
   text-decoration: none;
+}
+
+.app-nav__link:hover {
+  color: var(--text);
 }
 
 .app-nav__link:focus-visible {

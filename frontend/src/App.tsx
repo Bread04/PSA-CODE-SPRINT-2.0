@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AskPortwatch } from './components/AskPortwatch';
 import { ExecutionTrace } from './components/ExecutionTrace';
@@ -48,6 +48,19 @@ function App() {
     [approval, selectedId],
   );
 
+  // Move focus to the route container on a route change (not on first load) so
+  // keyboard / screen-reader users land in the new view instead of staying on
+  // the nav link they just activated.
+  const routeRef = useRef<HTMLDivElement>(null);
+  const firstRenderRef = useRef(true);
+  useEffect(() => {
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
+    routeRef.current?.focus();
+  }, [route]);
+
   return (
     <div className="app">
       <KillSwitchBanner engaged={kill.engaged} />
@@ -80,6 +93,7 @@ function App() {
         </div>
       </header>
 
+      <div className="app-route" tabIndex={-1} ref={routeRef}>
       {route === 'archive' ? (
         <IncidentArchive incidents={incidents} />
       ) : (
@@ -117,6 +131,7 @@ function App() {
           </aside>
         </main>
       )}
+      </div>
     </div>
   );
 }

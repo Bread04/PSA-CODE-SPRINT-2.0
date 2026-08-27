@@ -21,4 +21,3 @@ export function KillSwitchBanner({ engaged }: KillSwitchBannerProps) {
   );
 }
 
-export default KillSwitchBanner;

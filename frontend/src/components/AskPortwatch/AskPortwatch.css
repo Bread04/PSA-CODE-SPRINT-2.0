@@ -131,6 +131,20 @@
   opacity: 0.5;
 }
 
+.ask-portwatch__submit:not(:disabled):hover {
+  background: var(--accent-800);
+  border-color: var(--accent-800);
+}
+
+.ask-portwatch__submit:not(:disabled):active {
+  background: var(--accent-900);
+  border-color: var(--accent-900);
+}
+
+.ask-portwatch__chip:not(:disabled):hover {
+  color: var(--accent-900);
+}
+
 /* Visible AA-contrast focus ring against --surface (UX-DR11 / Accessibility Floor). */
 .ask-portwatch__input:focus-visible,
 .ask-portwatch__submit:focus-visible,

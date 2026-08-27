@@ -65,7 +65,6 @@ export function MapPanel({ variant = 'strait', className }: MapPanelProps) {
   );
 }
 
-export default MapPanel;
 
 /** Fixed illustrative strait approach: water channel, berth boxes, moored ships. */
 function StraitScene() {

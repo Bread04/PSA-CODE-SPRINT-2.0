@@ -1,4 +1,4 @@
-export { KillSwitchControl, default } from './KillSwitchControl';
+export { KillSwitchControl } from './KillSwitchControl';
 export type { KillSwitchControlProps } from './KillSwitchControl';
-export { KillSwitchBanner, default as KillSwitchBannerDefault } from './KillSwitchBanner';
+export { KillSwitchBanner } from './KillSwitchBanner';
 export type { KillSwitchBannerProps } from './KillSwitchBanner';

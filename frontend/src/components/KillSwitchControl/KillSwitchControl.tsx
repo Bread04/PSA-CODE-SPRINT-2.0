@@ -155,4 +155,3 @@ export function KillSwitchControl({
   );
 }
 
-export default KillSwitchControl;

@@ -73,6 +73,10 @@
   cursor: pointer;
 }
 
+.incident-row:hover {
+  background: var(--neutral-100);
+}
+
 /* Visible AA-contrast focus ring against --surface (UX-DR11). */
 .incident-row:focus-visible {
   outline: 2px solid var(--accent-700);

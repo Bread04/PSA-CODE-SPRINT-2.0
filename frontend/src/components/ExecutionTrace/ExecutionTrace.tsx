@@ -77,7 +77,6 @@ export function ExecutionTrace({ trace }: ExecutionTraceProps) {
   );
 }
 
-export default ExecutionTrace;
 
 function asBool(detail: Record<string, unknown>, key: string): boolean {
   return detail[key] === true;

@@ -207,6 +207,21 @@
   cursor: not-allowed;
 }
 
+.approval-banner__btn:not(:disabled):hover,
+.approval-banner__alt:not(:disabled):hover {
+  border-color: var(--accent-700);
+}
+
+.approval-banner__btn--primary:not(:disabled):hover {
+  background: var(--accent-800);
+  border-color: var(--accent-800);
+}
+
+.approval-banner__btn:not(:disabled):active,
+.approval-banner__alt:not(:disabled):active {
+  border-color: var(--accent-900);
+}
+
 /* Visible AA-contrast focus ring against --surface (UX-DR11 / Accessibility Floor). */
 .approval-banner__btn:focus-visible,
 .approval-banner__alt:focus-visible {

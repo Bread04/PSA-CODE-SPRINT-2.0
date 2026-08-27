@@ -93,6 +93,20 @@ describe('App routing', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('main')).not.toBeInTheDocument();
   });
+
+  it('moves focus to the route container on a route change (not on first load)', async () => {
+    window.location.hash = '';
+    const { container } = render(<App />);
+    await screen.findByRole('main');
+    // First load must not steal focus.
+    expect(document.activeElement).toBe(document.body);
+
+    window.location.hash = '#/archive';
+    fireEvent(window, new HashChangeEvent('hashchange'));
+    await screen.findByRole('region', { name: 'Incident Archive' });
+
+    expect(document.activeElement).toBe(container.querySelector('.app-route'));
+  });
 });
 
 describe('App live data wiring', () => {

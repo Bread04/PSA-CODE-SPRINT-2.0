@@ -1,2 +1,2 @@
-export { MapPanel, default } from './MapPanel';
+export { MapPanel } from './MapPanel';
 export type { MapPanelProps } from './MapPanel';
