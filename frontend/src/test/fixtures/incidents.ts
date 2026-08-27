@@ -223,6 +223,62 @@ export const openApproved: Incident = {
 };
 
 // ---------------------------------------------------------------------------
+// Story 2.9 — Incident Archive fixtures (resolved + operator decision)
+// ---------------------------------------------------------------------------
+
+/** Tier-3 resolved after the operator APPROVED the recommendation. */
+export const resolvedApproved: Incident = {
+  incident_id: 'inc-resolved-approved',
+  status: 'resolved',
+  entity_refs: ['vessel:MSC-ANNA', 'crane:CRANE-4'],
+  tier: 3,
+  confidence: 100,
+  recommended_option_id: 'opt-1',
+  options: [option({ option_id: 'opt-1' })],
+  approval_status: 'approved',
+  blocked_by_kill_switch: false,
+  trace: [
+    {
+      stage: 'APPROVAL',
+      timestamp: '2026-08-27T09:10:00Z',
+      detail: { decision: 'approve', option_id: 'opt-1' },
+      error: null,
+    },
+    {
+      stage: 'EXECUTE',
+      timestamp: '2026-08-27T09:11:00Z',
+      detail: {},
+      error: null,
+    },
+  ],
+  created_at: '2026-08-27T09:00:00Z',
+  last_signal_at: '2026-08-27T09:12:00Z',
+};
+
+/** Tier-3 resolved after the operator REJECTED the recommendation. */
+export const resolvedRejected: Incident = {
+  incident_id: 'inc-resolved-rejected',
+  status: 'resolved',
+  entity_refs: ['vessel:EVER-GIVEN'],
+  tier: 3,
+  confidence: 100,
+  recommended_option_id: 'opt-1',
+  options: [option({ option_id: 'opt-1' })],
+  approval_status: 'rejected',
+  blocked_by_kill_switch: false,
+  trace: [
+    {
+      stage: 'APPROVAL',
+      timestamp: '2026-08-27T08:58:00Z',
+      detail: { decision: 'reject' },
+      error: null,
+    },
+  ],
+  created_at: '2026-08-27T08:50:00Z',
+  last_signal_at: '2026-08-27T08:59:00Z',
+};
+
+// ---------------------------------------------------------------------------
 // Story 2.4 — IncidentDetail / ApprovalBanner fixtures
 // ---------------------------------------------------------------------------
 
@@ -396,6 +452,8 @@ export const allIncidents: Incident[] = [
   killSwitchBlocked,
   unclassified,
   openApproved,
+  resolvedApproved,
+  resolvedRejected,
   tier3WithAlternatives,
   tier3DgRejected,
 ];

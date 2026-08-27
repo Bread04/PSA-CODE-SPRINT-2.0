@@ -1,0 +1,35 @@
+/*
+ * App shell chrome (Story 2.9).
+ *
+ * Only the header route-nav lives here — the rest of the demo shell is inline
+ * style on throwaway layout elements. Colour, spacing and type route through
+ * Story 2.1 tokens; the active-route treatment is perceptible without relying
+ * on colour (UX-DR11): heavier weight + underline, not a hue swap.
+ */
+
+.app-nav {
+  display: flex;
+  gap: var(--space-4);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+}
+
+.app-nav__link {
+  color: var(--text);
+  text-decoration: none;
+  opacity: 0.6;
+}
+
+.app-nav__link:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+.app-nav__link[aria-current='page'] {
+  font-weight: var(--font-weight-heading);
+  text-decoration: underline;
+  opacity: 1;
+}

@@ -2,22 +2,28 @@ import { useState } from 'react';
 
 import { AskPortwatch } from './components/AskPortwatch';
 import { ExecutionTrace } from './components/ExecutionTrace';
+import { IncidentArchive } from './components/IncidentArchive';
 import { IncidentDetail } from './components/IncidentDetail';
 import { IncidentFeed } from './components/IncidentFeed';
 import { KillSwitchBanner, KillSwitchControl } from './components/KillSwitchControl';
 import { MapPanel } from './components/MapPanel';
 import { useAskPortwatch } from './hooks/useAskPortwatch';
+import { useHashRoute } from './hooks/useHashRoute';
 import { useKillSwitch } from './hooks/useKillSwitch';
 import { allIncidents } from './test/fixtures/incidents';
 
+import './App.css';
+
 /*
- * Minimal app shell for Stories 2.1–2.8 — NOT a real layout.
+ * Minimal app shell for Stories 2.1–2.9 — NOT a real layout.
  * It exists only to visually exercise the token system, the BlueprintPanel
  * primitive, the IncidentFeed, the IncidentDetail + ApprovalBanner, the
  * ExecutionTrace, the AskPortwatch natural-language query panel (with
- * fixture data and a local selection), and the Story 2.8 KillSwitchControl /
- * KillSwitchBanner (one live `useKillSwitch()` instance, no backend here) end
- * to end. The MapPanel below is a
+ * fixture data and a local selection), the Story 2.8 KillSwitchControl /
+ * KillSwitchBanner (one live `useKillSwitch()` instance, no backend here), and
+ * the Story 2.9 hash route: `#/archive` swaps the Live Console `<main>` for the
+ * session-scoped `IncidentArchive` view while the global KillSwitchBanner and
+ * the header stay put. The MapPanel below is a
  * static, dataless illustrative schematic — it takes no incident/selection
  * input and is mounted here only to show it in place. The real Live Console
  * layout, the polling wiring (useIncidents / useApproval), and the router
@@ -31,6 +37,7 @@ function App() {
     allIncidents.find((i) => i.incident_id === selectedId) ?? null;
   const ask = useAskPortwatch();
   const kill = useKillSwitch();
+  const route = useHashRoute();
 
   return (
     <div>
@@ -40,6 +47,7 @@ function App() {
           height: 'var(--header-height)',
           display: 'flex',
           alignItems: 'center',
+          gap: 'var(--space-6)',
           padding: '0 var(--space-6)',
           background: 'var(--surface)',
           borderBottom: '1px solid var(--divider)',
@@ -56,6 +64,22 @@ function App() {
         >
           Portwatch Console
         </h1>
+        <nav className="app-nav" aria-label="Primary">
+          <a
+            className="app-nav__link"
+            href="#/"
+            aria-current={route === 'live' ? 'page' : undefined}
+          >
+            Live Console
+          </a>
+          <a
+            className="app-nav__link"
+            href="#/archive"
+            aria-current={route === 'archive' ? 'page' : undefined}
+          >
+            Archive
+          </a>
+        </nav>
         <div style={{ marginLeft: 'auto' }}>
           <KillSwitchControl
             engaged={kill.engaged}
@@ -66,54 +90,58 @@ function App() {
         </div>
       </header>
 
-      <main
-        style={{
-          display: 'flex',
-          gap: 'var(--space-4)',
-          padding: 'var(--space-6)',
-          alignItems: 'flex-start',
-        }}
-      >
-        <div style={{ width: 'var(--col-left)', flex: 'none' }}>
-          <IncidentFeed
-            incidents={allIncidents}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            lastUpdatedAt={Date.now()}
-            isStale={false}
-            error={null}
-          />
-        </div>
-
-        <section style={{ flex: 1 }}>
-          <IncidentDetail
-            incident={selected}
-            submitting={false}
-            error={null}
-            onApprovalAction={() => {}}
-          />
-          <MapPanel />
-        </section>
-
-        <aside
+      {route === 'archive' ? (
+        <IncidentArchive incidents={allIncidents} />
+      ) : (
+        <main
           style={{
-            width: 'var(--col-right)',
-            flex: 'none',
             display: 'flex',
-            flexDirection: 'column',
             gap: 'var(--space-4)',
+            padding: 'var(--space-6)',
+            alignItems: 'flex-start',
           }}
         >
-          <ExecutionTrace trace={selected?.trace ?? []} />
-          <AskPortwatch
-            onSubmit={ask.submit}
-            answer={ask.answer}
-            submitting={ask.submitting}
-            error={ask.error}
-            selectedIncidentId={selectedId}
-          />
-        </aside>
-      </main>
+          <div style={{ width: 'var(--col-left)', flex: 'none' }}>
+            <IncidentFeed
+              incidents={allIncidents}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              lastUpdatedAt={Date.now()}
+              isStale={false}
+              error={null}
+            />
+          </div>
+
+          <section style={{ flex: 1 }}>
+            <IncidentDetail
+              incident={selected}
+              submitting={false}
+              error={null}
+              onApprovalAction={() => {}}
+            />
+            <MapPanel />
+          </section>
+
+          <aside
+            style={{
+              width: 'var(--col-right)',
+              flex: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-4)',
+            }}
+          >
+            <ExecutionTrace trace={selected?.trace ?? []} />
+            <AskPortwatch
+              onSubmit={ask.submit}
+              answer={ask.answer}
+              submitting={ask.submitting}
+              error={ask.error}
+              selectedIncidentId={selectedId}
+            />
+          </aside>
+        </main>
+      )}
     </div>
   );
 }

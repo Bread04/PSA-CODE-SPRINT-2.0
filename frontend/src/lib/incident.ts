@@ -80,6 +80,35 @@ export function formatIncidentLabel(incident: Incident): string {
 }
 
 // ---------------------------------------------------------------------------
+// Resolution outcome (Story 2.9 — Incident Archive tag)
+// ---------------------------------------------------------------------------
+
+/**
+ * The archive's resolution-outcome tag text for a resolved incident.
+ *
+ * Returns `null` for any incident that is not `status === 'resolved'` (the
+ * archive only ever renders resolved rows, but callers guard anyway). For a
+ * resolved incident: `'Approved'` when the operator approved the
+ * recommendation, `'Rejected'` when the operator rejected it, `'Auto-resolved'`
+ * when it resolved with no approval gate (`approval_status === 'n/a'`), and
+ * `null` for any other `approval_status` (e.g. a still-`'pending'` value on a
+ * resolved record) — no tag is safer than a wrong one.
+ *
+ * Kept separate from {@link statusPhrase} on purpose: that helper is overloaded
+ * (pinned / kill-switch / open states) and sentence-style; this is a tight
+ * enum used only for the archive tag.
+ */
+export function resolutionOutcome(
+  incident: Incident,
+): 'Auto-resolved' | 'Approved' | 'Rejected' | null {
+  if (incident.status !== 'resolved') return null;
+  if (incident.approval_status === 'approved') return 'Approved';
+  if (incident.approval_status === 'rejected') return 'Rejected';
+  if (incident.approval_status === 'n/a') return 'Auto-resolved';
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Confidence-degradation reason (UX-DR10)
 // ---------------------------------------------------------------------------
 

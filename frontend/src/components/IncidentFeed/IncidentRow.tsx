@@ -11,6 +11,13 @@ export interface IncidentRowProps {
   selected: boolean;
   /** Called with the clicked incident's `incident_id` on activation. */
   onSelect: (incidentId: string) => void;
+  /**
+   * Optional id of an external element describing this row (e.g. the Story 2.9
+   * archive's resolution-outcome tag). Appended to the button's
+   * `aria-describedby` so screen-reader users hear it without the tag text
+   * being folded into the row's accessible name. Existing callers pass nothing.
+   */
+  describedById?: string;
 }
 
 /**
@@ -23,7 +30,12 @@ export interface IncidentRowProps {
  * (UX-DR10). The button carries an explicit `aria-label` so its accessible name
  * is "<label> — <status>" rather than a run-on of every child.
  */
-export function IncidentRow({ incident, selected, onSelect }: IncidentRowProps) {
+export function IncidentRow({
+  incident,
+  selected,
+  onSelect,
+  describedById,
+}: IncidentRowProps) {
   const {
     dotState,
     statusText,
@@ -35,6 +47,10 @@ export function IncidentRow({ incident, selected, onSelect }: IncidentRowProps) 
   const label = formatIncidentLabel(incident);
   const reason = confidenceReason(incident);
   const reasonId = `incident-reason-${incident.incident_id}`;
+  const describedBy =
+    [reason ? reasonId : null, describedById ?? null]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   const className = selected
     ? 'incident-row incident-row--selected'
@@ -46,7 +62,7 @@ export function IncidentRow({ incident, selected, onSelect }: IncidentRowProps) 
       className={className}
       aria-pressed={selected}
       aria-label={`${label} — ${statusText}`}
-      aria-describedby={reason ? reasonId : undefined}
+      aria-describedby={describedBy}
       onClick={() => onSelect(incident.incident_id)}
     >
       <span className="incident-row__top">
