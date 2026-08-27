@@ -50,6 +50,7 @@ from agents.base import (
     _neutralise_delimiters,
     bounded_json_call,
 )
+from agents.mock_override import canned_arbiter, is_mock_forced
 
 NAME = "arbiter"
 
@@ -191,7 +192,7 @@ async def synthesize_options(
     """Make one bounded arbiter call over `incident_brief` + `bundle` and return ranked recovery options.
 
     `incident_brief` is the pre-rendered incident string (see
-    `base._incident_summary`); `client` is injected (an object exposing an
+    `base._incident_summary`);     `client` is injected (an object exposing an
     async `messages.create`). The first JSON candidate that yields at least one
     valid `RecoveryOption` wins: model-supplied ids are dropped, `opt-1..N` are
     stamped in the model's returned order, and at most the first three are kept
@@ -199,7 +200,20 @@ async def synthesize_options(
     surviving options, a schema mismatch, an unparseable reply, a `max_tokens` /
     `tool_use` / `refusal` / unexpected stop reason, or a raised SDK exception
     all surface as `SpecialistError("arbiter", reason)`.
+
+    Story 1.13: when the arbiter is mock-forced (`mock_override.is_mock_forced`),
+    no LLM call is made - a canned, structurally-identical `ArbiterResult` is
+    returned instead (consistent with the specialist override in `base.call_specialist`).
     """
+    if is_mock_forced(NAME):
+        canned = canned_arbiter()
+        options = _options_from_candidate(canned)
+        return ArbiterResult(
+            options=options,
+            specialist_disagreement=bool(canned.get("specialist_disagreement", False)),
+            disagreement_summary=canned.get("disagreement_summary", "") or "",
+        )
+
     if not isinstance(bundle, SpecialistBundle) or len(bundle.recommendations) != 3:
         raise SpecialistError(NAME, "expected a SpecialistBundle of exactly 3 recommendations")
 

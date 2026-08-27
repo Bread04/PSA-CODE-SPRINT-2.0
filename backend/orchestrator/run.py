@@ -44,6 +44,24 @@ from orchestrator.trace import append_trace, error_shape
 from mock_services.services import build_registry, execute_action
 
 
+class ExecutionError(RuntimeError):
+    """Raised when an action's execution fails, so Story 1.5 retry/fallback fires."""
+
+
+async def _execute_action_with_failures(action: dict, registry: Any) -> list[dict]:
+    """Run `execute_action`; raise on any failed call so the retry boundary triggers.
+
+    Per-call outcomes are still recorded by `execute_action` (it never swallows a
+    failure) - this wrapper only converts an action-level failure into a raise that
+    `with_retry` recognizes, instead of letting the action read as a silent success.
+    """
+    results = await execute_action(action, registry)
+    failed = [r for r in results if not r.get("ok")]
+    if failed:
+        raise ExecutionError(f"{len(failed)} of {len(results)} call(s) failed to execute")
+    return results
+
+
 class DecisionCard(BaseModel):
     """The operator-facing summary for a Tier 3 action held for approval (Story 1.8)."""
 
@@ -161,7 +179,7 @@ async def _execute_selected(
 
     action = _option_to_action(selected)
     registry = execute_registry if execute_registry is not None else build_registry()
-    result: RetryResult = await with_retry(lambda: execute_action(action, registry))
+    result: RetryResult = await with_retry(lambda: _execute_action_with_failures(action, registry))
     results: list[dict[str, Any]] = result.value if result.value is not None else []
 
     append_trace(
