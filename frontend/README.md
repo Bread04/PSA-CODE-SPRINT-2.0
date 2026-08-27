@@ -10,4 +10,21 @@ build, and `npm test` to run the token contract suite.
 color, spacing, radius, layout, and typography value as a `:root` custom property
 (the only place literal hex/px values may live), and `tokens.ts` is the typed
 mirror of those same values. `src/theme/tokens.test.ts` fails loudly if the two
-ever disagree or drift from DESIGN.md.
+ever disagree or drift from DESIGN.md — and its consumer-guardrail scan now
+covers every `.css` / `.ts` / `.tsx` file under `src/` (tokens definition files
+and tests excluded).
+
+## Components
+
+`src/components/BlueprintPanel/` — the shared blueprint container primitive
+(1px divider border, zero radius, four crosshair corner marks) used by every
+incident card, the approval card, the trace log, and the map panels. Its visual
+contract is verified against DESIGN.md `components.blueprint-panel` in
+`BlueprintPanel.test.tsx`.
+
+### Override hooks
+
+- `--blueprint-panel-padding` — set this custom property on (or above) a
+  `BlueprintPanel` to override its default padding (`--space-4`, 13.6px) without
+  editing the component. Registered via `@property` in `BlueprintPanel.css` and
+  allow-listed in `tokens.test.ts`.

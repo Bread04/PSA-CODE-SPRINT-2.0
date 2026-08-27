@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tokens } from './tokens';
 
@@ -18,8 +18,11 @@ import { tokens } from './tokens';
  *  4. tokens.css radius hygiene: no value other than 0 / 3px / 9999px.
  *  5. Bidirectional exhaustiveness: no undocumented token in tokens.css, and
  *     every tokens.ts leaf maps to a tokens.css declaration.
- *  6. Consumer guardrails: index.css / App.tsx route all color + radius through
- *     tokens and reference only declared custom properties.
+ *  6. Consumer guardrails: every shipped `.css` / `.tsx` file under `src/`
+ *     (globbed; tokens.css + test files excluded) routes all color + radius
+ *     through tokens and references only declared custom properties (bare
+ *     `var(--x)` refs must resolve; `var(--x, fallback)` override hooks are
+ *     allowed).
  */
 
 // ---------------------------------------------------------------------------
@@ -36,8 +39,7 @@ function readOrThrow(path: string, label: string): string {
 }
 
 const tokensCssPath = join(HERE, 'tokens.css');
-const indexCssPath = join(HERE, '..', 'index.css');
-const appTsxPath = join(HERE, '..', 'App.tsx');
+const srcDir = join(HERE, '..');
 const designMdPath = join(
   HERE,
   '..',
@@ -51,9 +53,47 @@ const designMdPath = join(
 );
 
 const cssText = readOrThrow(tokensCssPath, 'tokens.css');
-const indexCssText = readOrThrow(indexCssPath, 'index.css');
-const appTsxText = readOrThrow(appTsxPath, 'App.tsx');
 const designMdText = readOrThrow(designMdPath, 'DESIGN.md');
+
+// ---------------------------------------------------------------------------
+// Consumer guardrail targets: every shipped .css / .ts / .tsx file under src/
+// (walked with withFileTypes so a directory path is never handed to
+// readFileSync) EXCEPT the token definition files (theme/tokens.css +
+// theme/tokens.ts — the single place literal hex/px are allowed) and any
+// test file (*.test.*, *.spec.*, or a path under __tests__). This generalises
+// the previously hardcoded (index.css, App.tsx) pair so new component styling
+// — CSS or inline style objects in .ts/.tsx — is covered automatically.
+// ---------------------------------------------------------------------------
+
+/** Custom properties that are deliberately undeclared caller override hooks. */
+const OVERRIDE_HOOKS = new Set<string>(['--blueprint-panel-padding']);
+
+// Strip C-style block comments and `//` line comments (but not `://` in URLs),
+// so scans never trip on commented-out example values.
+function stripComments(text: string): string {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+const consumerRelPaths = readdirSync(srcDir, {
+  withFileTypes: true,
+  recursive: true,
+})
+  .filter((entry) => entry.isFile())
+  .map((entry) =>
+    relative(srcDir, join(entry.parentPath, entry.name)).replace(/\\/g, '/'),
+  )
+  .filter((p) => /\.(css|ts|tsx)$/.test(p))
+  .filter((p) => !/\.(test|spec)\.[cm]?[jt]sx?$/.test(p))
+  .filter((p) => !p.split('/').includes('__tests__'))
+  .filter((p) => !p.endsWith('theme/tokens.css') && !p.endsWith('theme/tokens.ts'))
+  .sort();
+
+const consumers: Array<[string, string]> = consumerRelPaths.map((rel) => [
+  rel,
+  readOrThrow(join(srcDir, rel), rel),
+]);
 
 // ---------------------------------------------------------------------------
 // Minimal YAML front-matter parser (flat + 2-level nested maps only).
@@ -369,21 +409,59 @@ describe('token set is exhaustive in both directions', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 6. Consumer guardrails (index.css + App.tsx).
+// 6. Consumer guardrails — every shipped .css / .ts / .tsx file under src/
+//    (see `consumers`, built by the directory walk above; the tokens.css /
+//    tokens.ts definition files and every test file are excluded). All scans
+//    run against comment-stripped text.
 // ---------------------------------------------------------------------------
-const consumers: Array<[string, string]> = [
-  ['index.css', indexCssText],
-  ['App.tsx', appTsxText],
-];
+const NAMED_COLOR =
+  /\b(white|black|red|green|blue|gray|grey|silver|gainsboro|orange|yellow|purple|pink|brown|cyan|magenta)\b/i;
 
-describe('index.css and App.tsx route styling through tokens only', () => {
-  it.each(consumers)('%s contains no raw hex color literal', (_name, text) => {
-    const body = stripBlockComments(text);
+describe('shipped src CSS + components route styling through tokens only', () => {
+  it('the guardrail walk covers ≥1 file with ≥1 token reference', () => {
+    expect(consumers.length).toBeGreaterThan(0);
+    const totalRefs = consumers.reduce(
+      (n, [, raw]) =>
+        n + [...stripComments(raw).matchAll(/var\(\s*--[a-z0-9-]+/gi)].length,
+      0,
+    );
+    expect(totalRefs).toBeGreaterThan(0);
+  });
+
+  it('the guardrail walk resolves the known consumer files', () => {
+    for (const required of [
+      'components/BlueprintPanel/BlueprintPanel.css',
+      'index.css',
+      'App.tsx',
+    ]) {
+      expect(consumerRelPaths, `missing ${required} from the walk`).toContain(
+        required,
+      );
+    }
+  });
+
+  it.each(consumers)('%s contains no raw hex color literal', (_name, raw) => {
+    const body = stripComments(raw);
     const hex = body.match(/#[0-9a-f]{3,8}\b/i);
     expect(hex, hex ? `raw hex ${hex[0]}` : undefined).toBeNull();
   });
 
-  it.each(consumers)('%s uses no disallowed border-radius value', (_name, text) => {
+  it.each(consumers.filter(([name]) => name.endsWith('.css')))(
+    '%s uses no CSS named color as a property value',
+    (_name, raw) => {
+      const body = stripComments(raw);
+      const values = [...body.matchAll(/:\s*([^;{}]+)[;}]/g)].map((m) =>
+        m[1].trim(),
+      );
+      for (const value of values) {
+        const hit = value.match(NAMED_COLOR);
+        expect(hit, hit ? `${_name}: named color "${hit[0]}" in "${value}"` : undefined).toBeNull();
+      }
+    },
+  );
+
+  it.each(consumers)('%s uses no disallowed border-radius value', (_name, raw) => {
+    const text = stripComments(raw);
     const allowed = /^(?:0|3px|9999px|var\(--radius-[a-z-]+\))$/;
 
     const cssRadius = /border(?:-[a-z]+)*-radius\s*:\s*([^;{}]+?)\s*[;}]/gi;
@@ -399,14 +477,47 @@ describe('index.css and App.tsx route styling through tokens only', () => {
     }
   });
 
-  it.each(consumers)('%s references only custom properties declared in tokens.css', (_name, text) => {
-    const refs = [...text.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)].map((x) => x[1]);
-    expect(refs.length).toBeGreaterThan(0);
-    for (const ref of refs) {
+  it.each(consumers)(
+    '%s references only declared tokens (fallbacks must be a token or a registered override hook)',
+    (_name, raw) => {
+      const body = stripComments(raw);
+      const re = /var\(\s*(--[a-z0-9-]+)\s*(,)?/gi;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(body)) !== null) {
+        const ref = m[1];
+        const declared = Object.prototype.hasOwnProperty.call(cssVars, ref);
+        if (m[2]) {
+          // `var(--x, <fallback>)` — still must be a real token or an
+          // explicitly registered override hook; a typo'd name does not pass
+          // just because it has a fallback.
+          expect(
+            declared || OVERRIDE_HOOKS.has(ref),
+            `${_name}: var(${ref}) has a fallback but is neither a declared token nor a registered OVERRIDE_HOOK`,
+          ).toBe(true);
+          continue;
+        }
+        expect(
+          declared,
+          `${_name}: var(${ref}) is not declared in tokens.css and has no fallback`,
+        ).toBe(true);
+      }
+    },
+  );
+
+  it.each(consumers)(
+    '%s: a file with any styling signal references at least one token',
+    (_name, raw) => {
+      const text = stripComments(raw);
+      // `style={{ … }}` (an inline style object literal) is a styling signal;
+      // `style={style}` passthrough plumbing is not.
+      const hasStylingSignal =
+        /style\s*=\s*\{\{|var\(|#[0-9a-fA-F]{3,8}\b|\b\d+(?:\.\d+)?px\b/.test(text);
+      if (!hasStylingSignal) return; // barrels, main.tsx, BlueprintPanel.tsx, *.d.ts — exempt
+      const refs = [...text.matchAll(/var\(\s*--[a-z0-9-]+/gi)];
       expect(
-        Object.prototype.hasOwnProperty.call(cssVars, ref),
-        `${_name}: var(${ref}) is not declared in tokens.css`,
-      ).toBe(true);
-    }
-  });
+        refs.length,
+        `${_name} carries a styling signal but no var(--token) reference`,
+      ).toBeGreaterThan(0);
+    },
+  );
 });

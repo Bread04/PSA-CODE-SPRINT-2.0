@@ -1,0 +1,85 @@
+/*
+ * BlueprintPanel — the universal Portwatch container primitive.
+ *
+ * Visual spec is an EXACT match to DESIGN.md `components.blueprint-panel` and
+ * the `.blueprint` / `.corner` rules in mockups/live-console.html:
+ *   - 1px `--divider` border, zero radius, `--surface` fill, `position: relative`
+ *   - default padding `--space-4` (13.6px), overridable by the caller via the
+ *     `--blueprint-panel-padding` custom property (no component edit required)
+ *   - four decorative 11x11px crosshair registration marks, offset -6px outside
+ *     each corner, drawn as a 1px cross in `--text` at opacity 0.35
+ *
+ * Every value routes through a Story 2.1 token or the literal 11px / -6px / 1px
+ * structural values the mock uses. No ad hoc hex. No non-zero radius.
+ */
+
+/*
+ * Caller override hook. Registered so the property has a typed syntax and a
+ * defined initial value even where the cascade does not supply one; the CSS
+ * rule below still carries an explicit `var(..., var(--space-4))` fallback.
+ */
+@property --blueprint-panel-padding {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 13.6px;
+}
+
+.blueprint-panel {
+  /* self-contained regardless of any global reset */
+  box-sizing: border-box;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  padding: var(--blueprint-panel-padding, var(--space-4));
+}
+
+.blueprint-panel__corner {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+}
+
+.blueprint-panel__corner::before,
+.blueprint-panel__corner::after {
+  content: "";
+  position: absolute;
+  background: var(--text);
+  opacity: 0.35;
+}
+
+/* 5px centers the 1px stroke inside the 11px box: (11 - 1) / 2 */
+.blueprint-panel__corner::before {
+  width: 11px;
+  height: 1px;
+  top: 5px;
+  left: 0;
+}
+
+.blueprint-panel__corner::after {
+  width: 1px;
+  height: 11px;
+  top: 0;
+  left: 5px;
+}
+
+.blueprint-panel__corner--tl {
+  top: -6px;
+  left: -6px;
+}
+
+.blueprint-panel__corner--tr {
+  top: -6px;
+  right: -6px;
+}
+
+.blueprint-panel__corner--bl {
+  bottom: -6px;
+  left: -6px;
+}
+
+.blueprint-panel__corner--br {
+  bottom: -6px;
+  right: -6px;
+}
