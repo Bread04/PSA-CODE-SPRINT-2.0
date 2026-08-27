@@ -1,15 +1,14 @@
 import { describe, it, expect } from 'vitest';
 
+import { formatAge, rowPresentation, secondsAgo, sortIncidents } from './incidentFeed.helpers';
+// Story 2.4 moved these four shared helpers to src/lib/incident.ts; the feed
+// helpers module still re-exports them, but the tests now target the new home.
 import {
   confidenceReason,
-  formatAge,
   formatEntityRef,
   formatIncidentLabel,
-  rowPresentation,
-  secondsAgo,
-  sortIncidents,
   statusPhrase,
-} from './incidentFeed.helpers';
+} from '../../lib/incident';
 import type { Incident, TraceEntry } from '../../types/incident';
 import {
   openApproved,

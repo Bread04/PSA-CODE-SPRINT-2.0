@@ -1,18 +1,23 @@
 import { useState } from 'react';
 
-import { BlueprintPanel } from './components/BlueprintPanel';
+import { ExecutionTrace } from './components/ExecutionTrace';
+import { IncidentDetail } from './components/IncidentDetail';
 import { IncidentFeed } from './components/IncidentFeed';
 import { allIncidents } from './test/fixtures/incidents';
 
 /*
- * Minimal app shell for Stories 2.1–2.3 — NOT a real layout.
+ * Minimal app shell for Stories 2.1–2.4 — NOT a real layout.
  * It exists only to visually exercise the token system, the BlueprintPanel
- * primitive, and now the IncidentFeed (with fixture data and a local
- * selection) end to end. The real Live Console layout, the polling wiring, and
- * the router arrive in later stories.
+ * primitive, the IncidentFeed, and now the IncidentDetail + ApprovalBanner
+ * (with fixture data and a local selection) end to end. The real Live Console
+ * layout, the polling wiring (useIncidents / useApproval), and the router
+ * arrive in later stories — here `onApprovalAction` is an inert stub and there
+ * is no live backend.
  */
 function App() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>('inc-tier3-with-alts');
+  const selected =
+    allIncidents.find((i) => i.incident_id === selectedId) ?? null;
 
   return (
     <div>
@@ -58,15 +63,18 @@ function App() {
           />
         </div>
 
-        <BlueprintPanel as="section" style={{ flex: 1 }}>
-          <p>
-            Design token system initialized. Selected incident:{' '}
-            <code>{selectedId ?? 'none'}</code>. This shell renders body text
-            through <code> --font-body </code> and chrome through{' '}
-            <code> --font-heading </code>, inside the shared BlueprintPanel
-            primitive.
-          </p>
-        </BlueprintPanel>
+        <section style={{ flex: 1 }}>
+          <IncidentDetail
+            incident={selected}
+            submitting={false}
+            error={null}
+            onApprovalAction={() => {}}
+          />
+        </section>
+
+        <aside style={{ width: 'var(--col-right)', flex: 'none' }}>
+          <ExecutionTrace trace={selected?.trace ?? []} />
+        </aside>
       </main>
     </div>
   );

@@ -1,0 +1,246 @@
+/*
+ * IncidentDetail + ApprovalBanner (Story 2.4).
+ *
+ * Geometry follows mockups/live-console.html (.incident-title, .incident-meta,
+ * .approval-banner, .dot-pulse, .approval-row, .confidence, .struck, .reason,
+ * .actions, .btn*). Colour, radius, and type route through Story 2.1 tokens
+ * (var(--accent-*), var(--neutral-*), var(--divider), var(--text), var(--space-*),
+ * var(--font-*)); the only bare literals are the small structural sizes the
+ * mock itself fixes (the 7px pulsing dot, the 130px label column, 44px button
+ * min-height) and non-colour values (letter-spacing, animation timing).
+ *
+ * The banner is one BlueprintPanel (reused primitive) — no one-off container.
+ * jsdom does not resolve stylesheet var() cascades, so the pulse animation,
+ * focus-ring colour, struck style, and button colours are asserted by a static
+ * scan of this file plus DOM structure, per the spec's jsdom note.
+ */
+
+.incident-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.incident-detail__placeholder {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.incident-detail__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-incident-title);
+  color: var(--text);
+}
+
+.incident-detail__meta {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+/* --- Approval banner --------------------------------------------------------- */
+
+.approval-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.approval-banner__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+/* Pulsing status dot — opacity 1 <-> 0.25 keyframe (DESIGN.md approval-card). */
+@keyframes approval-banner-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.approval-banner__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--accent-900);
+  animation: approval-banner-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .approval-banner__dot {
+    animation: none;
+  }
+}
+
+.approval-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.approval-banner__label {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.approval-banner__confidence {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-confidence);
+  line-height: 1;
+  color: var(--text);
+}
+
+.approval-banner__confidence-reason {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+/* DG-gate-rejected options — shown, not hidden, struck through with the reason. */
+.approval-banner__rejected {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: var(--space-2);
+}
+
+.approval-banner__struck {
+  display: block;
+  text-decoration: line-through;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.5;
+}
+
+.approval-banner__alternatives {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.approval-banner__alt-label {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.approval-banner__alt {
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.approval-banner__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.approval-banner__btn {
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* button-primary — solid accent-700, light text (DESIGN.md components.button-primary). */
+.approval-banner__btn--primary {
+  color: var(--neutral-100);
+  background: var(--accent-700);
+  border-color: var(--accent-700);
+}
+
+.approval-banner__btn:disabled,
+.approval-banner__alt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Visible AA-contrast focus ring against --surface (UX-DR11 / Accessibility Floor). */
+.approval-banner__btn:focus-visible,
+.approval-banner__alt:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+.approval-banner__error {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+}
+
+/* --- Read-only summary (non-actionable selected incident) ------------------- */
+
+.incident-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.incident-summary__status {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.6;
+}

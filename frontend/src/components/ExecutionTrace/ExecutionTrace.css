@@ -1,0 +1,94 @@
+/*
+ * ExecutionTrace (Story 2.5).
+ *
+ * Geometry follows DESIGN.md `components.execution-trace`: a bordered,
+ * zero-radius, `--surface` log with 1px `--divider` separators between rows and
+ * a `--accent-900` square marker on error / retry / fallback stages. Type and
+ * colour route through Story 2.1 tokens (var(--text), var(--divider),
+ * var(--accent-900), var(--font-*), var(--space-*), var(--font-size-*),
+ * var(--letter-spacing-*)); the only bare literals are small structural sizes
+ * (the 7px marker, a 56px timestamp column) and non-colour values.
+ *
+ * Error / retry / fallback are signalled textually (ERROR / RETRY / FALLBACK)
+ * as well as by the dot, per UX-DR11 (never colour-only).
+ */
+
+.execution-trace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.execution-trace__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.execution-trace__empty {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.execution-trace__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--divider);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.execution-trace__row:first-child {
+  border-top: none;
+}
+
+.execution-trace__time {
+  min-width: 56px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+.execution-trace__stage {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: 0.04em;
+}
+
+.execution-trace__dot {
+  width: 7px;
+  height: 7px;
+  background: var(--accent-900);
+}
+
+.execution-trace__flag {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-900);
+}
+
+.execution-trace__msg {
+  flex: 1 1 100%;
+  opacity: 0.8;
+}
+
+.execution-trace__mock {
+  flex: 1 1 100%;
+  font-size: 11px;
+  opacity: 0.6;
+}
