@@ -70,11 +70,12 @@
   stroke-width: 1.5px;
 }
 
+/* Load-bearing "not live AIS" disclaimer — a real muted colour (WCAG AA on
+   --surface), never `opacity` on --text. Clears the Story 2.7 deferred item. */
 .map-panel__caption {
   margin: 0;
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
   font-size: var(--font-size-micro-label);
-  color: var(--text);
-  opacity: 0.6;
+  color: var(--text-muted);
 }

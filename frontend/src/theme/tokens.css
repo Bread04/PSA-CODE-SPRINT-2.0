@@ -17,6 +17,9 @@
      the two are intentionally paired. */
   --divider: color-mix(in srgb, #1d1f20 16%, transparent);
   --text: #1d1f20;
+  /* Secondary / de-emphasised text. A real colour, NOT `opacity` on --text:
+     WCAG AA (>=4.5:1) against both --bg and --surface. Value tracks --neutral-700. */
+  --text-muted: #585c60;
 
   /* ---- Color: primary steel-blue accent ramp (the only hue) ---- */
   --accent-100: #eef6ff;
@@ -74,4 +77,11 @@
   --text-transform-micro-label: uppercase;
   --font-size-incident-title: 29px;
   --font-size-confidence: 38px;
+
+  /* ---- Typography: body / UI size ramp (12 -> 16px; 11px = --font-size-micro-label) ---- */
+  --font-size-caption: 12px;
+  --font-size-body: 13px;
+  --font-size-body-lg: 14px;
+  --font-size-section-title: 16px;
+  --letter-spacing-label: 0.08em;
 }

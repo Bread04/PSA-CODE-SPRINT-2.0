@@ -23,6 +23,7 @@ export const tokens = {
      */
     divider: 'rgba(29,31,32,0.16)',
     text: '#1d1f20',
+    textMuted: '#585c60',
     accent: {
       100: '#eef6ff',
       200: '#d6ebff',
@@ -71,6 +72,11 @@ export const tokens = {
     textTransformMicroLabel: 'uppercase',
     sizeIncidentTitle: '29px',
     sizeConfidence: '38px',
+    sizeCaption: '12px',
+    sizeBody: '13px',
+    sizeBodyLg: '14px',
+    sizeSectionTitle: '16px',
+    letterSpacingLabel: '0.08em',
   },
   layout: {
     headerHeight: '54px',

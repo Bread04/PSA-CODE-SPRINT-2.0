@@ -5,16 +5,13 @@
  * input + a primary "Ask" button + `button-ghost` suggestion chips, with the
  * answer shown in an `--accent-100` bubble.
  *
- * Colour routes entirely through Story 2.1 tokens (var(--text), var(--divider),
- * var(--surface), var(--accent-100), var(--accent-700), var(--neutral-100));
- * font-family / weight and spacing use var(--font-*) / var(--space-*) tokens,
- * and the uppercase micro-label heading uses var(--font-size-micro-label) /
- * var(--letter-spacing-micro-label). Story 2.1 defines no body-text size token,
- * so the 13px / 12px / 11px body font-sizes and the 0.08em button
- * letter-spacing are intentional literals matching the sibling components
- * (ExecutionTrace, IncidentDetail). The remaining literals are small
- * structural sizes (44px control min-height, 1px borders, 2px focus outline).
- * border-radius is 0.
+ * Colour routes entirely through Story 2.1 tokens (var(--text), var(--text-muted),
+ * var(--divider), var(--surface), var(--accent-100), var(--accent-700),
+ * var(--neutral-100)); type routes through the Story 2.1 ramp
+ * (var(--font-size-body | -caption | -micro-label), var(--letter-spacing-label |
+ * -micro-label)). Secondary text uses var(--text-muted) — a real colour, never
+ * `opacity` on --text. The remaining literals are small structural sizes (44px
+ * control min-height, 1px borders, 2px focus outline). border-radius is 0.
  *
  * jsdom does not resolve stylesheet var() cascades, so the focus-ring colour,
  * the primary-button colours, and the answer-bubble colour are asserted by a
@@ -49,7 +46,7 @@
   padding: 0 var(--space-3);
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 13px;
+  font-size: var(--font-size-body);
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--divider);
@@ -62,8 +59,8 @@
   padding: 0 var(--space-6);
   font-family: var(--font-heading);
   font-weight: var(--font-weight-heading);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: var(--font-size-caption);
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   cursor: pointer;
   /* button-primary — solid accent-700, light text (DESIGN.md components.button-primary). */
@@ -84,7 +81,7 @@
   padding: var(--space-2) 0;
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
+  font-size: var(--font-size-caption);
   text-align: left;
   color: var(--accent-700);
   background: transparent;
@@ -104,16 +101,15 @@
   margin: 0;
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
-  color: var(--text);
-  opacity: 0.6;
+  font-size: var(--font-size-caption);
+  color: var(--text-muted);
 }
 
 .ask-portwatch__error {
   margin: 0;
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
+  font-size: var(--font-size-caption);
   color: var(--text);
 }
 
@@ -121,7 +117,7 @@
   padding: var(--space-3);
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 13px;
+  font-size: var(--font-size-body);
   color: var(--text);
   background: var(--accent-100);
   border-radius: 0;

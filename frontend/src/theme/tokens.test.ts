@@ -175,6 +175,16 @@ expected['--text-transform-micro-label'] = fmTypography['micro-label'].textTrans
 expected['--font-size-incident-title'] = fmTypography['h2-incident-title'].fontSize;
 expected['--font-size-confidence'] = fmTypography['data-confidence'].fontSize;
 
+// Body / UI size ramp + label tracking (flat 2-level maps, like `spacing`).
+const fmTypeScale = fm['type-scale'] as unknown as Record<string, string>;
+const fmLetterSpacing = fm['letter-spacing'] as unknown as Record<string, string>;
+for (const [k, v] of Object.entries(fmTypeScale)) {
+  expected[`--font-size-${k}`] = v;
+}
+for (const [k, v] of Object.entries(fmLetterSpacing)) {
+  expected[`--letter-spacing-${k}`] = v;
+}
+
 const HEADING_FAMILY = fmTypography.heading.fontFamily; // "Barlow Condensed"
 const BODY_FAMILY = fmTypography.body.fontFamily; // "Barlow"
 const DIVIDER_COLOR_MIX = expected['--divider']; // color-mix(...) from DESIGN.md
@@ -226,6 +236,7 @@ function flattenTokens(): Flat[] {
   add('--surface', tokens.color.surface);
   add('--divider', tokens.color.divider, 'divider');
   add('--text', tokens.color.text);
+  add('--text-muted', tokens.color.textMuted);
   for (const [k, v] of Object.entries(tokens.color.accent)) add(`--accent-${k}`, v);
   add('--accent-2', tokens.color.accent2);
   add('--accent-2-100', tokens.color.accent2_100);
@@ -242,6 +253,11 @@ function flattenTokens(): Flat[] {
   add('--text-transform-micro-label', tokens.font.textTransformMicroLabel);
   add('--font-size-incident-title', tokens.font.sizeIncidentTitle);
   add('--font-size-confidence', tokens.font.sizeConfidence);
+  add('--font-size-caption', tokens.font.sizeCaption);
+  add('--font-size-body', tokens.font.sizeBody);
+  add('--font-size-body-lg', tokens.font.sizeBodyLg);
+  add('--font-size-section-title', tokens.font.sizeSectionTitle);
+  add('--letter-spacing-label', tokens.font.letterSpacingLabel);
   add('--header-height', tokens.layout.headerHeight);
   add('--col-left', tokens.layout.colLeft);
   add('--col-right', tokens.layout.colRight);

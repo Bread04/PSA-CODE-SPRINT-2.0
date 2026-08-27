@@ -25,25 +25,22 @@
   font-size: var(--font-size-micro-label);
   letter-spacing: var(--letter-spacing-micro-label);
   text-transform: uppercase;
-  color: var(--text);
-  opacity: 0.6;
+  color: var(--text-muted);
 }
 
 /* Non-blocking staleness line — never replaces the last-known rows. */
 .incident-feed__stale {
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
-  color: var(--text);
-  opacity: 0.6;
+  font-size: var(--font-size-caption);
+  color: var(--text-muted);
 }
 
 .incident-feed__empty {
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
-  color: var(--text);
-  opacity: 0.6;
+  font-size: var(--font-size-caption);
+  color: var(--text-muted);
 }
 
 .incident-feed__list {
@@ -114,7 +111,7 @@
 .incident-row__label {
   font-family: var(--font-heading);
   font-weight: var(--font-weight-heading);
-  font-size: 14px;
+  font-size: var(--font-size-body-lg);
 }
 
 /* Sub-content, indented to sit under the label past the dot (7 + 8 = 15px). */
@@ -128,9 +125,8 @@
 .incident-row__status {
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
-  color: var(--text);
-  opacity: 0.6;
+  font-size: var(--font-size-caption);
+  color: var(--text-muted);
 }
 
 .incident-row__tag {
@@ -153,7 +149,7 @@
   display: inline-block;
   font-family: var(--font-heading);
   font-weight: var(--font-weight-heading);
-  font-size: 10px;
+  font-size: var(--font-size-micro-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 2px 8px;
@@ -180,9 +176,8 @@
   gap: var(--space-1);
   font-family: var(--font-body);
   font-weight: var(--font-weight-body);
-  font-size: 12px;
-  color: var(--text);
-  opacity: 0.6;
+  font-size: var(--font-size-caption);
+  color: var(--text-muted);
 }
 
 .incident-row__confidence-value {

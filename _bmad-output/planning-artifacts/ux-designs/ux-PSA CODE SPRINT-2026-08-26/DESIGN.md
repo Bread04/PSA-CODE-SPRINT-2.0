@@ -8,6 +8,7 @@ colors:
   surface: '#e9e9ea'
   divider: 'color-mix(in srgb, #1d1f20 16%, transparent)'
   text: '#1d1f20'
+  text-muted: '#585c60'
   accent-100: '#eef6ff'
   accent-200: '#d6ebff'
   accent-300: '#b5d9fd'
@@ -48,6 +49,13 @@ typography:
     fontFamily: "Barlow Condensed"
     fontSize: 38px
     fontWeight: '600'
+type-scale:
+  caption: 12px
+  body: 13px
+  body-lg: 14px
+  section-title: 16px
+letter-spacing:
+  label: 0.08em
 rounded:
   sm: 0px
   DEFAULT: 0px

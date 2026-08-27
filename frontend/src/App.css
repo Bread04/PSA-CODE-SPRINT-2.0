@@ -18,9 +18,8 @@
 }
 
 .app-nav__link {
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: none;
-  opacity: 0.6;
 }
 
 .app-nav__link:focus-visible {
@@ -31,5 +30,5 @@
 .app-nav__link[aria-current='page'] {
   font-weight: var(--font-weight-heading);
   text-decoration: underline;
-  opacity: 1;
+  color: var(--text);
 }
