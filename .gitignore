@@ -1,0 +1,7 @@
+.bmad-loop/runs/
+.bmad-loop/cache/
+.bmad-loop/policy.toml
+_bmad/render/
+
+# Stray Claude Design canvas export (duplicated under _bmad-output/planning-artifacts/ux-designs/)
+Project deliverables priority/

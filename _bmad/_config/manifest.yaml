@@ -1,21 +1,30 @@
 installation:
   version: 6.11.0
   installDate: 2026-08-24T07:49:20.005Z
-  lastUpdated: 2026-08-24T08:25:24.135Z
+  lastUpdated: 2026-08-27T03:29:57.809Z
 modules:
   - name: core
     version: 6.11.0
     installDate: 2026-08-24T07:49:19.325Z
-    lastUpdated: 2026-08-24T08:25:24.122Z
+    lastUpdated: 2026-08-27T03:29:57.801Z
     source: built-in
     npmPackage: null
     repoUrl: null
   - name: bmm
     version: 6.11.0
     installDate: 2026-08-24T08:25:23.858Z
-    lastUpdated: 2026-08-24T08:25:24.135Z
+    lastUpdated: 2026-08-27T03:29:57.803Z
     source: built-in
     npmPackage: null
     repoUrl: null
+  - name: bmad-loop
+    version: v0.11.1
+    installDate: 2026-08-27T03:29:57.393Z
+    lastUpdated: 2026-08-27T03:29:57.807Z
+    source: external
+    npmPackage: null
+    repoUrl: https://github.com/bmad-code-org/bmad-loop
+    channel: stable
+    sha: bb7cebec4ee4f0fa2783a56ffd0b1b8bc67c4ec5
 ides:
   - claude-code
