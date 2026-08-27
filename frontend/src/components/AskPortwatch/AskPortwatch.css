@@ -1,0 +1,144 @@
+/*
+ * AskPortwatch (Story 2.6).
+ *
+ * The read-only natural-language query panel (DESIGN.md line 146): a free-text
+ * input + a primary "Ask" button + `button-ghost` suggestion chips, with the
+ * answer shown in an `--accent-100` bubble.
+ *
+ * Colour routes entirely through Story 2.1 tokens (var(--text), var(--divider),
+ * var(--surface), var(--accent-100), var(--accent-700), var(--neutral-100));
+ * font-family / weight and spacing use var(--font-*) / var(--space-*) tokens,
+ * and the uppercase micro-label heading uses var(--font-size-micro-label) /
+ * var(--letter-spacing-micro-label). Story 2.1 defines no body-text size token,
+ * so the 13px / 12px / 11px body font-sizes and the 0.08em button
+ * letter-spacing are intentional literals matching the sibling components
+ * (ExecutionTrace, IncidentDetail). The remaining literals are small
+ * structural sizes (44px control min-height, 1px borders, 2px focus outline).
+ * border-radius is 0.
+ *
+ * jsdom does not resolve stylesheet var() cascades, so the focus-ring colour,
+ * the primary-button colours, and the answer-bubble colour are asserted by a
+ * static scan of this file plus DOM structure, per the spec's jsdom note.
+ */
+
+.ask-portwatch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ask-portwatch__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.ask-portwatch__form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.ask-portwatch__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 0;
+}
+
+.ask-portwatch__submit {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* button-primary — solid accent-700, light text (DESIGN.md components.button-primary). */
+  color: var(--neutral-100);
+  background: var(--accent-700);
+  border: 1px solid var(--accent-700);
+  border-radius: 0;
+}
+
+.ask-portwatch__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* button-ghost — text-only, no fill, no border (DESIGN.md components.button-ghost). */
+.ask-portwatch__chip {
+  padding: var(--space-2) 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  text-align: left;
+  color: var(--accent-700);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ask-portwatch__answer-region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ask-portwatch__status {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.ask-portwatch__error {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.ask-portwatch__answer {
+  padding: var(--space-3);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--accent-100);
+  border-radius: 0;
+  white-space: pre-wrap;
+}
+
+.ask-portwatch__input:disabled,
+.ask-portwatch__submit:disabled,
+.ask-portwatch__chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Visible AA-contrast focus ring against --surface (UX-DR11 / Accessibility Floor). */
+.ask-portwatch__input:focus-visible,
+.ask-portwatch__submit:focus-visible,
+.ask-portwatch__chip:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}

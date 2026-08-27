@@ -188,3 +188,102 @@ export async function postApproval(
     throw new ApiError('POST /incidents/{id}/approval returned invalid JSON');
   }
 }
+
+// ---------------------------------------------------------------------------
+// Read path (Story 2.6) — the natural-language query endpoint (FR12, AD-2).
+// ---------------------------------------------------------------------------
+
+/**
+ * GET a plain-language answer for a free-text incident question:
+ *   GET ${API_BASE}/incidents/query?q=<enc>[&incident_id=<enc>]  →  { answer: string }
+ *
+ * `incident_id` is an OPTIONAL hint — appended only when `incidentId` is a
+ * non-empty string after trim. The query never requires an incident selection.
+ *
+ * An empty / whitespace-only `q` throws an {@link ApiError} synchronously,
+ * before any `fetch`. Otherwise the same failure discipline as
+ * {@link fetchIncidents}: a network reject, a non-2xx status, a non-object body
+ * or a missing / non-string `answer`, or the {@link REQUEST_TIMEOUT_MS} timeout
+ * all surface as an {@link ApiError}; a caller-initiated abort re-throws as-is.
+ *
+ * The returned `answer` string is rendered verbatim by the UI — the client
+ * never synthesises or templates an incident status itself.
+ *
+ * @param q the free-text question.
+ * @param incidentId optional selected-incident hint.
+ * @param signal optional `AbortSignal` so an in-flight query can be cancelled.
+ */
+export function fetchQuery(
+  q: string,
+  incidentId?: string,
+  signal?: AbortSignal,
+): Promise<{ answer: string }> {
+  // Guard runs synchronously (before any `fetch`) — this is a plain function,
+  // not `async`, so an empty question throws rather than rejecting.
+  if (typeof q !== 'string' || q.trim() === '') {
+    throw new ApiError('GET /incidents/query requires a non-empty question');
+  }
+  return runQuery(q, incidentId, signal);
+}
+
+async function runQuery(
+  q: string,
+  incidentId?: string,
+  signal?: AbortSignal,
+): Promise<{ answer: string }> {
+  const params = new URLSearchParams();
+  params.set('q', q.trim());
+  if (typeof incidentId === 'string' && incidentId.trim() !== '') {
+    params.set('incident_id', incidentId.trim());
+  }
+
+  const url = `${API_BASE.replace(/\/+$/, '')}/incidents/query?${params.toString()}`;
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+
+  let res: Response;
+  try {
+    res = await fetch(url, { signal: combined });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      throw new ApiError('GET /incidents/query timed out');
+    }
+    if (isAbortError(err)) {
+      throw err;
+    }
+    throw new ApiError(
+      err instanceof Error
+        ? err.message
+        : 'Network request to /incidents/query failed',
+    );
+  }
+
+  if (!res.ok) {
+    throw new ApiError(
+      `GET /incidents/query failed with ${res.status}`,
+      res.status,
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new ApiError('GET /incidents/query returned invalid JSON');
+  }
+
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    typeof (data as { answer?: unknown }).answer !== 'string'
+  ) {
+    throw new ApiError('GET /incidents/query did not return a string `answer`');
+  }
+
+  const answer = (data as { answer: string }).answer;
+  if (answer.trim() === '') {
+    throw new ApiError('GET /incidents/query returned an empty answer');
+  }
+
+  return { answer };
+}
