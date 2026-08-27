@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-27-2026 12:00
-last_updated: 08-28-2026 01:32
+last_updated: 08-28-2026 02:55
 project: PSA CODE SPRINT
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
   2-7-mappanel: done
   2-8-killswitchcontrol: done
   2-9-incident-archive-route: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   epic-3: backlog
   3-1-concurrent-incident-proof: backlog
@@ -102,3 +102,65 @@ action_items:
     status: open
     ref: "C:\\Users\\braed\\OneDrive\\Desktop\\PSA CODE SPRINT\\_bmad-output\\implementation-artifacts\\\
       epic-1-retro-08-27-2026.md"
+  - id: "epic-2-retro-item-5-build-the-integrating-live-console-story"
+    epic: 2
+    action: "Build the integrating Live Console story: replace the throwaway App.tsx
+      shell with the real 3-column layout, wire useIncidents + useApproval polling,
+      mount the 2.9 hash route, add App-level integration tests"
+    owner: "frontend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-6-stand-up-the-backend-http-layer-get-inci"
+    epic: 2
+    action: "Stand up the backend HTTP layer (GET /incidents, GET /incidents/{id},
+      POST /incidents/{id}/approval, GET /incidents/query, POST /kill-switch) per
+      ARCHITECTURE-SPINE.md then an end-to-end console smoke path"
+    owner: "backend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-7-run-stories-2-4-2-5-through-an-adversari"
+    epic: 2
+    action: "Run Stories 2.4 & 2.5 through an adversarial review pass and reconcile
+      their specs (status in-progress -> done, add Auto Run Result)"
+    owner: "dev"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-8-add-a-contrast-validated-text-muted-toke"
+    epic: 2
+    action: "Add a contrast-validated --text-muted token and replace opacity:0.6 on
+      --text for secondary/disclaimer text across IncidentFeed, IncidentDetail, ExecutionTrace,
+      AskPortwatch, MapPanel, KillSwitchControl, IncidentArchive"
+    owner: "frontend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-9-extend-the-story-2-1-token-set-with-a-ty"
+    epic: 2
+    action: "Extend the Story 2.1 token set with a type-size ramp (body/label/caption
+      font-size + letter-spacing tokens) and migrate hardcoded 12/13/14px literals"
+    owner: "design"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-10-add-eslint-prettier-editorconfig-and-a-c"
+    epic: 2
+    action: "Add ESLint + Prettier + .editorconfig and a CI workflow running tsc -b
+      + vitest; convert the bespoke per-file token/hex/border-radius Vitest scans
+      into a shared lint rule or test util"
+    owner: "frontend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-11-do-one-consolidated-ui-polish-pass-for-t"
+    epic: 2
+    action: "Do one consolidated UI-polish pass for the accumulated low-severity items
+      behind the 7 followup_review_recommended flags (hover/active states, focus management
+      on route + row-selection change, role=group labelling, i18n indirection, barrel-export
+      convention)"
+    owner: "frontend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-2-retro-item-12-process-recalibrate-the-spec-size-target"
+    epic: 2
+    action: "Process: recalibrate the spec-size target and the followup_review_recommended
+      heuristic for greenfield-UI epics"
+    owner: "process"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
