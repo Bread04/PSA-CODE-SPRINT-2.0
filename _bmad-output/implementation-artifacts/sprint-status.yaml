@@ -51,8 +51,8 @@ development_status:
   1-13-per-agent-demo-safety-mock-override: done
   epic-1-retrospective: done
 
-  epic-2: backlog
-  2-1-design-token-system: backlog
+  epic-2: in-progress
+  2-1-design-token-system: done
   2-2-blueprint-panel-primitive: backlog
   2-3-incidentfeed: backlog
   2-4-incidentdetail-approvalbanner: backlog
