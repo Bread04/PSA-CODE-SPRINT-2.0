@@ -5,3 +5,7 @@ _bmad/render/
 
 # Stray Claude Design canvas export (duplicated under _bmad-output/planning-artifacts/ux-designs/)
 Project deliverables priority/
+
+# Python bytecode / caches
+__pycache__/
+*.pyc
