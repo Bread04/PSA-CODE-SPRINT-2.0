@@ -43,6 +43,8 @@ from pydantic import BaseModel, Field, ValidationError
 
 from models.incident import Incident
 
+from agents.mock_override import canned_specialist, is_mock_forced
+
 MODEL = "claude-sonnet-5"  # AD-2: pinned; do not change.
 # 4096: one specialist recommendation is a small JSON object (a summary, a few
 # short action/constraint strings, a rationale paragraph). 4096 output tokens
@@ -315,7 +317,14 @@ async def call_specialist(
     `tool_use` / `refusal` stop reason, no text block, unparseable JSON, schema
     mismatch, `agent`-field mismatch - is converted to `SpecialistError(agent,
     reason)`.
+
+    Story 1.13: when the agent is mock-forced (`mock_override.is_mock_forced`),
+    the Messages API call is short-circuited and a canned `SpecialistRecommendation`
+    is returned without touching `client`.
     """
+    if is_mock_forced(agent):
+        return SpecialistRecommendation.model_validate(canned_specialist(agent))
+
     module = _resolve(agent)
 
     candidates = await bounded_json_call(
