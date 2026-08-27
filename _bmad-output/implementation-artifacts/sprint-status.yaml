@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-27-2026 12:00
-last_updated: 08-27-2026 16:30
+last_updated: 08-27-2026 17:30
 project: PSA CODE SPRINT
 project_key: NOKEY
 tracking_system: file-system
@@ -37,7 +37,7 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   epic-1: in-progress
   1-1-signal-ingestion-normalization: done
-  1-2-incident-correlation-via-15-minute-window: backlog
+  1-2-incident-correlation-via-15-minute-window: done
   1-3-specialist-agent-analysis-berth-crane-yard: backlog
   1-4-arbiter-synthesis-of-recovery-options: backlog
   1-5-tool-retry-fallback-on-failure: backlog
