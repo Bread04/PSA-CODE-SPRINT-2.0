@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-27-2026 12:00
-last_updated: 08-28-2026 02:55
+last_updated: 08-28-2026 03:31
 project: PSA CODE SPRINT
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ action_items:
     action: "Add POLICY_START to STAGES enum in trace.py (or rename the run.py trace
       stage)"
     owner: "backend"
-    status: open
+    status: done
     ref: "C:\\Users\\braed\\OneDrive\\Desktop\\PSA CODE SPRINT\\_bmad-output\\implementation-artifacts\\\
       epic-1-retro-08-27-2026.md"
   - id: "epic-1-retro-item-2-block-approve_incident-when-is_kill_swit"
@@ -84,7 +84,7 @@ action_items:
     action: "Block approve_incident when is_kill_switch_engaged() to honor Story 1.10
       for Tier 3"
     owner: "backend/safety"
-    status: open
+    status: done
     ref: "C:\\Users\\braed\\OneDrive\\Desktop\\PSA CODE SPRINT\\_bmad-output\\implementation-artifacts\\\
       epic-1-retro-08-27-2026.md"
   - id: "epic-1-retro-item-3-reconcile-epics-md-story-1-10-and-1-12-w"
@@ -108,7 +108,7 @@ action_items:
       shell with the real 3-column layout, wire useIncidents + useApproval polling,
       mount the 2.9 hash route, add App-level integration tests"
     owner: "frontend"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-6-stand-up-the-backend-http-layer-get-inci"
     epic: 2
@@ -116,14 +116,14 @@ action_items:
       POST /incidents/{id}/approval, GET /incidents/query, POST /kill-switch) per
       ARCHITECTURE-SPINE.md then an end-to-end console smoke path"
     owner: "backend"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-7-run-stories-2-4-2-5-through-an-adversari"
     epic: 2
     action: "Run Stories 2.4 & 2.5 through an adversarial review pass and reconcile
       their specs (status in-progress -> done, add Auto Run Result)"
     owner: "dev"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-8-add-a-contrast-validated-text-muted-toke"
     epic: 2
@@ -131,14 +131,14 @@ action_items:
       --text for secondary/disclaimer text across IncidentFeed, IncidentDetail, ExecutionTrace,
       AskPortwatch, MapPanel, KillSwitchControl, IncidentArchive"
     owner: "frontend"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-9-extend-the-story-2-1-token-set-with-a-ty"
     epic: 2
     action: "Extend the Story 2.1 token set with a type-size ramp (body/label/caption
       font-size + letter-spacing tokens) and migrate hardcoded 12/13/14px literals"
     owner: "design"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-10-add-eslint-prettier-editorconfig-and-a-c"
     epic: 2
@@ -146,7 +146,7 @@ action_items:
       + vitest; convert the bespoke per-file token/hex/border-radius Vitest scans
       into a shared lint rule or test util"
     owner: "frontend"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-11-do-one-consolidated-ui-polish-pass-for-t"
     epic: 2
@@ -155,12 +155,12 @@ action_items:
       on route + row-selection change, role=group labelling, i18n indirection, barrel-export
       convention)"
     owner: "frontend"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
   - id: "epic-2-retro-item-12-process-recalibrate-the-spec-size-target"
     epic: 2
     action: "Process: recalibrate the spec-size target and the followup_review_recommended
       heuristic for greenfield-UI epics"
     owner: "process"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
