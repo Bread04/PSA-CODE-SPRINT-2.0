@@ -57,8 +57,8 @@ development_status:
   2-3-incidentfeed: done
   2-4-incidentdetail-approvalbanner: done
   2-5-executiontrace-viewer: done
-  2-6-askportwatch-natural-language-query: backlog
-  2-7-mappanel: backlog
+  2-6-askportwatch-natural-language-query: done
+  2-7-mappanel: done
   2-8-killswitchcontrol: backlog
   2-9-incident-archive-route: backlog
   epic-2-retrospective: optional

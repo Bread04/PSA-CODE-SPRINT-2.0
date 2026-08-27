@@ -1,0 +1,80 @@
+/*
+ * MapPanel (Story 2.7).
+ *
+ * A read-only illustrative strait / yard schematic framed by the shared
+ * BlueprintPanel. Geometry follows DESIGN.md map panels: hand-authored inline
+ * SVG primitives (ship rectangles, berth / yard boxes, crane line-groups), no
+ * icon library, captioned below the frame. Every colour routes through Story 2.1
+ * tokens (var(--text), var(--divider), var(--accent-600)); the only bare
+ * literals are non-colour structural sizes (stroke widths, the max-height cap).
+ * Zero border-radius, per the blueprint
+ * aesthetic. The panel carries no severity / state signal — nothing here is
+ * colour-coded meaning (UX-DR11).
+ */
+
+.map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-radius: 0;
+}
+
+.map-panel__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.map-panel__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  border-radius: 0;
+}
+
+.map-panel__water {
+  stroke: var(--accent-600);
+  stroke-width: 1.5px;
+}
+
+.map-panel__channel {
+  stroke: var(--divider);
+  stroke-width: 1px;
+  stroke-dasharray: 4 4;
+}
+
+.map-panel__quay {
+  stroke: var(--text);
+  stroke-width: 1.5px;
+}
+
+.map-panel__berth,
+.map-panel__yard-block {
+  fill: none;
+  stroke: var(--divider);
+  stroke-width: 1px;
+}
+
+.map-panel__ship {
+  fill: var(--accent-600);
+  stroke: none;
+}
+
+.map-panel__crane {
+  stroke: var(--text);
+  stroke-width: 1.5px;
+}
+
+.map-panel__caption {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-micro-label);
+  color: var(--text);
+  opacity: 0.6;
+}

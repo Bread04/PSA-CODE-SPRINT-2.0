@@ -4,15 +4,18 @@ import { AskPortwatch } from './components/AskPortwatch';
 import { ExecutionTrace } from './components/ExecutionTrace';
 import { IncidentDetail } from './components/IncidentDetail';
 import { IncidentFeed } from './components/IncidentFeed';
+import { MapPanel } from './components/MapPanel';
 import { useAskPortwatch } from './hooks/useAskPortwatch';
 import { allIncidents } from './test/fixtures/incidents';
 
 /*
- * Minimal app shell for Stories 2.1–2.6 — NOT a real layout.
+ * Minimal app shell for Stories 2.1–2.7 — NOT a real layout.
  * It exists only to visually exercise the token system, the BlueprintPanel
  * primitive, the IncidentFeed, the IncidentDetail + ApprovalBanner, the
- * ExecutionTrace, and now the AskPortwatch natural-language query panel
- * (with fixture data and a local selection) end to end. The real Live Console
+ * ExecutionTrace, and the AskPortwatch natural-language query panel (with
+ * fixture data and a local selection) end to end. The MapPanel below is a
+ * static, dataless illustrative schematic — it takes no incident/selection
+ * input and is mounted here only to show it in place. The real Live Console
  * layout, the polling wiring (useIncidents / useApproval), and the router
  * arrive in later stories — here `onApprovalAction` is an inert stub and there
  * is no live backend. `useAskPortwatch` is wired for real (a single GET per
@@ -75,6 +78,7 @@ function App() {
             error={null}
             onApprovalAction={() => {}}
           />
+          <MapPanel />
         </section>
 
         <aside
