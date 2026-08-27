@@ -59,7 +59,7 @@ development_status:
   2-5-executiontrace-viewer: done
   2-6-askportwatch-natural-language-query: done
   2-7-mappanel: done
-  2-8-killswitchcontrol: backlog
+  2-8-killswitchcontrol: done
   2-9-incident-archive-route: backlog
   epic-2-retrospective: optional
 

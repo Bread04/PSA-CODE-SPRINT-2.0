@@ -190,6 +190,93 @@ export async function postApproval(
 }
 
 // ---------------------------------------------------------------------------
+// Write path (Story 2.8) — the global kill switch, AD-7 / AD-15.
+// ---------------------------------------------------------------------------
+
+/**
+ * POST the global kill-switch state:
+ *   POST ${API_BASE}/kill-switch   (body EXACTLY `{"enabled": <bool>}`)
+ *
+ * AD-7: a single in-memory backend flag with no read endpoint. This client
+ * never GETs the flag; the console holds engaged state for the session.
+ *
+ * A non-boolean `enabled` throws an {@link ApiError} synchronously, before any
+ * `fetch`. Otherwise the same failure discipline as {@link postApproval}: a
+ * network reject, a non-2xx status (the {@link ApiError} carries `.status`), an
+ * unparseable body, a 2xx body that is JSON without a boolean `enabled`, or the
+ * {@link REQUEST_TIMEOUT_MS} timeout all surface as an {@link ApiError}; a 2xx
+ * empty body is tolerated and resolves `{ enabled }` echoing the request; a
+ * caller-initiated abort re-throws as-is.
+ *
+ * @param enabled the new switch state (`true` disables autonomous execution).
+ * @param signal optional `AbortSignal` so an in-flight POST can be cancelled.
+ */
+export async function postKillSwitch(
+  enabled: boolean,
+  signal?: AbortSignal,
+): Promise<{ enabled: boolean }> {
+  // Guard runs synchronously — but this is an `async` function, so throwing
+  // here still surfaces as a rejected promise for `await` callers while also
+  // being catchable before any network work happens.
+  if (typeof enabled !== 'boolean') {
+    throw new ApiError("postKillSwitch requires a boolean 'enabled'");
+  }
+
+  const url = `${API_BASE.replace(/\/+$/, '')}/kill-switch`;
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+      signal: combined,
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      throw new ApiError('POST /kill-switch timed out');
+    }
+    if (isAbortError(err)) {
+      throw err;
+    }
+    throw new ApiError(
+      err instanceof Error ? err.message : 'Network request to /kill-switch failed',
+    );
+  }
+
+  if (!res.ok) {
+    throw new ApiError(`POST /kill-switch failed with ${res.status}`, res.status);
+  }
+
+  // A 2xx kill-switch response may legitimately return an empty body; tolerate
+  // that (echo the request), wrap any genuinely malformed JSON as an ApiError.
+  let text: string;
+  try {
+    text = await res.text();
+  } catch {
+    throw new ApiError('POST /kill-switch returned an unreadable body');
+  }
+  if (!text) return { enabled };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new ApiError('POST /kill-switch returned invalid JSON');
+  }
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    typeof (parsed as { enabled?: unknown }).enabled !== 'boolean'
+  ) {
+    throw new ApiError('POST /kill-switch did not return a boolean `enabled`');
+  }
+  return { enabled: (parsed as { enabled: boolean }).enabled };
+}
+
+// ---------------------------------------------------------------------------
 // Read path (Story 2.6) — the natural-language query endpoint (FR12, AD-2).
 // ---------------------------------------------------------------------------
 

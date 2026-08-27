@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { API_BASE, ApiError, fetchIncidents, fetchQuery } from './client';
+import {
+  API_BASE,
+  ApiError,
+  fetchIncidents,
+  fetchQuery,
+  postKillSwitch,
+} from './client';
 
 /**
  * Story 2.3 — Incident API client.
@@ -307,6 +313,114 @@ describe('fetchQuery', () => {
     );
 
     const err = await fetchQuery('q').catch((e: unknown) => e);
+    expect(err).not.toBeInstanceOf(ApiError);
+    expect((err as DOMException).name).toBe('AbortError');
+  });
+});
+
+describe('postKillSwitch', () => {
+  function okBody(body?: string) {
+    return () =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(body ?? ''),
+      } as Response);
+  }
+
+  it('POST shape: hits `${API_BASE}/kill-switch` with body {"enabled":true} and no other keys', async () => {
+    const spy = stubFetch(okBody());
+    await expect(postKillSwitch(true)).resolves.toEqual({ enabled: true });
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [url, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe(`${API_BASE}/kill-switch`);
+    expect(init.method).toBe('POST');
+    expect(
+      new Headers(init.headers).get('Content-Type'),
+    ).toBe('application/json');
+    expect(JSON.parse(init.body as string)).toEqual({ enabled: true });
+    expect(Object.keys(JSON.parse(init.body as string))).toEqual(['enabled']);
+  });
+
+  it('non-boolean `enabled` throws ApiError synchronously, with no fetch', async () => {
+    const spy = stubFetch(okBody());
+    await expect(postKillSwitch('yes' as unknown as boolean)).rejects.toBeInstanceOf(
+      ApiError,
+    );
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('empty 2xx body resolves { enabled } echoing the request', async () => {
+    stubFetch(okBody(''));
+    await expect(postKillSwitch(false)).resolves.toEqual({ enabled: false });
+  });
+
+  it('a well-formed 2xx body is the source of truth for the resolved value', async () => {
+    stubFetch(okBody('{"enabled":true}'));
+    await expect(postKillSwitch(true)).resolves.toEqual({ enabled: true });
+  });
+
+  it('timeout branch → ApiError whose message mentions "timed out"', async () => {
+    stubFetch(() =>
+      Promise.reject(new DOMException('timeout', 'TimeoutError')),
+    );
+
+    const err = await postKillSwitch(true).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).message).toMatch(/timed out/i);
+  });
+
+  it('a real caller AbortSignal aborted mid-flight re-throws the AbortError as-is', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (_input: unknown, init?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            const signal = init?.signal;
+            signal?.addEventListener('abort', () => {
+              reject(new DOMException('The operation was aborted.', 'AbortError'));
+            });
+          }),
+      ),
+    );
+
+    const controller = new AbortController();
+    const pending = postKillSwitch(true, controller.signal);
+    controller.abort();
+
+    const err = await pending.catch((e: unknown) => e);
+    expect(err).not.toBeInstanceOf(ApiError);
+    expect((err as DOMException).name).toBe('AbortError');
+  });
+
+  it('non-2xx → ApiError carrying the status code', async () => {
+    stubFetch(() =>
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve(''),
+      } as Response),
+    );
+
+    const err = await postKillSwitch(true).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(500);
+  });
+
+  it('a 2xx body without a boolean `enabled` → ApiError', async () => {
+    stubFetch(okBody('{"ok":1}'));
+
+    const err = await postKillSwitch(true).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+  });
+
+  it('re-throws a caller AbortError as-is (not wrapped in ApiError)', async () => {
+    stubFetch(() =>
+      Promise.reject(new DOMException('The operation was aborted.', 'AbortError')),
+    );
+
+    const err = await postKillSwitch(true).catch((e: unknown) => e);
     expect(err).not.toBeInstanceOf(ApiError);
     expect((err as DOMException).name).toBe('AbortError');
   });

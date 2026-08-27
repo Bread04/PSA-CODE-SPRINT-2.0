@@ -1,0 +1,123 @@
+/*
+ * KillSwitchControl + KillSwitchBanner (Story 2.8).
+ *
+ * The kill switch is a `role="switch"` circular dot control (DESIGN.md line
+ * 147): `--radius-full` dot, `--accent-900` fill when engaged, a neutral fill
+ * otherwise. The banner is a full-bleed `--accent-900` bar with light text.
+ *
+ * Colour routes entirely through Story 2.1 tokens (var(--text), var(--accent-700),
+ * var(--accent-900), var(--neutral-100), var(--neutral-500)); font-family /
+ * weight and spacing use var(--font-*) / var(--space-*) tokens, and the
+ * uppercase micro-labels use var(--font-size-micro-label) /
+ * var(--letter-spacing-micro-label). The 12px body font-sizes are intentional
+ * literals matching the sibling components (AskPortwatch, ExecutionTrace). The
+ * remaining literals are small structural sizes (18px dot, 44px control
+ * min-height, 1px borders, 2px focus outline).
+ *
+ * border-radius is 0 everywhere except the dot, which is the one place
+ * var(--radius-full) is permitted.
+ *
+ * jsdom does not resolve stylesheet var() cascades, so the focus-ring colour,
+ * the engaged-dot colour, the confirm-button colours, and the banner colour are
+ * asserted by a static scan of this file plus DOM structure.
+ */
+
+.kill-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.kill-switch__label {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.kill-switch__dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: var(--neutral-500);
+  border: 1px solid var(--accent-900);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.kill-switch__dot--engaged {
+  background: var(--accent-900);
+}
+
+.kill-switch__dot:disabled,
+.kill-switch__confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Visible AA-contrast focus ring (UX-DR11 / Accessibility Floor). */
+.kill-switch__dot:focus-visible,
+.kill-switch__confirm:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+.kill-switch__prompt {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.kill-switch__confirm {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  /* button-primary — solid accent-700, light text. */
+  color: var(--neutral-100);
+  background: var(--accent-700);
+  border: 1px solid var(--accent-700);
+  border-radius: 0;
+}
+
+.kill-switch__status {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.kill-switch__error {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.kill-switch-banner {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-2) var(--space-6);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--neutral-100);
+  background: var(--accent-900);
+  border-radius: 0;
+}
