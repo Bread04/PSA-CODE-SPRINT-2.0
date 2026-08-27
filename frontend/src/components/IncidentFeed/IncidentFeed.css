@@ -1,0 +1,196 @@
+/*
+ * IncidentFeed — reverse-chronological incident list (Story 2.3).
+ *
+ * Row geometry follows mockups/live-console.html (.feed-row, .status-dot,
+ * .progress-track / .progress-fill, .tag, .feed-sub, .panel-title). Colour,
+ * radius, spacing and type route through Story 2.1 tokens (var(--space-*),
+ * var(--accent-*), var(--neutral-*), var(--radius-tag), var(--font-*)); the
+ * only bare literals are the small structural sizes the mock itself fixes
+ * (the square status dot, the hairline progress bar, the sub-row indent).
+ *
+ * The feed LIST is one BlueprintPanel; ROWS are plain <button>s styled to the
+ * mock's .feed-row (no per-row corner marks) — DESIGN.md "row inside a
+ * blueprint panel" + the spine deferring composition to the mock.
+ */
+
+.incident-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.incident-feed__title {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+/* Non-blocking staleness line — never replaces the last-known rows. */
+.incident-feed__stale {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.incident-feed__empty {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.incident-feed__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.incident-feed__item {
+  display: block;
+}
+
+/* --- Row (mock .feed-row) --------------------------------------------------- */
+
+.incident-row {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Visible AA-contrast focus ring against --surface (UX-DR11). */
+.incident-row:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+/* Selected row is visually distinct (mock .feed-row.selected). */
+.incident-row--selected,
+.incident-row[aria-pressed='true'] {
+  border-color: var(--accent-400);
+}
+
+.incident-row__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-1);
+}
+
+/* 7x7 solid square status dot — always paired with a text label, never colour
+   alone. Base = lighter accent (Tier 1/2 open / in-progress / resolved). */
+.incident-row__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--accent-300);
+}
+
+/* Needs-attention states — pending approval and kill-switch-blocked — take the
+   darkest accent (still paired with the row's status text / tag). */
+.incident-row__dot--pending,
+.incident-row__dot--blocked {
+  background: var(--accent-900);
+}
+
+.incident-row__label {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: 14px;
+}
+
+/* Sub-content, indented to sit under the label past the dot (7 + 8 = 15px). */
+.incident-row__sub {
+  margin-left: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.incident-row__status {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.incident-row__tag {
+  align-self: flex-start;
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  background: var(--neutral-100);
+  color: var(--text);
+  border-radius: var(--radius-tag);
+}
+
+/* Small non-sound notification badge (Tier 2 auto-resolved). */
+.incident-row__badge {
+  align-self: flex-start;
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  background: var(--accent-100);
+  color: var(--accent-800);
+  border-radius: var(--radius-tag);
+}
+
+/* 2px resolution progress bar (mock .progress-track / .progress-fill). */
+.incident-row__progress {
+  height: 2px;
+  background: var(--neutral-300);
+}
+
+.incident-row__progress-fill {
+  height: 2px;
+  width: 60%;
+  background: var(--accent-600);
+}
+
+.incident-row__confidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.incident-row__confidence-value {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+}
+
+.incident-row__confidence-reason {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+}
