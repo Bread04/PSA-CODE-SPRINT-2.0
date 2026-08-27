@@ -1,11 +1,40 @@
 /*
- * App shell chrome (Story 2.9).
+ * App shell chrome (epic-2 retro item 1 — the real Live Console layout).
  *
- * Only the header route-nav lives here — the rest of the demo shell is inline
- * style on throwaway layout elements. Colour, spacing and type route through
- * Story 2.1 tokens; the active-route treatment is perceptible without relying
- * on colour (UX-DR11): heavier weight + underline, not a hue swap.
+ * A fixed 54px header + a 296 | flex | 400 three-column body, per DESIGN.md.
+ * Colour, spacing and type route through Story 2.1 tokens; the active-route
+ * treatment is perceptible without relying on colour (UX-DR11): heavier weight
+ * + underline, not a hue swap. The only bare literals are non-colour layout
+ * values (min-width, viewport-relative heights).
  */
+
+.app {
+  min-width: 1280px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  height: var(--header-height);
+  padding: 0 var(--space-6);
+  background: var(--surface);
+  border-bottom: 1px solid var(--divider);
+}
+
+.app-header__brand {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.app-header__kill {
+  margin-left: auto;
+}
 
 .app-nav {
   display: flex;
@@ -31,4 +60,32 @@
   font-weight: var(--font-weight-heading);
   text-decoration: underline;
   color: var(--text);
+}
+
+.app-main {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  align-items: flex-start;
+}
+
+.app-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.app-col--left {
+  width: var(--col-left);
+  flex: none;
+}
+
+.app-col--center {
+  flex: 1;
+}
+
+.app-col--right {
+  width: var(--col-right);
+  flex: none;
 }

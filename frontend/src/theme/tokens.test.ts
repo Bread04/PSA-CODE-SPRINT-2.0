@@ -476,6 +476,37 @@ describe('shipped src CSS + components route styling through tokens only', () =>
     },
   );
 
+  // Epic 2 retro F5: every `font-size` in a shipped .css file must resolve to a
+  // token — no bare `<n>px` / `<n>rem`. (The token definition files are already
+  // excluded from `consumers`.)
+  it.each(consumers.filter(([name]) => name.endsWith('.css')))(
+    '%s routes every font-size through a token (no bare px/rem literal)',
+    (_name, raw) => {
+      const body = stripComments(raw);
+      const bare = [...body.matchAll(/font-size\s*:\s*([^;{}]+)[;}]/gi)]
+        .map((m) => m[1].trim())
+        .filter((v) => !/^var\(--font-size-[a-z-]+\)$/.test(v));
+      expect(
+        bare,
+        bare.length ? `${_name}: bare font-size literal(s) ${bare.join(', ')}` : undefined,
+      ).toEqual([]);
+    },
+  );
+
+  // Epic 2 retro F4: secondary text must use `color: var(--text-muted)`, never
+  // `opacity: 0.6` on `--text` (which drops below WCAG AA). The exact anti-pattern
+  // value is banned in shipped .css so a regression fails here.
+  it.each(consumers.filter(([name]) => name.endsWith('.css')))(
+    '%s does not de-emphasise text with opacity: 0.6 (use var(--text-muted))',
+    (_name, raw) => {
+      const body = stripComments(raw);
+      expect(
+        /opacity\s*:\s*0?\.6\b/i.test(body),
+        `${_name}: found "opacity: 0.6" — use color: var(--text-muted) instead`,
+      ).toBe(false);
+    },
+  );
+
   it.each(consumers)('%s uses no disallowed border-radius value', (_name, raw) => {
     const text = stripComments(raw);
     const allowed = /^(?:0|3px|9999px|var\(--radius-[a-z-]+\))$/;

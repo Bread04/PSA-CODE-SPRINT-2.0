@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { AskPortwatch } from './components/AskPortwatch';
 import { ExecutionTrace } from './components/ExecutionTrace';
@@ -7,63 +7,53 @@ import { IncidentDetail } from './components/IncidentDetail';
 import { IncidentFeed } from './components/IncidentFeed';
 import { KillSwitchBanner, KillSwitchControl } from './components/KillSwitchControl';
 import { MapPanel } from './components/MapPanel';
+import { useApproval } from './hooks/useApproval';
 import { useAskPortwatch } from './hooks/useAskPortwatch';
 import { useHashRoute } from './hooks/useHashRoute';
+import { useIncidents } from './hooks/useIncidents';
 import { useKillSwitch } from './hooks/useKillSwitch';
-import { allIncidents } from './test/fixtures/incidents';
+import type { ApprovalAction } from './api/client';
 
 import './App.css';
 
-/*
- * Minimal app shell for Stories 2.1–2.9 — NOT a real layout.
- * It exists only to visually exercise the token system, the BlueprintPanel
- * primitive, the IncidentFeed, the IncidentDetail + ApprovalBanner, the
- * ExecutionTrace, the AskPortwatch natural-language query panel (with
- * fixture data and a local selection), the Story 2.8 KillSwitchControl /
- * KillSwitchBanner (one live `useKillSwitch()` instance, no backend here), and
- * the Story 2.9 hash route: `#/archive` swaps the Live Console `<main>` for the
- * session-scoped `IncidentArchive` view while the global KillSwitchBanner and
- * the header stay put. The MapPanel below is a
- * static, dataless illustrative schematic — it takes no incident/selection
- * input and is mounted here only to show it in place. The real Live Console
- * layout, the polling wiring (useIncidents / useApproval), and the router
- * arrive in later stories — here `onApprovalAction` is an inert stub and there
- * is no live backend. `useAskPortwatch` is wired for real (a single GET per
- * submit) but has no backend to reach in this demo shell.
+/**
+ * Portwatch Console — the real Live Console shell (epic-2 retro item 1).
+ *
+ * Wires the live data layer end to end: `useIncidents` polls `GET /incidents`
+ * every 2-3s and drives the feed / detail / trace / archive; `useApproval`
+ * owns the one write path and refetches on success; `useKillSwitch` and
+ * `useAskPortwatch` own their own POST/GET. `useHashRoute` swaps between the
+ * Live Console and the session-scoped Incident Archive.
+ *
+ * Layout follows DESIGN.md: a fixed 54px header + a 296 | flex | 400 three-
+ * column body. All chrome styling lives in App.css via Story 2.1 tokens.
  */
 function App() {
-  const [selectedId, setSelectedId] = useState<string | null>('inc-tier3-with-alts');
-  const selected =
-    allIncidents.find((i) => i.incident_id === selectedId) ?? null;
+  const route = useHashRoute();
+  const { incidents, lastUpdatedAt, isStale, error, refetch } = useIncidents();
+  const approval = useApproval(refetch);
   const ask = useAskPortwatch();
   const kill = useKillSwitch();
-  const route = useHashRoute();
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(
+    () => incidents.find((i) => i.incident_id === selectedId) ?? null,
+    [incidents, selectedId],
+  );
+
+  const onApprovalAction = useCallback(
+    (body: ApprovalAction) => {
+      if (selectedId) approval.submit(selectedId, body);
+    },
+    [approval, selectedId],
+  );
 
   return (
-    <div>
+    <div className="app">
       <KillSwitchBanner engaged={kill.engaged} />
-      <header
-        style={{
-          height: 'var(--header-height)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-6)',
-          padding: '0 var(--space-6)',
-          background: 'var(--surface)',
-          borderBottom: '1px solid var(--divider)',
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 'var(--font-weight-heading)',
-            fontSize: 'var(--font-size-micro-label)',
-            letterSpacing: 'var(--letter-spacing-micro-label)',
-            textTransform: 'uppercase',
-          }}
-        >
-          Portwatch Console
-        </h1>
+
+      <header className="app-header">
+        <h1 className="app-header__brand">Portwatch Console</h1>
         <nav className="app-nav" aria-label="Primary">
           <a
             className="app-nav__link"
@@ -80,7 +70,7 @@ function App() {
             Archive
           </a>
         </nav>
-        <div style={{ marginLeft: 'auto' }}>
+        <div className="app-header__kill">
           <KillSwitchControl
             engaged={kill.engaged}
             pending={kill.pending}
@@ -91,46 +81,31 @@ function App() {
       </header>
 
       {route === 'archive' ? (
-        <IncidentArchive incidents={allIncidents} />
+        <IncidentArchive incidents={incidents} />
       ) : (
-        <main
-          style={{
-            display: 'flex',
-            gap: 'var(--space-4)',
-            padding: 'var(--space-6)',
-            alignItems: 'flex-start',
-          }}
-        >
-          <div style={{ width: 'var(--col-left)', flex: 'none' }}>
+        <main className="app-main">
+          <div className="app-col app-col--left">
             <IncidentFeed
-              incidents={allIncidents}
+              incidents={incidents}
               selectedId={selectedId}
               onSelect={setSelectedId}
-              lastUpdatedAt={Date.now()}
-              isStale={false}
-              error={null}
+              lastUpdatedAt={lastUpdatedAt}
+              isStale={isStale}
+              error={error}
             />
           </div>
 
-          <section style={{ flex: 1 }}>
+          <section className="app-col app-col--center">
             <IncidentDetail
               incident={selected}
-              submitting={false}
-              error={null}
-              onApprovalAction={() => {}}
+              submitting={approval.submitting}
+              error={approval.error}
+              onApprovalAction={onApprovalAction}
             />
             <MapPanel />
           </section>
 
-          <aside
-            style={{
-              width: 'var(--col-right)',
-              flex: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-4)',
-            }}
-          >
+          <aside className="app-col app-col--right">
             <ExecutionTrace trace={selected?.trace ?? []} />
             <AskPortwatch
               onSubmit={ask.submit}

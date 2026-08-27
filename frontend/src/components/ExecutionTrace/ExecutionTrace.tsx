@@ -52,6 +52,11 @@ export function ExecutionTrace({ trace }: ExecutionTraceProps) {
                 className={
                   'execution-trace__row' + (marker ? ' execution-trace__row--error' : '')
                 }
+                // Each trace row is a focus stop by design (Story 2.5): an
+                // operator tabs through the log to review each stage, and every
+                // row carries its own `aria-label`. A deliberate reading-order
+                // affordance, not an interactive control.
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                 tabIndex={0}
                 aria-label={ariaLabel}
               >

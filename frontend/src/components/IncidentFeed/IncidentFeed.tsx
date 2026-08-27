@@ -45,11 +45,11 @@ export function IncidentFeed({
   error = null,
 }: IncidentFeedProps) {
   // Local 1s tick so the "Xs ago" text keeps advancing while stale, even if the
-  // parent does not re-render.
+  // parent does not re-render. The interval owns every update (no synchronous
+  // setState in the effect body); the first tick lands ~1s after staleness.
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
     if (!isStale) return;
-    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [isStale]);

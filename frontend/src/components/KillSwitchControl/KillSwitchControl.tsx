@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import type { FocusEvent, KeyboardEvent } from 'react';
 
 import type { ApiError } from '../../api/client';
@@ -48,10 +48,14 @@ export function KillSwitchControl({
   const labelId = useId();
 
   // Any external `engaged` change (a successful POST, a parent reset) drops a
-  // stale confirm affordance.
-  useEffect(() => {
+  // stale confirm affordance. Handled as a render-phase state adjustment on the
+  // prev-value change (React's sanctioned pattern) rather than a setState-in-
+  // effect, so there is no extra commit + no cascading render.
+  const [prevEngaged, setPrevEngaged] = useState(engaged);
+  if (engaged !== prevEngaged) {
+    setPrevEngaged(engaged);
     setConfirming(false);
-  }, [engaged]);
+  }
 
   function onActivate() {
     if (pending) return;
@@ -89,6 +93,11 @@ export function KillSwitchControl({
   const showConfirm = !engaged && confirming;
 
   return (
+    // The Escape-to-cancel and focus-out-to-cancel behaviours are properties of
+    // the composite control as a whole, so the listeners belong on the labelled
+    // `group` container, not on one child. Both interactive children (the switch
+    // and Confirm) remain independently operable.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       className="kill-switch"
       role="group"
