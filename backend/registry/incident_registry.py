@@ -33,6 +33,7 @@ This is fully insertion-order-independent so a signal never fans out.
 
 from __future__ import annotations
 
+import copy
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -114,6 +115,13 @@ class IncidentRegistry:
                     "matched": not created,
                     "entity_refs": list(signal.entity_refs),
                     "incident_id": incident.incident_id,
+                    # Story 1.3: carry the correlated signal's actual content
+                    # (ETA value, alert body, congestion level, ...) forward on
+                    # the incident so downstream specialist briefs can reason
+                    # over real signal data, not just entity refs / metadata.
+                    # Deep-copied so the trace detail never aliases the signal's
+                    # own dict.
+                    "payload": copy.deepcopy(signal.payload),
                 },
             )
         )
