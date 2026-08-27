@@ -8,10 +8,11 @@ export interface IncidentSummaryProps {
 
 /**
  * Read-only detail for a selected incident that is NOT actionable (not
- * Tier-3-pending and not kill-switch-blocked). Shows situation, plus
- * recommendation & predicted impact when `options` exist, else a plain status
- * line — and the confidence with its degradation reason when applicable. No
- * Approve / Reject / alternative controls.
+ * Tier-3-pending and not kill-switch-blocked). Always shows the situation and a
+ * plain status line (so a resolved / approved / rejected incident's state is
+ * stated, not just implied), plus recommendation & predicted impact when
+ * `options` exist, and the confidence with its degradation reason when
+ * applicable. No Approve / Reject / alternative controls.
  */
 export function IncidentSummary({ incident }: IncidentSummaryProps) {
   const model = bannerModel(incident);
@@ -25,6 +26,8 @@ export function IncidentSummary({ incident }: IncidentSummaryProps) {
         <span>{model.situation}</span>
       </div>
 
+      <p className="incident-summary__status">{statusPhrase(incident)}</p>
+
       {hasOptions && model.recommendation != null && (
         <div className="approval-row">
           <span className="approval-banner__label">Recommendation</span>
@@ -37,10 +40,6 @@ export function IncidentSummary({ incident }: IncidentSummaryProps) {
           <span className="approval-banner__label">Predicted impact</span>
           <span>{formatPredictedImpact(model.impact)}</span>
         </div>
-      )}
-
-      {!hasOptions && (
-        <p className="incident-summary__status">{statusPhrase(incident)}</p>
       )}
 
       <div className="approval-row">

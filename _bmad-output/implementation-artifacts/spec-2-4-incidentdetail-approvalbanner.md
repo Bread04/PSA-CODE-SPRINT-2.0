@@ -2,7 +2,7 @@
 title: 'Story 2.4: IncidentDetail + ApprovalBanner'
 type: 'feature'
 created: '2026-08-28'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 followup_review_recommended: false
 baseline_revision: 'bcea1b8967c7a5ca74b5705de4c93fd41cc99a68'
@@ -130,3 +130,34 @@ deferred: []
 **Commands:**
 - `cd frontend && npm run build` -- expected: `tsc -b` strict + `vite build` succeed.
 - `cd frontend && npm test -- --run` -- expected: all suites pass (2.1–2.3 unchanged after the `src/lib/incident.ts` move, 2.4 new); every I/O matrix row has a passing assertion; 0 failures.
+
+## Review Triage Log
+
+### 2026-08-28 — Retrospective reconciliation pass (epic-2 retro item 3)
+Story 2.4 was committed as pre-session WIP without the build-auto 4-reviewer pass. This pass reviewed the as-built code and closed the gaps:
+- intent_gap: 0
+- bad_spec: 0
+- patch: 2: (high 0, medium 1, low 1)
+- defer: 0
+- reject: 3
+- addressed_findings:
+  - `[medium]` `[patch]` The story shipped with **no tests** — added `incidentDetail.helpers.test.ts` (bannerModel / dgRejectedReasons / formatPredictedImpact, incl. non-mutation + dangling-id), `IncidentDetail.test.tsx` (placeholder routing, Tier-3 banner content, AD-11 payloads for approve / reject / select_alternative, submitting-disables, error line, DG-struck option shown-not-hidden, kill-switch-blocked = Approve-only, BlueprintPanel + 4 corner marks, first-appearance `aria-live` relax, CSS token scan), and `useApproval.test.ts` (POST body, re-entrancy guard, ApiError capture without throwing, `onSuccess`, `reset`, no-state-after-unmount).
+  - `[low]` `[patch]` `IncidentSummary` only rendered a status line when the incident had **no** options, so a resolved / approved / rejected incident *with* options showed recommendation + impact but never stated its state — now the plain `statusPhrase` line always renders.
+- rejected: `aria-live="assertive"` at mount is a weak announce (a region that mounts already-populated may not be spoken) — kept as spec'd (epic context mandates this exact attribute); folded into the item-7 polish note. `.approval-banner__btn--secondary` is a dead modifier class (base style already is the secondary look) — harmless, left. `key={i}` on the struck-reasons list — static list, low, left.
+
+## Auto Run Result
+
+Status: done
+
+**Implemented change (as-built, verified in this reconciliation pass):** The centre detail column — `IncidentDetail` routes a selected incident to the pinned `ApprovalBanner` (Tier-3-pending OR `blocked_by_kill_switch`, tier never reclassified) or the read-only `IncidentSummary`, or a plain "Select an incident" line when nothing is selected. `ApprovalBanner` (one reused `BlueprintPanel`) shows situation / recommendation / predicted impact / confidence + degradation reason, DG-gate-rejected options struck-through-not-hidden with their reason, ranked alternatives, and Approve / Reject / select-alternative controls wired to the exact AD-11 payloads; `aria-live="assertive"` on first appearance then relaxed; no timer / auto-dismiss. `useApproval` is the render-safe submit hook (serialised, aborts on unmount, refetch on success). Shared incident derivations were moved to `src/lib/incident.ts`.
+
+**Files (as-built):** `frontend/src/components/IncidentDetail/{IncidentDetail,ApprovalBanner,IncidentSummary}.tsx`, `incidentDetail.helpers.ts`, `IncidentDetail.css`, `index.ts`; `frontend/src/hooks/useApproval.ts`; `frontend/src/lib/incident.ts`. Reconciliation added the three test files above and the `IncidentSummary` status-line fix.
+
+**Review findings breakdown:** 2 patches applied (1 medium: missing tests; 1 low: summary status line), 0 deferred, 3 rejected. See Review Triage Log.
+
+**Follow-up review recommended:** false — the medium finding (zero coverage) is fully closed; the rest is covered by epic-2 retro item 7.
+
+**Verification performed:**
+- `cd frontend && npm run lint` → clean (0 errors, 0 warnings).
+- `cd frontend && npm run build` → `tsc -b` strict + `vite build` succeed.
+- `cd frontend && npm test` → 19 files / 555 tests pass, 0 failures.

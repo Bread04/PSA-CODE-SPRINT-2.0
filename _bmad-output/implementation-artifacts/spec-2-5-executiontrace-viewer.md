@@ -2,7 +2,7 @@
 title: 'Story 2.5: ExecutionTrace Viewer'
 type: 'feature'
 created: '2026-08-28'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 followup_review_recommended: false
 baseline_revision: 'bcea1b8967c7a5ca74b5705de4c93fd41cc99a68'
@@ -108,3 +108,32 @@ deferred: []
 **Commands:**
 - `cd frontend && npm run build` -- expected: `tsc -b` strict + `vite build` succeed.
 - `cd frontend && npm test -- --run` -- expected: all suites pass (2.1–2.4 unchanged, 2.5 new); every I/O matrix row has a passing assertion; 0 failures.
+
+## Review Triage Log
+
+### 2026-08-28 — Retrospective reconciliation pass (epic-2 retro item 3)
+Story 2.5 was committed as pre-session WIP without the build-auto 4-reviewer pass. Unlike Story 2.4, it *did* ship `ExecutionTrace.test.tsx` (covers empty state, reverse-chrono order, ERROR/RETRY/FALLBACK marker rows, `mock_forced` annotation, unknown-stage still rendered, keyboard focus stop, `role="log"` + `aria-live="polite"`, CSS token scan). This pass re-read the component and its test against the 4-reviewer lenses:
+- intent_gap: 0
+- bad_spec: 0
+- patch: 0
+- defer: 0
+- reject: 2
+- addressed_findings: none
+- rejected: the trace-row `tabIndex={0}` trips `jsx-a11y/no-noninteractive-tabindex` — kept (Story 2.5 mandates each row be a focus stop for review) and now carries a justified `eslint-disable` with a comment. `.execution-trace__msg` at `opacity: 0.8` — retained (main message content, ~9:1 contrast, above AA); the secondary rows (`__time`, `__mock`, `__empty`) were moved to `var(--text-muted)` in retro item 4.
+
+## Auto Run Result
+
+Status: done
+
+**Implemented change (as-built, verified in this reconciliation pass):** `ExecutionTrace` — a reused `BlueprintPanel` in the Live Console right column driven by `incident.trace`. Renders an append-only, newest-at-top `role="log"` / `aria-live="polite"` list, one row per `TraceEntry` sorted reverse-chronologically; SCREAMING_SNAKE stage badge; error / retry / fallback rows get an `accent-900` dot **and** a textual `ERROR` / `RETRY` / `FALLBACK` flag (never colour-only, UX-DR11); `detail.mock_forced === true` rows carry a "response mocked for demo stability" annotation and are never byte-identical to a live row; unknown stages are still rendered; every row is a keyboard focus stop with its own `aria-label`.
+
+**Files (as-built):** `frontend/src/components/ExecutionTrace/{ExecutionTrace.tsx,ExecutionTrace.css,ExecutionTrace.test.tsx,index.ts}`. Reconciliation added a justified `eslint-disable` comment on the row `tabIndex`.
+
+**Review findings breakdown:** 0 patches, 0 deferred, 2 rejected (spec-mandated / already-addressed elsewhere). See Review Triage Log.
+
+**Follow-up review recommended:** false.
+
+**Verification performed:**
+- `cd frontend && npm run lint` → clean.
+- `cd frontend && npm run build` → `tsc -b` strict + `vite build` succeed.
+- `cd frontend && npm test` → 19 files / 555 tests pass, 0 failures (`ExecutionTrace.test.tsx` unchanged and green).
