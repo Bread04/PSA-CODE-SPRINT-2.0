@@ -5,8 +5,8 @@ import { ExecutionTrace } from './components/ExecutionTrace';
 import { IncidentArchive } from './components/IncidentArchive';
 import { IncidentDetail } from './components/IncidentDetail';
 import { IncidentFeed } from './components/IncidentFeed';
+import { GeoMapPanel } from './components/GeoMapPanel';
 import { KillSwitchBanner, KillSwitchControl } from './components/KillSwitchControl';
-import { MapPanel } from './components/MapPanel';
 import { useApproval } from './hooks/useApproval';
 import { useAskPortwatch } from './hooks/useAskPortwatch';
 import { useHashRoute } from './hooks/useHashRoute';
@@ -116,7 +116,7 @@ function App() {
               error={approval.error}
               onApprovalAction={onApprovalAction}
             />
-            <MapPanel />
+            <GeoMapPanel incident={selected} />
           </section>
 
           <aside className="app-col app-col--right">

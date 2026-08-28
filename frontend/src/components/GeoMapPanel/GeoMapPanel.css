@@ -1,0 +1,122 @@
+/*
+ * GeoMapPanel (Story 4.1 / FR15 / UX-DR13).
+ *
+ * A read-only illustrative Singapore Strait basemap framed by the shared
+ * BlueprintPanel. The basemap is a real bundled d3-geo vector (Natural Earth
+ * via world-atlas); markers are primitive SVG shapes for the selected
+ * incident's affected entities. Every colour routes through Story 2.1 tokens
+ * (var(--accent-*), var(--divider), var(--text), var(--text-muted)); the only
+ * bare literals are non-colour structural sizes (stroke widths, dash arrays,
+ * the max-height cap). Zero border-radius, per the blueprint aesthetic.
+ *
+ * State (analysing / deciding / applied / blocked / done / pending) is carried
+ * by the <text> label AND a stroke/dash change — colour is never the sole
+ * signal (UX-DR11). No severity red/amber/green vocabulary.
+ */
+
+.geo-map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-radius: 0;
+}
+
+.geo-map__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.geo-map__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.geo-map__land {
+  fill: var(--accent-100);
+  stroke: var(--divider);
+  stroke-width: 1px;
+}
+
+/* --- markers: shape + fill/stroke by kind (never hue alone) --- */
+
+.geo-map__shape {
+  fill: var(--accent-600);
+  stroke: none;
+}
+
+.geo-map__marker--yard .geo-map__shape,
+.geo-map__marker--gate .geo-map__shape {
+  fill: var(--accent-2);
+}
+
+.geo-map__shape--dashed {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.25px;
+  stroke-dasharray: 3 2;
+}
+
+/* State variants change stroke / dash / opacity, never hue alone. The <text>
+   suffix (pending / analysing / deciding / action applied / blocked / done)
+   already differs; these give a monochrome viewer a second cue. */
+.geo-map__marker--pending .geo-map__shape {
+  stroke: var(--divider);
+  stroke-width: 1px;
+  stroke-dasharray: 1 2;
+  opacity: 0.65;
+}
+
+.geo-map__marker--analysing .geo-map__shape {
+  stroke: var(--accent-400);
+  stroke-width: 1px;
+  stroke-dasharray: 4 2;
+}
+
+.geo-map__marker--deciding .geo-map__shape {
+  stroke: var(--accent-700);
+  stroke-width: 1.25px;
+  stroke-dasharray: 0;
+}
+
+.geo-map__marker--applied .geo-map__shape {
+  stroke: var(--text);
+  stroke-width: 1px;
+  stroke-dasharray: 6 2;
+}
+
+.geo-map__marker--blocked .geo-map__shape {
+  stroke: var(--text);
+  stroke-width: 1.5px;
+  stroke-dasharray: 2 2;
+}
+
+.geo-map__marker--done .geo-map__shape {
+  stroke: var(--text);
+  stroke-width: 1px;
+  stroke-dasharray: 0;
+}
+
+.geo-map__label {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-micro-label);
+  fill: var(--text);
+}
+
+/* Load-bearing "not live AIS" disclaimer — mirrors .map-panel__caption. */
+.geo-map__caption {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-micro-label);
+  color: var(--text-muted);
+}

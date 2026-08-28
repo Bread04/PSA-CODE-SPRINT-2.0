@@ -165,6 +165,39 @@ describe('App live data wiring', () => {
     await waitFor(() => expect(client.fetchIncidents).toHaveBeenCalled());
   });
 
+  const mapLabel = () =>
+    screen
+      .getByRole('region', { name: 'Strait Map' })
+      .querySelector('svg[role="img"]')!
+      .getAttribute('aria-label') ?? '';
+
+  it('the map is degraded-safe with no incident and names the selection once one is picked', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    // No incident selected: the map still renders (Story 2.7 fallback), no markers.
+    const map = await screen.findByRole('region', { name: 'Strait Map' });
+    expect(within(map).getAllByRole('img')).toHaveLength(1);
+    expect(map.querySelectorAll('.geo-map__marker')).toHaveLength(0);
+
+    const feed = await screen.findByRole('region', { name: 'Incidents' });
+    const first = await within(feed).findByText(
+      /reroute affected yard moves through Crane #6/i,
+    );
+    await user.click(first.closest('button')!);
+
+    await waitFor(() => expect(mapLabel()).toContain('MSC-ANNA'));
+
+    const second = await within(feed).findByText(/Vessel CMA CGM TITAN/i);
+    await user.click(second.closest('button')!);
+
+    await waitFor(() => {
+      const label = mapLabel();
+      expect(label).toContain('CMA-CGM-TITAN');
+      expect(label).not.toContain('MSC-ANNA');
+    });
+  });
+
   it('the kill switch control posts to /kill-switch and shows the global banner', async () => {
     const user = userEvent.setup();
     render(<App />);
