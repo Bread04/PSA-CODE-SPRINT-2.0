@@ -198,6 +198,62 @@ describe('App live data wiring', () => {
     });
   });
 
+  it('composes the Pipeline stage rail + the map, and both update on selection change', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const feed = await screen.findByRole('region', { name: 'Incidents' });
+
+    const clickRow = async (el: HTMLElement) => {
+      const btn = el.closest('button');
+      if (!btn) throw new Error('feed row has no <button> ancestor');
+      await user.click(btn);
+    };
+
+    // tier3WithAlternatives — its trace reaches APPROVAL, so early rail stages
+    // read as reached. The rail sits alongside the Strait Map in the centre.
+    const first = await within(feed).findByText(
+      /reroute affected yard moves through Crane #6/i,
+    );
+    await clickRow(first);
+
+    const rail = await screen.findByRole('region', { name: 'Pipeline' });
+    expect(screen.getByRole('region', { name: 'Strait Map' })).toBeInTheDocument();
+
+    const items = within(rail).getAllByRole('listitem');
+    expect(items).toHaveLength(10);
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole('region', { name: 'Pipeline' })).getAllByRole(
+          'listitem',
+        )[0],
+      ).toHaveClass('stage-rail__item--done');
+    });
+    // The map names this incident's affected vessel.
+    await waitFor(() => expect(mapLabel()).toContain('MSC-ANNA'));
+
+    // openInProgress has an empty trace — selecting it resets the rail to
+    // all-pending AND repoints the map at CMA-CGM-TITAN.
+    const second = await within(feed).findByText(/Vessel CMA CGM TITAN/i);
+    await clickRow(second);
+
+    await waitFor(() => {
+      const resetItems = within(
+        screen.getByRole('region', { name: 'Pipeline' }),
+      ).getAllByRole('listitem');
+      expect(
+        resetItems.every((li) =>
+          li.classList.contains('stage-rail__item--pending'),
+        ),
+      ).toBe(true);
+    });
+    await waitFor(() => {
+      const label = mapLabel();
+      expect(label).toContain('CMA-CGM-TITAN');
+      expect(label).not.toContain('MSC-ANNA');
+    });
+  });
+
   it('the kill switch control posts to /kill-switch and shows the global banner', async () => {
     const user = userEvent.setup();
     render(<App />);

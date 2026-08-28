@@ -7,6 +7,7 @@ import { IncidentDetail } from './components/IncidentDetail';
 import { IncidentFeed } from './components/IncidentFeed';
 import { GeoMapPanel } from './components/GeoMapPanel';
 import { KillSwitchBanner, KillSwitchControl } from './components/KillSwitchControl';
+import { StageRail } from './components/StageRail';
 import { useApproval } from './hooks/useApproval';
 import { useAskPortwatch } from './hooks/useAskPortwatch';
 import { useHashRoute } from './hooks/useHashRoute';
@@ -117,6 +118,7 @@ function App() {
               onApprovalAction={onApprovalAction}
             />
             <GeoMapPanel incident={selected} />
+            <StageRail incident={selected} />
           </section>
 
           <aside className="app-col app-col--right">

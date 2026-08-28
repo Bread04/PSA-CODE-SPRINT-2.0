@@ -1,0 +1,109 @@
+/*
+ * StageRail (Story 4.2 / UX-DR13).
+ *
+ * A compact, read-only pipeline projection framed by the shared BlueprintPanel.
+ * Geometry follows the blueprint aesthetic: zero radius, 1px token strokes, a
+ * small square marker per stage. Every colour routes through Story 2.1 tokens
+ * (var(--text), var(--divider), var(--accent-600/700/900));
+ * the only bare literals are non-colour structural sizes (the 9px marker).
+ *
+ * Per-stage state is carried by BOTH shape and text, never colour alone
+ * (UX-DR11): the marker glyph differs per state (hollow-dashed square =
+ * pending, filled square = done / complete, diamond = current, triangle =
+ * attention) and every item shows a `done` / `current` / `attention` /
+ * `pending` / `complete` word plus a textual ERROR / RETRY / FALLBACK flag.
+ * No red / amber / green vocabulary.
+ */
+
+.stage-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stage-rail__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.stage-rail__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.stage-rail__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-caption);
+  color: var(--text);
+}
+
+/* --- marker: a small square whose shape differs per state --- */
+
+.stage-rail__marker {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  background: none;
+}
+
+.stage-rail__item--pending .stage-rail__marker {
+  border: 1px dashed var(--divider);
+  background: none;
+}
+
+.stage-rail__item--done .stage-rail__marker,
+.stage-rail__item--complete .stage-rail__marker {
+  border: 1px solid var(--accent-600);
+  background: var(--accent-600);
+}
+
+.stage-rail__item--active .stage-rail__marker {
+  border: 2px solid var(--accent-700);
+  background: none;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+/* Attention: the ExecutionTrace `--accent-900` marker dot, given a distinct
+   triangular silhouette so it never reads by colour alone. */
+.stage-rail__item--error .stage-rail__marker {
+  border: 1px solid var(--accent-900);
+  background: var(--accent-900);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.stage-rail__label {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+/* The state word + flag is the UX-DR11 non-shape carrier of meaning, so it is
+   full-strength body text, not a muted micro-label. */
+.stage-rail__state {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-caption);
+  color: var(--text);
+}
+
+/* The attention flag text is emphasised, still alongside the shape + word. */
+.stage-rail__item--error .stage-rail__state {
+  color: var(--accent-900);
+}
