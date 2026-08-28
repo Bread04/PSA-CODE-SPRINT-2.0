@@ -115,6 +115,10 @@ Judging criteria targeted: Agentic AI Design & Technical Execution; Innovation &
 
 `[ASSUMPTION]` The MVP's DG/IMDG ruleset is a simplified, representative subset built for demo purposes — not a certified compliance implementation. State this explicitly in the architecture explanation deliverable so it reads as intentional scoping rather than an overlooked gap.
 
+## 6a. Visualisation Scoping Note
+
+`[ASSUMPTION]` Added 2026-08-28 via `sprint-change-proposal-2026-08-28.md`. The console's geographic map is an *illustrative visualisation of mock incident state* built for the demo — it renders bundled basemap geometry and mock entity positions, updates from the same polled incident trace the rest of the dashboard uses, and makes no live network call. It is explicitly **not** an AIS/VTS feed and carries no vessel-tracking claim; the "Strait-Level Multi-Vessel Collision Avoidance" item in Future Extensions remains vision-only and un-demoed. State this in the architecture-explanation deliverable and the pitch so the map reads as intentional scoping, not an implied real-time tracking capability.
+
 ## 7. Scalability
 
 - Incident processor built as stateless-per-incident workers from the start of the build (not retrofitted).

@@ -3,6 +3,7 @@ title: 'Story 2.7: MapPanel'
 type: 'feature'
 created: '2026-08-28'
 status: 'done'
+superseded_by: 'Epic 4 Story 4.1 (Geographic MapPanel) — sprint-change-proposal-2026-08-28.md. This component is retained as the yard/plan schematic and as the no-incident-selected fallback; its caption-wording test assertions are carried forward into 4.1 unchanged.'
 review_loop_iteration: 0
 followup_review_recommended: true
 baseline_revision: '125c9a7cd251e9ad390520119420d1b1721aa5c1'
@@ -101,6 +102,9 @@ deferred:
 - Given a clean checkout, when `npm run build && npm test` runs in `frontend/`, then typecheck, build, and all suites (2.1–2.6 unchanged, 2.7 new) pass, and every I/O matrix row has a passing assertion.
 
 ## Spec Change Log
+
+### 2026-08-28 — Superseded by Epic 4 Story 4.1 (Correct Course)
+`sprint-change-proposal-2026-08-28.md` replaces the static illustrative strait view with a geographic, incident-driven MapPanel (real bundled Singapore Strait basemap via d3-geo, markers from `frontend/src/lib/geo.ts`, updated on trace progress). UX-DR7 was rewritten and a new UX-DR13 (agent-action stage rail) and Architecture Spine AD-17 were added. This spec's component is **not deleted**: it remains the yard/plan schematic and the no-incident-selected fallback, and its caption-honesty assertions ("illustrative", "not live AIS", absence of `real-time|live positions|tracking|current location`) are carried into Story 4.1 verbatim.
 
 ## Review Triage Log
 

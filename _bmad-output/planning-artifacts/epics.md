@@ -83,12 +83,13 @@ UX-DR3: IncidentFeed component — reverse-chronological incident list; 7x7px ac
 UX-DR4: IncidentDetail + ApprovalBanner component — pinned Tier-3 approval card (`aria-live="assertive"` on first appearance only, pulsing status dot) showing situation, recommendation, any rejected option struck through with its DG-gate reason, predicted impact, and confidence with its degradation reason when applicable; Approve/Modify/Reject wired to `POST /incidents/{incident_id}/approval` (`approve` / `reject` / `select_alternative(option_id)`, AD-11); persistent, no auto-dismiss, no timeout-driven default action.
 UX-DR5: ExecutionTrace component — `role="log" aria-live="polite"`, reverse-chronological rows keyed to the SCREAMING_SNAKE stage vocabulary (INGEST/CORRELATE/AGENT_CALL/SYNTHESIZE/CONFIDENCE/POLICY_DECISION/DG_CHECK/APPROVAL/EXECUTE/VERIFY), `accent-900` dot marker + bolder text on error rows.
 UX-DR6: AskPortwatch component — free-text input + suggestion chips; calls `GET /incidents/query?q=...` with an optional `incident_id` hint from the current selection; never requires an incident to be selected first (matches UJ-2 and the architecture's free-text resolution).
-UX-DR7: MapPanel component — read-only strait/yard illustrative view rendered inside a blueprint panel, captioned to state that positions are illustrative, not live AIS.
+UX-DR7: MapPanel component — a geographic strait/terminal view rendered inside a blueprint panel from mock incident state. Real Singapore Strait / Tuas basemap (bundled vector geometry; no runtime network call). Renders the selected incident's affected entities (berth / crane / yard block / vessel) as token-coloured primitive markers, and updates as the incident's trace progresses. Read-only for decisions — it is NOT the decision surface (that stays the approval banner + incident detail, UX-DR4). Pan/zoom optional and lockable. Caption still states the view is illustrative and NOT live AIS, and carries no wording implying real-time / tracked vessel positions; adds that positions are mock incident state, not a vessel-tracking feed. Single `role="img"` node with a full-sentence text equivalent (UX-DR11). Story 2.7's caption-wording test assertions are carried forward unchanged. (Revised 2026-08-28 by sprint-change-proposal-2026-08-28.md; real geometry was always in the design canvas `pw-map.js` — Story 2.7 down-scoped it for time.)
 UX-DR8: KillSwitchControl component — persistent header control (never nested in a menu); engaging is two-step (toggle + inline confirm) since it disables all autonomous execution; disengaging is one-step; wired to `POST /kill-switch`.
 UX-DR9: IncidentArchive route — new session-scoped screen listing resolved incidents (reuses IncidentFeed row + blueprint-panel styling, adds a resolution-outcome tag: Auto-resolved/Approved/Rejected), filtered client-side from `GET /incidents`; opening an archived incident shows its trace read-only, no approval actions possible.
 UX-DR10: State-pattern coverage — Tier 1 auto-resolves with no interruption (quiet tag only); Tier 2 adds a small non-sound notification badge; degraded-confidence shows an inline plain-language reason (FR5/FR6); DG re-plan shows the rejected option struck through with its reason (FR9); kill-switch-engaged shows a persistent global banner AND, per-incident, a "needs manual action — kill switch engaged" tag on any Tier 1/2 incident with `blocked_by_kill_switch: true` (AD-15), resolved via the existing Approve action; stale/unreachable API shows a small "last updated Xs ago" indicator, never a blocking error screen; empty archive shows a plain one-line message; concurrent incidents remain independently selectable (FR16 proof at the UI level).
 UX-DR11: Accessibility floor — every interactive element (incl. Approve/Reject/Modify) operable via Tab/Enter/Space, not click-only; visible focus rings at AA contrast against `DESIGN.md` surface tokens; severity is never conveyed by color alone (label text + shape + `accent-900` together).
 UX-DR12: Voice & tone — all microcopy plain, factual, non-alarmist per EXPERIENCE.md's Do/Don't table (e.g. "MSC Anna — ETA slipped 90 min" not "CRITICAL DISRUPTION"); no escalating exclamation/emoji as severity increases; same register for a Tier 1 footnote and a Tier 3 banner.
+UX-DR13: Agent-action visualisation (added 2026-08-28, sprint-change-proposal-2026-08-28.md) — the console makes the pipeline the agents run legible as it happens, not only as a text log. A stage rail keyed to the SCREAMING_SNAKE stage vocabulary (INGEST / CORRELATE / AGENT_CALL ×3 / SYNTHESIZE / CONFIDENCE / POLICY_DECISION / DG_CHECK / APPROVAL / EXECUTE / VERIFY) reflects the selected incident's trace progress; the map's entity markers change state in step (e.g. a crane marker enters "analysing" then "action applied"). ExecutionTrace (UX-DR5) remains the authoritative detailed log; this is a complementary at-a-glance layer. Derived entirely from the existing polled trace data (AD-6) — no new endpoint, no new backend state. Colour is never the sole signal (UX-DR11): stage state also carries a label and a shape change.
 
 ### FR Coverage Map
 
@@ -136,6 +137,10 @@ UX-DR10 (state patterns), UX-DR11 (accessibility floor), and UX-DR12 (voice & to
 ### Epic 3: Proven at Scale
 Portwatch resolves multiple simultaneous incidents without interference, and extends to a second terminal cluster (Pasir Panjang) using the same agents and policy engine, unchanged — direct evidence for the Scalability & Responsible AI judging criterion. **Stretch block (Day-5, strictly additive, ranked by the PRD's value/hour order — build only after FR16/FR17 and time permits):** disruption types beyond cargo/crane/yard, through the same trusted pipeline, proving the architecture generalizes rather than being purpose-built for one incident shape — an AGV/Gate specialist agent for gate-congestion signals (FR20, ranked third), a mocked meteorological-radar Weather agent (FR18, ranked last), and a mocked MPA-style clearance check (FR19, ranked last). Folded into this epic rather than kept as a separate peer epic (party-mode review, 2026-08-27): none of the three stretch items stand alone the way Epic 1-3's core FRs do — all three assume Epic 1-3's pipeline is already fully built and are ranked at or near the bottom of the PRD's Day-5 value/hour order, so treating them as a fourth co-equal epic overstated their independence. FR20 was minted during this same pass — the PRD named "AGV/Gate agent" in its Day-5 ranking without ever giving it an FR number; closed as an orphaned-requirement finding.
 **FRs covered:** FR16, FR17, FR20, FR19, FR18
+
+### Epic 4: Operator Visibility (demo-critical)
+Added 2026-08-28 via `sprint-change-proposal-2026-08-28.md`. The console makes an in-flight incident legible at a glance — spatially (a real Singapore Strait / Tuas terminal map driven by mock incident state) and procedurally (a stage rail showing where in the agent pipeline the incident is). Additive, frontend-contained, reads only the existing polled trace data (AD-6 / AD-17). **Priority: P0 / demo-blocking — sequenced BEFORE Epic 3's Day-5 stretch items.** Does NOT touch the golden-path backend.
+**FRs covered:** none new — realises UX-DR7 (revised), UX-DR13 (new), FR15.
 
 ---
 
@@ -814,3 +819,65 @@ So that Portwatch demonstrates it generalizes to a disruption type with real phy
 **Given** the Weather agent's output
 **When** it reaches confidence, policy, and execution
 **Then** it uses the exact same formula, tier rules, and execution path as any other recovery option — no weather-specific carve-out in the deterministic layers
+
+---
+
+## Epic 4: Operator Visibility (demo-critical)
+
+Added 2026-08-28 via `sprint-change-proposal-2026-08-28.md` (Correct Course). The console makes an in-flight incident legible at a glance — spatially and procedurally. Additive, frontend-contained, reads only the existing polled trace data. **P0 / demo-blocking — sequenced before Epic 3's Day-5 stretch items.** Does NOT touch the golden-path backend (see Architecture Spine AD-17).
+
+Implementation: **Option A — d3-geo vector basemap** (real Singapore Strait coastline from bundled TopoJSON, Mercator-fit; markers = token-coloured SVG primitives). This is the approach the design canvas `pw-map.js` already specifies ("real Natural Earth geometry via d3-geo … no tiles … mocked positions, not a live AIS feed"). No runtime network call. Story 2.7's `MapPanel` is retained as the yard/plan schematic and as the no-incident-selected fallback.
+
+**Realises:** UX-DR7 (revised 2026-08-28), UX-DR13 (new), FR15.
+
+### Story 4.1: Geographic MapPanel
+
+As an operator,
+I want the map to show the real Singapore Strait / Tuas terminal with the selected incident's affected entities marked,
+So that I can see where an incident is happening — without it being, or implying, a live vessel-tracking feed.
+
+**Acceptance Criteria:**
+
+**Given** the Live Console renders and an incident is selected
+**When** the map draws
+**Then** it shows a real bundled Strait/terminal basemap with token-coloured markers for that incident's affected berth / crane / yard block / vessel, positioned from `frontend/src/lib/geo.ts`
+
+**Given** the selected incident's trace advances
+**When** the map re-renders on the next 2–3s poll
+**Then** affected-entity markers reflect the current pipeline stage (e.g. analysing → action applied), colour never the sole signal (label + shape too)
+
+**Given** either map variant
+**When** the caption is shown
+**Then** it contains "illustrative" and "not live AIS", contains none of `real-time` / `live positions` / `tracking` / `current location`, and adds that positions are mock incident state — assertions carried verbatim from Story 2.7's test
+
+**Given** the rendered map
+**When** it is inspected
+**Then** it is a single `role="img"` node with a full-sentence text equivalent, **no runtime network request is made** (asserted with a `fetch` spy), and `npm run verify` (lint + build + test) stays green
+
+**Given** no incident is selected
+**When** the console renders
+**Then** the map shows the basemap with no incident markers (degraded-safe; matches Story 2.7's default behaviour)
+
+### Story 4.2: Agent-action stage rail
+
+As an operator,
+I want a compact stage rail showing where the selected incident is in the agent pipeline,
+So that I can follow what the AI is doing without reading the full trace log.
+
+**Acceptance Criteria:**
+
+**Given** a selected incident
+**When** its trace is polled
+**Then** a stage rail renders the pipeline stages (INGEST … VERIFY) with reached stages marked done, the current stage active, and error stages marked with label + shape (not colour alone) — derived only from trace entries
+
+**Given** the incident completes
+**When** VERIFY is reached
+**Then** the rail shows the terminal state and ExecutionTrace (UX-DR5) remains the authoritative detailed log — unchanged
+
+**Given** the rail
+**When** navigated by keyboard / screen reader
+**Then** each stage is announced with its state; the rail adds no new interactive controls
+
+**Given** App-level tests
+**When** they run
+**Then** the composed console renders the rail + map for a selected fixture incident and updates on selection change

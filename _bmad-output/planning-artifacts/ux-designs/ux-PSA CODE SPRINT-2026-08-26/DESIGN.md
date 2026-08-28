@@ -150,7 +150,7 @@ Flat design — no drop shadows. Depth and grouping are communicated entirely th
 - **Incident feed row** — left-aligned button-like row inside a blueprint panel; a 7×7px accent-colored status dot plus a 2px progress bar beneath (`neutral-300` track, `accent-600` fill) shows resolution-in-progress state.
 - **Approval card** — a blueprint panel with `aria-live="assertive"`, a pulsing status dot (opacity 1↔0.25 keyframe), 2-column situation/recommendation/why + predicted-impact layout, and Approve/Reject buttons.
 - **Execution trace log** — `role="log" aria-live="polite"`, scrolling list inside a blueprint panel; each entry a 2-column grid (timestamp | stage badge + text) with 1px bottom dividers; `accent-900` dot marker on error entries.
-- **Map/plan panels** — blueprint-framed custom map views (strait map, yard/plan view), captioned below the frame.
+- **Map/plan panels** — blueprint-framed map views, captioned below the frame. The strait view uses a real, bundled vector basemap (Singapore Strait coastline, d3-geo) driven by mock incident state; the yard/plan view stays a hand-drawn schematic. Both carry incident-driven, token-coloured primitive markers. Zero-radius / token-colour discipline applies to all panel chrome; the only exemption is vendored basemap geometry. (Revised 2026-08-28, sprint-change-proposal-2026-08-28.md.)
 - **Ask Portwatch (chat) panel** — text input + primary button + `button-ghost` suggestion chips; answer renders in an `accent-100`-background bubble.
 - **Kill switch** — a `role="switch"` toggle styled as a circular dot control; `accent-900` when engaged.
 - **Buttons** — `button-primary` (solid `accent-700`), `button-secondary` (outlined), `button-ghost` (text-only) — all square, 44–48px minimum height.
