@@ -62,6 +62,38 @@ describe('placeholder / non-actionable routing', () => {
   });
 });
 
+describe('IncidentSummary — Yard load row (Spec 3.2 / FR17)', () => {
+  const withYardUtil = (util: unknown) => ({
+    ...tier1Resolved,
+    trace: [
+      {
+        stage: 'CORRELATE',
+        timestamp: '2026-08-27T10:00:00Z',
+        detail: { signal_type: 'yard_congestion', payload: { yard_utilization: util } },
+        error: null,
+      },
+    ],
+  });
+
+  it('shows both blocks’ rounded percentages when the CORRELATE payload carries yard_utilization', () => {
+    renderDetail(withYardUtil({ tuas_c7: 0.93, pasir_panjang_p2: 0.44 }));
+    expect(screen.getByText('Yard load')).toBeInTheDocument();
+    expect(
+      screen.getByText('Tuas C7 93% · Pasir Panjang P2 44%'),
+    ).toBeInTheDocument();
+  });
+
+  it('omits the row entirely when no utilization payload is present', () => {
+    renderDetail(tier1Resolved);
+    expect(screen.queryByText('Yard load')).toBeNull();
+  });
+
+  it('omits the row (no throw) when the payload is malformed', () => {
+    renderDetail(withYardUtil({ tuas_c7: 'high' }));
+    expect(screen.queryByText('Yard load')).toBeNull();
+  });
+});
+
 describe('ApprovalBanner — Tier 3 pending', () => {
   it('shows situation, recommendation, predicted impact, confidence + degradation reason', () => {
     renderDetail(tier3WithAlternatives);

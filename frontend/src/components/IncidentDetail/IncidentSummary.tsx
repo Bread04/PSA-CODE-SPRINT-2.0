@@ -1,5 +1,9 @@
 import { confidenceReason, statusPhrase } from '../../lib/incident';
-import { bannerModel, formatPredictedImpact } from './incidentDetail.helpers';
+import {
+  bannerModel,
+  formatPredictedImpact,
+  yardBlockUtilization,
+} from './incidentDetail.helpers';
 import type { Incident } from '../../types/incident';
 
 export interface IncidentSummaryProps {
@@ -18,6 +22,7 @@ export function IncidentSummary({ incident }: IncidentSummaryProps) {
   const model = bannerModel(incident);
   const reason = confidenceReason(incident);
   const hasOptions = incident.options.length > 0;
+  const yardLoad = yardBlockUtilization(incident);
 
   return (
     <div className="incident-summary">
@@ -39,6 +44,13 @@ export function IncidentSummary({ incident }: IncidentSummaryProps) {
         <div className="approval-row">
           <span className="approval-banner__label">Predicted impact</span>
           <span>{formatPredictedImpact(model.impact)}</span>
+        </div>
+      )}
+
+      {yardLoad && (
+        <div className="approval-row">
+          <span className="approval-banner__label">Yard load</span>
+          <span>{yardLoad}</span>
         </div>
       )}
 

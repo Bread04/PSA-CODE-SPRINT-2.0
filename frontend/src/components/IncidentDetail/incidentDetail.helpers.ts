@@ -78,6 +78,35 @@ export function bannerModel(incident: Incident): BannerModel {
   };
 }
 
+const asNumericFraction = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1 ? v : null;
+
+/**
+ * Spec 3.2 (FR17) — the two-block yard load string for the selected incident,
+ * or `null` when there is no utilization payload.
+ *
+ * Source: the LAST `trace` entry with `stage === 'CORRELATE'`, reading
+ * `detail.payload.yard_utilization`. When it carries numeric `tuas_c7` and
+ * `pasir_panjang_p2` fractions, returns
+ * `"Tuas C7 93% · Pasir Panjang P2 44%"` (rounded ints); otherwise `null`.
+ * Pure and defensive — a malformed payload yields `null`, never a throw.
+ */
+export function yardBlockUtilization(incident: Incident): string | null {
+  const trace: TraceEntry[] = incident.trace ?? [];
+  let correlate: TraceEntry | undefined;
+  for (const entry of trace) {
+    if (entry.stage === 'CORRELATE') correlate = entry;
+  }
+  if (!correlate) return null;
+
+  const util = asRecord(asRecord(asRecord(correlate.detail).payload).yard_utilization);
+  const tuas = asNumericFraction(util.tuas_c7);
+  const pasir = asNumericFraction(util.pasir_panjang_p2);
+  if (tuas == null || pasir == null) return null;
+
+  return `Tuas C7 ${Math.round(tuas * 100)}% · Pasir Panjang P2 ${Math.round(pasir * 100)}%`;
+}
+
 /**
  * One-line plain-language rendering of a `PredictedImpact` — delay, cost band,
  * yard effect, risk band. Factual, non-alarmist (UX-DR12).

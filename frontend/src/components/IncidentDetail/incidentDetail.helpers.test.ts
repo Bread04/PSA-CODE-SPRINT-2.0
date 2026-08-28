@@ -4,8 +4,9 @@ import {
   bannerModel,
   dgRejectedReasons,
   formatPredictedImpact,
+  yardBlockUtilization,
 } from './incidentDetail.helpers';
-import type { Incident, PredictedImpact } from '../../types/incident';
+import type { Incident, PredictedImpact, TraceEntry } from '../../types/incident';
 import {
   tier1Resolved,
   tier3DgRejected,
@@ -76,6 +77,73 @@ describe('bannerModel', () => {
     const snapshot = JSON.stringify(tier3WithAlternatives);
     bannerModel(tier3WithAlternatives);
     expect(JSON.stringify(tier3WithAlternatives)).toBe(snapshot);
+  });
+});
+
+describe('yardBlockUtilization', () => {
+  const correlate = (payload: unknown): TraceEntry => ({
+    stage: 'CORRELATE',
+    timestamp: '2026-08-27T10:00:00Z',
+    detail: { signal_type: 'yard_congestion', payload } as Record<string, unknown>,
+    error: null,
+  });
+
+  const withTrace = (trace: TraceEntry[]): Incident => ({ ...tier1Resolved, trace });
+
+  it('renders both blocks as rounded percentages from the newest CORRELATE payload', () => {
+    const inc = withTrace([
+      correlate({ yard_utilization: { tuas_c7: 0.93, pasir_panjang_p2: 0.44 } }),
+    ]);
+    expect(yardBlockUtilization(inc)).toBe('Tuas C7 93% · Pasir Panjang P2 44%');
+  });
+
+  it('uses the LAST CORRELATE entry when several are present', () => {
+    const inc = withTrace([
+      correlate({ yard_utilization: { tuas_c7: 0.5, pasir_panjang_p2: 0.5 } }),
+      correlate({ yard_utilization: { tuas_c7: 0.876, pasir_panjang_p2: 0.401 } }),
+    ]);
+    expect(yardBlockUtilization(inc)).toBe('Tuas C7 88% · Pasir Panjang P2 40%');
+  });
+
+  it('is null when there is no CORRELATE entry', () => {
+    expect(yardBlockUtilization(tier1Resolved)).toBeNull();
+  });
+
+  it('is null when the CORRELATE entry carries no yard_utilization payload', () => {
+    expect(yardBlockUtilization(withTrace([correlate({})]))).toBeNull();
+    expect(
+      yardBlockUtilization(withTrace([correlate({ yard_utilization: {} })])),
+    ).toBeNull();
+  });
+
+  it('is null when a block fraction is out of the [0, 1] range', () => {
+    expect(
+      yardBlockUtilization(
+        withTrace([
+          correlate({ yard_utilization: { tuas_c7: 1.5, pasir_panjang_p2: 0.4 } }),
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it('is null (no throw) when a block value is missing or non-numeric', () => {
+    expect(
+      yardBlockUtilization(
+        withTrace([correlate({ yard_utilization: { tuas_c7: 0.9 } })]),
+      ),
+    ).toBeNull();
+    expect(
+      yardBlockUtilization(
+        withTrace([
+          correlate({ yard_utilization: { tuas_c7: 'high', pasir_panjang_p2: 0.4 } }),
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it('tolerates a missing trace', () => {
+    const noTrace = { ...tier1Resolved, trace: undefined } as unknown as Incident;
+    expect(yardBlockUtilization(noTrace)).toBeNull();
   });
 });
 

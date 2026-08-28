@@ -3,7 +3,10 @@
 Enabled by default; set `PORTWATCH_SEED=0` to start empty. Not used by tests
 (they seed their own fixtures). Mirrors the shapes the console renders: a held
 Tier 3 card with alternatives, a kill-switch-blocked Tier 1/2, a couple of
-resolved incidents (auto / approved / rejected), and an in-progress one.
+resolved incidents (auto / approved / rejected), an in-progress one, and a
+`demo-load-balancing` incident (Spec 3.2 / FR17: Tuas C7 under pressure,
+recommended reroute to Pasir Panjang P2, per-block utilization carried on its
+CORRELATE payload so the IncidentDetail "Yard load" row renders).
 """
 
 from __future__ import annotations
@@ -11,6 +14,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timedelta, timezone
 
+from agents.yard_load_balancing import format_block_utilization
 from models.incident import Incident, TraceEntry
 from models.recovery import PredictedImpact, RecoveryOption
 
@@ -152,7 +156,44 @@ def demo_incidents() -> list[Incident]:
                 _tr("EXECUTE", 3, {"tier": 2, "results": [{"service": "tos", "ok": True}]}),
             ],
         ),
+        _load_balancing_incident(),
     ]
+
+
+def _load_balancing_incident() -> Incident:
+    """Spec 3.2 (FR17): a Tuas-C7-under-pressure incident whose recommended
+    option reroutes flow to Pasir Panjang P2, with both blocks' utilization on
+    the CORRELATE payload so the IncidentDetail "Yard load" row renders."""
+    util = {"tuas_c7": 0.93, "pasir_panjang_p2": 0.44}
+    option = RecoveryOption(
+        option_id="opt-1",
+        description=f"Route ~600 TEU of import flow to Pasir Panjang P2 ({format_block_utilization(util)})",
+        predicted_impact=PredictedImpact(
+            delay_min=35,
+            cost="medium",
+            yard_impact="Tuas C7 relieved to ~78%; Pasir Panjang P2 rises to ~52%",
+            risk="low",
+        ),
+        reversible=True,
+        dg_involved=False,
+    )
+    return Incident(
+        incident_id="demo-load-balancing",
+        status="open",
+        entity_refs=["yard:TUAS-C7", "yard:PASIR-PANJANG-P2"],
+        tier=2,
+        confidence=91,
+        recommended_option_id="opt-1",
+        options=[option],
+        approval_status="n/a",
+        created_at=_iso(19),
+        last_signal_at=_iso(5),
+        trace=[
+            _tr("CORRELATE", 19, {"signal_type": "yard_congestion", "matched": False, "payload": {"yard_utilization": util}}),
+            _tr("POLICY_DECISION", 17, {"tier": 2}),
+            _tr("EXECUTE", 16, {"tier": 2, "results": [{"service": "tos", "ok": True}]}),
+        ],
+    )
 
 
 def seed_demo() -> int:
