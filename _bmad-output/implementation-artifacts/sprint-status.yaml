@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-27-2026 12:00
-last_updated: 08-28-2026 03:45
+last_updated: 08-29-2026 01:40
 project: PSA CODE SPRINT
 project_key: NOKEY
 tracking_system: file-system
@@ -63,17 +63,21 @@ development_status:
   2-9-incident-archive-route: done
   epic-2-retrospective: done
 
-  epic-4: backlog
-  4-1-geographic-map-panel: backlog
-  4-2-agent-action-stage-rail: backlog
+  epic-4: done
+  4-1-geographic-map-panel: done
+  4-2-agent-action-stage-rail: done
   epic-4-retrospective: optional
 
   epic-3: in-progress
   3-1-concurrent-incident-proof: done
-  3-2-pasir-panjang-load-balancing: backlog
-  3-3-agv-gate-specialist-agent: backlog
-  3-4-mocked-mpa-clearance-check: backlog
-  3-5-weather-circuit-breaker-agent: backlog
+  3-2-pasir-panjang-load-balancing: done
+  # 3-3 / 3-5: bmad-build-auto HALTed blocked at planning — adding a 4th/5th
+  # specialist requires unfreezing the Day-3-frozen 3-specialist SpecialistBundle/
+  # arbiter contract + a frozen test; needs a human architecture decision.
+  # See spec-3-3-*.md / spec-3-5-*.md Auto Run Result.
+  3-3-agv-gate-specialist-agent: blocked
+  3-4-mocked-mpa-clearance-check: done
+  3-5-weather-circuit-breaker-agent: blocked
   epic-3-retrospective: optional
 action_items:
   - id: "epic-1-retro-item-1-add-policy_start-to-stages-enum-in-trace"
