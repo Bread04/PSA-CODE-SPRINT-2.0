@@ -1,6 +1,7 @@
 import { useId } from 'react';
 
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import { IncidentRow } from '../IncidentFeed';
 import { resolutionOutcome } from '../../lib/incident';
 import type { Incident } from '../../types/incident';
@@ -50,9 +51,13 @@ export function IncidentArchiveList({
       className="incident-archive__panel"
       aria-labelledby={headingId}
     >
-      <h2 className="incident-archive__title" id={headingId}>
-        Incident Archive
-      </h2>
+      <PanelHeader
+        level={3}
+        eyebrow="Session"
+        title="Incident Archive"
+        titleId={headingId}
+        titleClassName="incident-archive__title"
+      />
 
       {resolved.length === 0 ? (
         <p className="incident-archive__empty">

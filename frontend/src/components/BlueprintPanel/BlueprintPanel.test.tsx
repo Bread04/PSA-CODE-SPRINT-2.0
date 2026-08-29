@@ -13,15 +13,14 @@ import { BlueprintPanel } from './index';
 import type { BlueprintPanelProps } from './index';
 
 /**
- * Story 2.2 — Blueprint Panel Primitive.
+ * BlueprintPanel — re-implemented to portwatch-tuas's `.panel`
+ * (spec-portwatch-tuas-chrome).
  *
- * Covers every I/O & Edge-Case Matrix row:
- *   - default render + children + four aria-hidden / non-interactive corner marks
- *   - token-driven styling + DESIGN.md `components.blueprint-panel` conformance
- *     (static text scan of BlueprintPanel.css — jsdom does not resolve
- *     stylesheet `var()` cascades, per the spec's jsdom note)
- *   - `as` override (incl. ref), className + style merge, arbitrary prop +
- *     onClick forwarding, DOM order, ref forwarding, padding override, empty render
+ * The DOM/behaviour contract is preserved (the `as` prop, ref forwarding,
+ * className / style merge, arbitrary-prop + onClick forwarding, the padding
+ * override hook, empty render). The static CSS-scan assertions are rewritten to
+ * the new treatment: ONE `::before` seafoam L-bracket + ONE `.corner-mark` ⌐
+ * (not four `.blueprint-panel__corner` spans).
  */
 
 const HERE = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
@@ -68,28 +67,23 @@ const dmSpec = parsePanelSpec(readFileSync(designMdPath, 'utf8'));
 // Row: Default render
 // ---------------------------------------------------------------------------
 describe('default render', () => {
-  it('renders children inside a root <div> carrying the blueprint-panel class', () => {
+  it('renders children inside a root <div> carrying the blueprint-panel + panel classes', () => {
     render(<BlueprintPanel>hello</BlueprintPanel>);
     const child = screen.getByText('hello');
     expect(child.tagName).toBe('DIV');
     expect(child).toHaveClass('blueprint-panel');
+    expect(child).toHaveClass('panel');
   });
 
-  it('renders exactly four corner marks — one per corner — each aria-hidden', () => {
+  it('renders exactly one corner mark — the bottom-right ⌐ — aria-hidden, and no legacy corner spans', () => {
     const { container } = render(<BlueprintPanel>x</BlueprintPanel>);
-    const corners = container.querySelectorAll('.blueprint-panel__corner');
-    expect(corners).toHaveLength(4);
-    for (const suffix of ['tl', 'tr', 'bl', 'br']) {
-      expect(
-        container.querySelector(`.blueprint-panel__corner--${suffix}`),
-      ).not.toBeNull();
-    }
-    for (const corner of corners) {
-      expect(corner).toHaveAttribute('aria-hidden', 'true');
-    }
+    const marks = container.querySelectorAll('.corner-mark');
+    expect(marks).toHaveLength(1);
+    expect(marks[0]).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelectorAll('.blueprint-panel__corner')).toHaveLength(0);
   });
 
-  it('renders the four corner marks AFTER children in DOM order', () => {
+  it('renders the corner mark AFTER children in DOM order', () => {
     const { container } = render(
       <BlueprintPanel>
         <span data-testid="kid">kid</span>
@@ -100,22 +94,18 @@ describe('default render', () => {
     const kidIndex = kids.findIndex(
       (el) => el.getAttribute('data-testid') === 'kid',
     );
-    const firstCornerIndex = kids.findIndex((el) =>
-      el.classList.contains('blueprint-panel__corner'),
+    const markIndex = kids.findIndex((el) =>
+      el.classList.contains('corner-mark'),
     );
     expect(kidIndex).toBe(0);
-    expect(firstCornerIndex).toBeGreaterThan(kidIndex);
-    expect(kids.slice(-4).map((el) => el.className)).toEqual([
-      'blueprint-panel__corner blueprint-panel__corner--tl',
-      'blueprint-panel__corner blueprint-panel__corner--tr',
-      'blueprint-panel__corner blueprint-panel__corner--bl',
-      'blueprint-panel__corner blueprint-panel__corner--br',
-    ]);
+    expect(markIndex).toBeGreaterThan(kidIndex);
+    expect(kids.at(-1)?.className).toBe('corner-mark');
   });
 
-  it('corner marks declare pointer-events:none in the stylesheet', () => {
+  it('the corner mark and the ::before bracket declare pointer-events:none in the stylesheet', () => {
+    expect(css).toMatch(/\.corner-mark\s*\{[^}]*pointer-events\s*:\s*none/);
     expect(css).toMatch(
-      /\.blueprint-panel__corner\s*\{[^}]*pointer-events\s*:\s*none/,
+      /\.blueprint-panel::before,\s*\.panel::before\s*\{[^}]*pointer-events\s*:\s*none/,
     );
   });
 
@@ -135,52 +125,56 @@ describe('default render', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Row: Token-driven styling — static assertions over BlueprintPanel.css.
-// Declaration matches are whitespace-tolerant regexes, not string contains.
+// Row: Token-driven styling — static assertions over BlueprintPanel.css,
+// rewritten to portwatch's `.panel` treatment.
 // ---------------------------------------------------------------------------
 describe('token-driven styling (static scan of BlueprintPanel.css)', () => {
-  it('panel rule declares border / radius / background / shadow / padding via tokens', () => {
-    expect(css).toMatch(/border\s*:\s*1px\s+solid\s+var\(\s*--divider\s*\)\s*;/);
-    expect(css).toMatch(/border-radius\s*:\s*var\(\s*--radius-md\s*\)\s*;/);
-    expect(css).toMatch(/background\s*:\s*var\(\s*--surface\s*\)\s*;/);
-    expect(css).toMatch(/box-shadow\s*:\s*var\(\s*--shadow-panel\s*\)\s*;/);
-    expect(css).toMatch(/position\s*:\s*relative\s*;/);
-    expect(css).toMatch(/overflow\s*:\s*hidden\s*;/);
+  it('the panel box routes border / radius / background / overflow through tokens', () => {
+    expect(css).toMatch(
+      /\.blueprint-panel,\s*\.panel\s*\{[^}]*background:\s*var\(\s*--panel-bg\s*\)/,
+    );
+    expect(css).toMatch(
+      /\.blueprint-panel,\s*\.panel\s*\{[^}]*border:\s*1px\s+solid\s+var\(\s*--panel-border\s*\)/,
+    );
+    expect(css).toMatch(
+      /\.blueprint-panel,\s*\.panel\s*\{[^}]*border-radius:\s*var\(\s*--radius-md\s*\)/,
+    );
+    expect(css).toMatch(
+      /\.blueprint-panel,\s*\.panel\s*\{[^}]*overflow:\s*hidden/,
+    );
+    expect(css).toMatch(/position:\s*relative/);
+  });
+
+  it('keeps the caller padding override hook with the --space-4 default', () => {
     expect(css).toMatch(
       /padding\s*:\s*var\(\s*--blueprint-panel-padding\s*,\s*var\(\s*--space-4\s*\)\s*\)\s*;/,
     );
   });
 
-  it('draws the 18px seafoam L-bracket on ::before via the bracket token', () => {
+  it('draws ONE 18px seafoam L-bracket on ::before via --panel-bracket', () => {
     expect(css).toMatch(
-      /\.blueprint-panel::before\s*\{[^}]*width\s*:\s*18px\s*;[^}]*height\s*:\s*18px\s*;/,
+      /::before\s*\{[^}]*width\s*:\s*18px\s*;[^}]*height\s*:\s*18px\s*;/,
     );
     expect(css).toMatch(
-      /::before\s*\{[^}]*border-top\s*:\s*1px\s+solid\s+var\(\s*--bracket-seafoam\s*\)\s*;/,
+      /::before\s*\{[^}]*border-top\s*:\s*1px\s+solid\s+var\(\s*--panel-bracket\s*\)/,
     );
     expect(css).toMatch(
-      /::before\s*\{[^}]*border-left\s*:\s*1px\s+solid\s+var\(\s*--bracket-seafoam\s*\)\s*;/,
+      /::before\s*\{[^}]*border-left\s*:\s*1px\s+solid\s+var\(\s*--panel-bracket\s*\)/,
     );
   });
 
-  it('the four corner spans are small seafoam registration dots (no crosshair, no doubled L)', () => {
+  it('the single .corner-mark is a 9px seafoam ⌐ via --corner-mark-border', () => {
     expect(css).toMatch(
-      /\.blueprint-panel__corner\s*\{[^}]*width\s*:\s*3px\s*;[^}]*height\s*:\s*3px\s*;/,
-    );
-    expect(css).toMatch(
-      /\.blueprint-panel__corner\s*\{[^}]*background\s*:\s*var\(\s*--bracket-seafoam\s*\)\s*;/,
+      /\.corner-mark\s*\{[^}]*width\s*:\s*9px\s*;[^}]*height\s*:\s*9px\s*;/,
     );
     expect(css).toMatch(
-      /\.blueprint-panel__corner\s*\{[^}]*border-radius\s*:\s*var\(\s*--radius-full\s*\)\s*;/,
+      /\.corner-mark\s*\{[^}]*border-right\s*:\s*1px\s+solid\s+var\(\s*--corner-mark-border\s*\)/,
     );
-    // No longer a filled square / crosshair in --text.
-    expect(css).not.toMatch(
-      /\.blueprint-panel__corner[^{]*\{[^}]*background\s*:\s*var\(\s*--text\s*\)/,
+    expect(css).toMatch(
+      /\.corner-mark\s*\{[^}]*border-bottom\s*:\s*1px\s+solid\s+var\(\s*--corner-mark-border\s*\)/,
     );
-    // The top-left L is drawn once (the ::before bracket), not also on --tl.
-    const tl = css.match(/\.blueprint-panel__corner--tl\s*\{([^}]*)\}/);
-    expect(tl).not.toBeNull();
-    expect(tl![1]).not.toMatch(/border-(top|left)\s*:/);
+    // The 4-corner crosshair treatment is gone.
+    expect(css).not.toMatch(/\.blueprint-panel__corner/);
   });
 
   it('contains no ad hoc hex color; every border-radius routes through a radius token', () => {
@@ -201,12 +195,7 @@ describe('BlueprintPanel.css conforms to Harbor Signal DESIGN.md components.pane
     expect(dmSpec.radius).toBe('8');
     expect(dmSpec.border).toBe('1px solid {colors.border}');
     expect(dmSpec.cornerBracket).toMatch(/seafoam L-bracket, top-left, 18px/);
-    expect(dmSpec.cornerMark).toMatch(/seafoam corner/);
-  });
-
-  it('border is 1px solid var(--divider) — DESIGN.md border token', () => {
-    expect(dmSpec.border).toMatch(/^1px solid \{colors\.border\}$/);
-    expect(css).toMatch(/border\s*:\s*1px\s+solid\s+var\(\s*--divider\s*\)\s*;/);
+    expect(dmSpec.cornerMark).toMatch(/seafoam corner, bottom-right, 9px/);
   });
 
   it('radius resolves to the DESIGN.md panel radius (8px) via --radius-md', () => {
@@ -217,8 +206,14 @@ describe('BlueprintPanel.css conforms to Harbor Signal DESIGN.md components.pane
   it('the corner bracket is 18px, matching DESIGN.md cornerBracket', () => {
     const size = dmSpec.cornerBracket.match(/(\d+)px\s*$/)![1];
     expect(size).toBe('18');
+    expect(css).toMatch(new RegExp(`::before\\s*\\{[^}]*width\\s*:\\s*${size}px\\s*;`));
+  });
+
+  it('the corner mark is 9px, matching DESIGN.md cornerMark', () => {
+    const size = dmSpec.cornerMark.match(/bottom-right,\s*(\d+)px/)![1];
+    expect(size).toBe('9');
     expect(css).toMatch(
-      new RegExp(`\\.blueprint-panel::before\\s*\\{[^}]*width\\s*:\\s*${size}px\\s*;`),
+      new RegExp(`\\.corner-mark\\s*\\{[^}]*width\\s*:\\s*${size}px\\s*;`),
     );
   });
 });
@@ -227,7 +222,7 @@ describe('BlueprintPanel.css conforms to Harbor Signal DESIGN.md components.pane
 // Row: `as` override
 // ---------------------------------------------------------------------------
 describe('`as` override', () => {
-  it('selects the root element and keeps the class + spread props', () => {
+  it('selects the root element and keeps the classes + spread props', () => {
     render(
       <BlueprintPanel as="section" aria-label="Trace">
         body
@@ -236,7 +231,8 @@ describe('`as` override', () => {
     const root = screen.getByLabelText('Trace');
     expect(root.tagName).toBe('SECTION');
     expect(root).toHaveClass('blueprint-panel');
-    expect(root.querySelectorAll('.blueprint-panel__corner')).toHaveLength(4);
+    expect(root).toHaveClass('panel');
+    expect(root.querySelectorAll('.corner-mark')).toHaveLength(1);
   });
 
   it('forwards the ref to the root even when `as` overrides the tag', () => {
@@ -247,8 +243,6 @@ describe('`as` override', () => {
       </BlueprintPanel>,
     );
     expect(ref.current).not.toBeNull();
-    // runtime element is correct; TS ref type stays HTMLDivElement per the
-    // spec's documented polymorphic-ref tradeoff.
     expect(ref.current?.tagName).toBe('SECTION');
   });
 });
@@ -257,12 +251,13 @@ describe('`as` override', () => {
 // Row: className / style merge
 // ---------------------------------------------------------------------------
 describe('className / style merge', () => {
-  it('root carries both blueprint-panel and the caller className', () => {
+  it('root carries blueprint-panel, panel, and the caller className', () => {
     const { container } = render(
       <BlueprintPanel className="feed-row">c</BlueprintPanel>,
     );
     const root = container.firstElementChild as HTMLElement;
     expect(root).toHaveClass('blueprint-panel');
+    expect(root).toHaveClass('panel');
     expect(root).toHaveClass('feed-row');
   });
 
@@ -333,11 +328,11 @@ describe('padding override', () => {
 // Row: No children
 // ---------------------------------------------------------------------------
 describe('no children', () => {
-  it('renders the bordered box with four corner marks and no content, without throwing', () => {
+  it('renders the bordered box with one corner mark and no content, without throwing', () => {
     const { container } = render(<BlueprintPanel />);
     const root = container.firstElementChild as HTMLElement;
     expect(root).toHaveClass('blueprint-panel');
-    expect(root.querySelectorAll('.blueprint-panel__corner')).toHaveLength(4);
+    expect(root.querySelectorAll('.corner-mark')).toHaveLength(1);
   });
 });
 

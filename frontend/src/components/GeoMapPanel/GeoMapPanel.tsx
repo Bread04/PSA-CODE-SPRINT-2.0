@@ -2,6 +2,7 @@ import { useId, useMemo } from 'react';
 import { geoPath } from 'd3-geo';
 
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import { MapPanel } from '../MapPanel';
 import type { Incident, TraceEntry } from '../../types/incident';
 import {
@@ -168,9 +169,13 @@ export function GeoMapPanel({ incident, className }: GeoMapPanelProps) {
       className={rootClassName}
       aria-labelledby={headingId}
     >
-      <h3 id={headingId} className="geo-map__heading">
-        Strait Map
-      </h3>
+      <PanelHeader
+        level={3}
+        eyebrow="Port Canvas"
+        title="Strait Map"
+        titleId={headingId}
+        titleClassName="geo-map__heading"
+      />
       <svg
         className="geo-map__svg"
         role="img"

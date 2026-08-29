@@ -2,6 +2,7 @@ import { useId, useMemo } from 'react';
 
 import type { Incident } from '../../types/incident';
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import { deriveRail, type RailState, type RailStageView } from '../../lib/stageRail';
 import './StageRail.css';
 
@@ -63,9 +64,13 @@ export function StageRail({ incident, className }: StageRailProps) {
 
   return (
     <BlueprintPanel as="section" className={rootClassName} aria-labelledby={headingId}>
-      <h3 id={headingId} className="stage-rail__heading">
-        Pipeline
-      </h3>
+      <PanelHeader
+        level={3}
+        eyebrow="Orchestra"
+        title="Pipeline"
+        titleId={headingId}
+        titleClassName="stage-rail__heading"
+      />
       {/*
         `list-style: none` (StageRail.css) makes WebKit/VoiceOver drop the list
         semantics; the explicit role restores the "list, 10 items" announcement

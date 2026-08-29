@@ -150,20 +150,31 @@ describe('ApprovalBanner — Tier 3 pending', () => {
     expect(struck?.textContent).toMatch(/DG\/IMDG/i);
   });
 
-  it('the banner is one BlueprintPanel (border + four corner marks)', () => {
+  it('the banner is one portwatch .panel (one L-bracket + one corner mark)', () => {
     const { container } = renderDetail(tier3WithAlternatives);
-    const panel = container.querySelector('.blueprint-panel.approval-banner');
+    const panel = container.querySelector('.blueprint-panel.panel.approval-banner');
     expect(panel).not.toBeNull();
-    expect(panel?.querySelectorAll('.blueprint-panel__corner')).toHaveLength(4);
+    expect(panel?.querySelectorAll('.blueprint-panel__corner')).toHaveLength(0);
+    expect(panel?.querySelectorAll('.corner-mark')).toHaveLength(1);
   });
 });
 
 describe('ApprovalBanner — kill-switch-blocked (any tier, NOT reclassified to 3)', () => {
   it('shows the manual-action heading and Approve only — no Reject, no alternatives', () => {
     renderDetail(killSwitchBlocked);
+    const bannerHeading = screen.getByRole('heading', {
+      level: 4,
+      name: 'Needs manual action — kill switch engaged',
+    });
+    expect(bannerHeading).toHaveClass(
+      'panel-header__title',
+      'approval-banner__heading',
+    );
+    // the 7px pulsing attention dot rides inside the header
     expect(
-      screen.getByRole('heading', { level: 3, name: /kill switch engaged/i }),
+      bannerHeading.querySelector('.approval-banner__dot'),
     ).toBeInTheDocument();
+    expect(screen.getByText('Kill Switch')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^approve$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^reject$/i })).toBeNull();
     expect(screen.queryByText('Other options')).toBeNull();

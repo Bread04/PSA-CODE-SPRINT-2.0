@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import type { ApiError } from '../../api/client';
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import './AskPortwatch.css';
 
 export interface AskPortwatchProps {
@@ -55,6 +56,7 @@ export function AskPortwatch({
   selectedIncidentId,
   suggestions,
 }: AskPortwatchProps) {
+  const headingId = useId();
   const [value, setValue] = useState('');
   const chips = suggestions ?? DEFAULT_SUGGESTIONS;
 
@@ -77,8 +79,18 @@ export function AskPortwatch({
   }
 
   return (
-    <BlueprintPanel as="section" className="ask-portwatch" aria-label="Ask Portwatch">
-      <h3 className="ask-portwatch__heading">Ask Portwatch</h3>
+    <BlueprintPanel
+      as="section"
+      className="ask-portwatch"
+      aria-labelledby={headingId}
+    >
+      <PanelHeader
+        eyebrow="Query"
+        title="Ask Portwatch"
+        level={3}
+        titleId={headingId}
+        titleClassName="ask-portwatch__heading"
+      />
 
       <form
         className="ask-portwatch__form"

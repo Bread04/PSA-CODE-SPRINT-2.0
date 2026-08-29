@@ -82,10 +82,7 @@
   --col-right: 400px;
 
   /* ---- Elevation: depth from thin borders + one soft ambient shadow with a
-     1px inner top highlight (mirrors portwatch-tuas .panel) ---- */
-  --shadow-panel: 0 14px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(191, 255, 245, 0.03);
-  --shadow-panel-accent: 0 18px 54px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(191, 255, 245, 0.04);
-  --bracket-seafoam: #66e0d2;
+     1px inner top highlight. The seafoam glow behind the active rail edge. ---- */
   --rail-active-glow: rgba(102, 224, 210, 0.55);
 
   /* ---- Radius: softer than a blueprint (DESIGN.md rounded sm/md/lg/xl) ---- */
@@ -117,4 +114,70 @@
   --font-size-body-lg: 14px;
   --font-size-section-title: 16px;
   --letter-spacing-label: 0.08em;
+
+  /* ---- Harbor Signal chrome (transcribed from
+     frontend/portwatch-tuas/client/src/index.css — the .app-shell grid + grain,
+     .app-rail, .topbar, the .panel family, .section-heading / .eyebrow and the
+     PortwatchPrimitives). portwatch's 5px / 7px radii snap to --radius-sm /
+     --radius-md; no new --radius-*. Inline rgba(...) stops that are not reused
+     stay inline in the consuming CSS. ---- */
+
+  /* map land fill — fixes the white-map regression (was --accent-100) */
+  --geo-land: #0a2028;
+
+  /* panel (.panel / .blueprint-panel) */
+  --panel-border: rgba(85, 147, 151, 0.21);
+  --panel-bg: rgba(14, 36, 44, 0.73);
+  --panel-accent-border: rgba(102, 224, 210, 0.4);
+  --panel-hover-border: rgba(237, 177, 92, 0.62);
+  --panel-bracket: rgba(102, 224, 210, 0.65);
+  --corner-mark-border: rgba(102, 224, 210, 0.38);
+  --panel-header-text: #d9eeeb;
+  --panel-header-detail: #688c91;
+
+  /* command rail */
+  --rail-bg: rgba(6, 20, 27, 0.88);
+  --rail-border: rgba(84, 150, 154, 0.2);
+  --rail-eyebrow: #557d85;
+  --rail-foot: #52767b;
+  --rail-foot-strong: #8fb7b6;
+  --rail-status: #8bd4c7;
+  --rail-collapse-border: rgba(102, 224, 210, 0.34);
+  --nav-active-grad-from: rgba(54, 122, 128, 0.24);
+  --nav-active-grad-to: rgba(40, 82, 89, 0.08);
+  --nav-hover-bg: rgba(78, 137, 143, 0.1);
+  --nav-idle: #6a9196;
+  --nav-active-text: #d8fbf3;
+
+  /* topbar */
+  --topbar-bg: rgba(7, 20, 27, 0.64);
+  --topbar-border: rgba(84, 150, 154, 0.16);
+  --breadcrumb: #62868b;
+  --breadcrumb-strong: #d6ebe8;
+  --topbar-time: #668a8e;
+  --live-chip-border: rgba(102, 224, 210, 0.28);
+  --live-chip-bg: rgba(36, 109, 108, 0.1);
+  --live-chip-text: #89d9ce;
+
+  /* shell atmosphere */
+  --chrome-backdrop-blur: 18px;
+  --grid-line: rgba(85, 154, 156, 0.055);
+  --grid-size: 40px 40px;
+  --grid-opacity: 0.24;
+  --grain-opacity: 0.025;
+
+  /* primitives */
+  --metric-card-bg: rgba(10, 29, 37, 0.77);
+  --metric-value: #dff5f1;
+  --eyebrow: #69c8c0;
+  --status-pulse-glow: rgba(102, 224, 210, 0.28);
+  /* Per-instance countdown fill %; the runtime value rides the var() fallback
+     slot (PortwatchPrimitives CountdownBar), this is only the default. */
+  --countdown-fill-width: 0%;
+
+  /* chrome type sizes (portwatch mono chrome + section heading + metric value) */
+  --font-size-nano: 9px;
+  --font-size-pico: 8px;
+  --font-size-section-heading: 21px;
+  --font-size-metric-value: 27px;
 }

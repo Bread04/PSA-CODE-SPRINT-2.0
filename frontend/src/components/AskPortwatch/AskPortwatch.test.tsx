@@ -34,10 +34,19 @@ describe('AskPortwatch', () => {
 
     const panel = screen.getByRole('region', { name: 'Ask Portwatch' });
     expect(panel).toHaveClass('blueprint-panel');
+    expect(panel).toHaveClass('panel');
     expect(panel).toHaveClass('ask-portwatch');
-    expect(
-      screen.getByRole('heading', { name: 'Ask Portwatch' }),
-    ).toBeInTheDocument();
+    const heading = screen.getByRole('heading', {
+      level: 3,
+      name: 'Ask Portwatch',
+    });
+    expect(heading).toHaveClass('panel-header__title', 'ask-portwatch__heading');
+    // region is named by the heading (no duplicate aria-label)
+    expect(panel).not.toHaveAttribute('aria-label');
+    expect(panel.getAttribute('aria-labelledby')).toBe(heading.id);
+    expect(panel.querySelector('.panel-header .eyebrow')?.textContent).toBe(
+      'Query',
+    );
   });
 
   it('renders the default suggestion chips when the prop is omitted', () => {

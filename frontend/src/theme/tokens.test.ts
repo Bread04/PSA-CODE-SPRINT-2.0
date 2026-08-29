@@ -258,9 +258,6 @@ function flattenTokens(): Flat[] {
   add('--rail-width-collapsed', tokens.layout.railWidthCollapsed);
   add('--col-left', tokens.layout.colLeft);
   add('--col-right', tokens.layout.colRight);
-  add('--shadow-panel', tokens.elevation.shadowPanel);
-  add('--shadow-panel-accent', tokens.elevation.shadowPanelAccent);
-  add('--bracket-seafoam', tokens.elevation.bracketSeafoam);
   add('--rail-active-glow', tokens.elevation.railActiveGlow);
   for (const [k, v] of Object.entries(tokens.radius)) add(`--radius-${k}`, v);
   add('--font-heading', tokens.font.heading, 'fontFamily');
@@ -278,6 +275,51 @@ function flattenTokens(): Flat[] {
   add('--font-size-body-lg', tokens.font.sizeBodyLg);
   add('--font-size-section-title', tokens.font.sizeSectionTitle);
   add('--letter-spacing-label', tokens.font.letterSpacingLabel);
+  add('--font-size-nano', tokens.font.sizeNano);
+  add('--font-size-pico', tokens.font.sizePico);
+  add('--font-size-section-heading', tokens.font.sizeSectionHeading);
+  add('--font-size-metric-value', tokens.font.sizeMetricValue);
+
+  // ---- Harbor Signal chrome (spec-portwatch-tuas-chrome) ----
+  add('--geo-land', tokens.chrome.geoLand);
+  add('--panel-border', tokens.chrome.panelBorder);
+  add('--panel-bg', tokens.chrome.panelBg);
+  add('--panel-accent-border', tokens.chrome.panelAccentBorder);
+  add('--panel-hover-border', tokens.chrome.panelHoverBorder);
+  add('--panel-bracket', tokens.chrome.panelBracket);
+  add('--corner-mark-border', tokens.chrome.cornerMarkBorder);
+  add('--panel-header-text', tokens.chrome.panelHeaderText);
+  add('--panel-header-detail', tokens.chrome.panelHeaderDetail);
+  add('--rail-bg', tokens.chrome.railBg);
+  add('--rail-border', tokens.chrome.railBorder);
+  add('--rail-eyebrow', tokens.chrome.railEyebrow);
+  add('--rail-foot', tokens.chrome.railFoot);
+  add('--rail-foot-strong', tokens.chrome.railFootStrong);
+  add('--rail-status', tokens.chrome.railStatus);
+  add('--rail-collapse-border', tokens.chrome.railCollapseBorder);
+  add('--nav-active-grad-from', tokens.chrome.navActiveGradFrom);
+  add('--nav-active-grad-to', tokens.chrome.navActiveGradTo);
+  add('--nav-hover-bg', tokens.chrome.navHoverBg);
+  add('--nav-idle', tokens.chrome.navIdle);
+  add('--nav-active-text', tokens.chrome.navActiveText);
+  add('--topbar-bg', tokens.chrome.topbarBg);
+  add('--topbar-border', tokens.chrome.topbarBorder);
+  add('--breadcrumb', tokens.chrome.breadcrumb);
+  add('--breadcrumb-strong', tokens.chrome.breadcrumbStrong);
+  add('--topbar-time', tokens.chrome.topbarTime);
+  add('--live-chip-border', tokens.chrome.liveChipBorder);
+  add('--live-chip-bg', tokens.chrome.liveChipBg);
+  add('--live-chip-text', tokens.chrome.liveChipText);
+  add('--chrome-backdrop-blur', tokens.chrome.chromeBackdropBlur);
+  add('--grid-line', tokens.chrome.gridLine);
+  add('--grid-size', tokens.chrome.gridSize);
+  add('--grid-opacity', tokens.chrome.gridOpacity);
+  add('--grain-opacity', tokens.chrome.grainOpacity);
+  add('--metric-card-bg', tokens.chrome.metricCardBg);
+  add('--metric-value', tokens.chrome.metricValue);
+  add('--eyebrow', tokens.chrome.eyebrow);
+  add('--status-pulse-glow', tokens.chrome.statusPulseGlow);
+  add('--countdown-fill-width', tokens.chrome.countdownFillWidth);
   return out;
 }
 

@@ -1,8 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import App, { readCollapsed } from './App';
+import App from './App';
+import { readCollapsed } from './lib/railCollapse';
 import * as client from './api/client';
 import {
   allIncidents,
@@ -318,6 +323,91 @@ describe('App live data wiring', () => {
     expect(() => readCollapsed()).not.toThrow();
     expect(readCollapsed()).toBe(false);
     spy.mockRestore();
+  });
+
+  it('renders the Harbor Signal chrome: grid + grain shell, translucent rail, a topbar with breadcrumb + LIVE chip + ticking SGT clock', async () => {
+    const { container } = render(<App />);
+    await screen.findByRole('main');
+
+    // Shell: the grid + grain pseudo-element rules ship in App.css.
+    const here = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
+    const appCss = readFileSync(join(here, 'App.css'), 'utf8');
+    expect(appCss).toMatch(/\.app-shell::before\s*\{[^}]*background-image:/);
+    expect(appCss).toMatch(/\.app-shell::after\s*\{[^}]*feTurbulence/i);
+    expect(appCss).toMatch(/\.app-rail\s*\{[^}]*backdrop-filter:\s*blur\(/);
+
+    // Rail: brand lockup + OPERATIONS eyebrow + foot status.
+    expect(container.querySelector('.app-rail__brand')).toBeInTheDocument();
+    expect(
+      container.querySelector('.app-rail__eyebrow')?.textContent,
+    ).toMatch(/operations/i);
+    expect(
+      container.querySelector('.app-rail__status')?.textContent,
+    ).toMatch(/all systems nominal/i);
+
+    // Topbar: one .topbar with a breadcrumb, a .live-chip with a pulsing dot,
+    // and a mono SGT clock.
+    const topbar = container.querySelector('header.topbar')!;
+    expect(topbar).toBeInTheDocument();
+    expect(topbar.querySelector('.breadcrumb strong')?.textContent).toBe(
+      'Dashboard',
+    );
+    const chip = topbar.querySelector('.live-chip')!;
+    expect(chip.querySelector('.status-dot.pulse')).toBeInTheDocument();
+    expect(topbar.querySelector('.topbar-time')?.textContent).toMatch(
+      /^SGT \d{2}:\d{2}:\d{2}$/,
+    );
+
+    // Nav is still two <a> links with the exact names + hrefs.
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    const links = within(nav).getAllByRole('link');
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['#/', '#/archive']);
+    expect(links.map((a) => a.textContent?.trim())).toEqual([
+      'Live Console',
+      'Archive',
+    ]);
+  });
+
+  it('the topbar breadcrumb names the selected incident once one is picked', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    const topbar = container.querySelector('header.topbar') as HTMLElement;
+
+    const feed = await screen.findByRole('region', { name: 'Incidents' });
+    const row = await within(feed).findByText(
+      /reroute affected yard moves through Crane #6/i,
+    );
+    await user.click(row.closest('button')!);
+
+    await waitFor(() =>
+      expect(
+        within(topbar).getByText(/MSC[ -]?ANNA/i, { selector: '.breadcrumb strong' }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('the topbar clock re-renders each second and stays in the SGT HH:MM:SS format', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { container } = render(<App />);
+      const time = () =>
+        container.querySelector('.topbar-time')?.textContent ?? '';
+
+      await vi.waitFor(() =>
+        expect(time()).toMatch(/^SGT \d{2}:\d{2}:\d{2}$/),
+      );
+      const before = time();
+
+      await act(async () => {
+        vi.setSystemTime(new Date(Date.now() + 1000));
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(time()).toMatch(/^SGT \d{2}:\d{2}:\d{2}$/);
+      expect(time()).not.toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('the kill switch control posts to /kill-switch and shows the global banner', async () => {

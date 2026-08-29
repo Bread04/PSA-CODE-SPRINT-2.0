@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import { confidenceReason, KILL_SWITCH_TAG } from '../../lib/incident';
 import {
   bannerModel,
@@ -65,10 +66,17 @@ export function ApprovalBanner({
       aria-label={heading}
       aria-live={live}
     >
-      <h3 className="approval-banner__heading">
-        <span className="approval-banner__dot" aria-hidden="true" />
-        {heading}
-      </h3>
+      <PanelHeader
+        eyebrow={blocked ? 'Kill Switch' : 'Decision'}
+        level={4}
+        title={
+          <>
+            <span className="approval-banner__dot" aria-hidden="true" />
+            {heading}
+          </>
+        }
+        titleClassName="approval-banner__heading"
+      />
 
       <div className="approval-row">
         <span className="approval-banner__label">Situation</span>

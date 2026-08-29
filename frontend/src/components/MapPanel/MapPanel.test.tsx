@@ -54,6 +54,7 @@ describe('MapPanel', () => {
     expect(
       within(panel).getByRole('heading', { level: 3, name: 'Yard Plan' }),
     ).toBeInTheDocument();
+    expect(within(panel).getByText('Port Canvas')).toBeInTheDocument();
 
     const img = within(panel).getByRole('img');
     expect(img).toHaveAttribute('aria-label', 'Illustrative schematic of the terminal yard');
@@ -61,7 +62,7 @@ describe('MapPanel', () => {
   });
 
   it.each(VARIANTS)(
-    'the %s region is named by its own <h3> heading and carries no aria-label',
+    'the %s region is named by its SectionHeading <h2> and carries no aria-label',
     (variant) => {
       render(<MapPanel variant={variant} />);
       const panel = getPanelByHeading(HEADING_TEXT[variant]);
@@ -70,8 +71,14 @@ describe('MapPanel', () => {
       const labelId = panel.getAttribute('aria-labelledby');
       expect(labelId).toBeTruthy();
       const heading = within(panel).getByRole('heading', { level: 3 });
+      expect(heading).toHaveClass('panel-header__title');
+      expect(heading).toHaveClass('map-panel__heading');
       expect(heading.id).toBe(labelId);
       expect(heading.textContent).toBe(HEADING_TEXT[variant]);
+      // the SectionHeading eyebrow sits alongside the title
+      expect(
+        panel.querySelector('.panel-header .eyebrow')?.textContent,
+      ).toBe('Port Canvas');
     },
   );
 
@@ -90,13 +97,14 @@ describe('MapPanel', () => {
     },
   );
 
-  it('renders children in order: heading, then svg, then caption', () => {
+  it('renders children in order: section heading, then svg, then caption', () => {
     render(<MapPanel />);
     const panel = getPanelByHeading('Strait Map');
-    const tags = Array.from(panel.children)
-      .filter((el) => !el.classList.contains('blueprint-panel__corner'))
-      .map((el) => el.tagName.toLowerCase());
-    expect(tags).toEqual(['h3', 'svg', 'p']);
+    const els = Array.from(panel.children).filter(
+      (el) => !el.classList.contains('corner-mark'),
+    );
+    expect(els[0]).toHaveClass('panel-header');
+    expect(els.map((el) => el.tagName.toLowerCase())).toEqual(['div', 'svg', 'p']);
   });
 
   it.each(VARIANTS)(
@@ -196,7 +204,7 @@ describe('MapPanel', () => {
   it('a whitespace-only className does not emit blank class tokens', () => {
     render(<MapPanel className="   " />);
     const panel = getPanelByHeading('Strait Map');
-    expect(panel.className).toBe('blueprint-panel map-panel');
+    expect(panel.className).toBe('blueprint-panel panel map-panel');
   });
 });
 

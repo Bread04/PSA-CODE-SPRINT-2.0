@@ -2,6 +2,7 @@ import { useId, useMemo } from 'react';
 
 import type { Incident } from '../../types/incident';
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import {
   deriveRoster,
   type AgentChipView,
@@ -62,9 +63,13 @@ export function AgentRoster({ incident, className }: AgentRosterProps) {
       className={rootClassName}
       aria-labelledby={headingId}
     >
-      <h3 id={headingId} className="agent-roster__heading">
-        Agent Roster
-      </h3>
+      <PanelHeader
+        level={3}
+        eyebrow="Orchestra"
+        title="Agent Roster"
+        titleId={headingId}
+        titleClassName="agent-roster__heading"
+      />
       {/* eslint-disable-next-line jsx-a11y/no-redundant-roles */}
       <ol className="agent-roster__list" role="list">
         {chips.map((chip) => (

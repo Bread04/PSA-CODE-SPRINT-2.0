@@ -79,6 +79,9 @@ describe('GeoMapPanel — structure & accessibility (incident selected)', () => 
     expect(
       within(panel).getByRole('heading', { level: 3, name: 'Strait Map' }),
     ).toBeInTheDocument();
+    expect(
+      panel.querySelector('.panel-header .eyebrow')?.textContent,
+    ).toBe('Port Canvas');
 
     expect(within(panel).getAllByRole('img')).toHaveLength(1);
     const svg = within(panel).getByRole('img');
@@ -86,19 +89,22 @@ describe('GeoMapPanel — structure & accessibility (incident selected)', () => 
     expect(svg).toHaveAttribute('viewBox', '0 0 320 180');
     expect(svg).toHaveAttribute('focusable', 'false');
 
-    const tags = Array.from(panel.children)
-      .filter((el) => !el.classList.contains('blueprint-panel__corner'))
-      .map((el) => el.tagName.toLowerCase());
-    expect(tags).toEqual(['h3', 'svg', 'p']);
+    const els = Array.from(panel.children).filter(
+      (el) => !el.classList.contains('corner-mark'),
+    );
+    expect(els[0]).toHaveClass('panel-header');
+    expect(els.map((el) => el.tagName.toLowerCase())).toEqual(['div', 'svg', 'p']);
   });
 
-  it('the region is named by its own <h3> and carries no aria-label', () => {
+  it('the region is named by its SectionHeading <h2> and carries no aria-label', () => {
     render(<GeoMapPanel incident={makeIncident()} />);
     const panel = getPanel();
     expect(panel).not.toHaveAttribute('aria-label');
     const labelId = panel.getAttribute('aria-labelledby');
     expect(labelId).toBeTruthy();
-    expect(within(panel).getByRole('heading', { level: 3 }).id).toBe(labelId);
+    const heading = within(panel).getByRole('heading', { level: 3 });
+    expect(heading).toHaveClass('geo-map__heading');
+    expect(heading.id).toBe(labelId);
   });
 
   it('the svg is described by the caption via aria-describedby', () => {
@@ -374,7 +380,7 @@ describe('GeoMapPanel — read-only SVG safety (carried from MapPanel.test.tsx)'
     expect(getPanel()).toHaveClass('blueprint-panel', 'geo-map-panel', 'x');
 
     rerender(<GeoMapPanel incident={makeIncident()} className="   " />);
-    expect(getPanel().className).toBe('blueprint-panel geo-map-panel');
+    expect(getPanel().className).toBe('blueprint-panel panel geo-map-panel');
   });
 });
 
@@ -421,6 +427,12 @@ describe('GeoMapPanel.css routes visual values through Story 2.1 tokens', () => 
   it('the caption font-size routes through a token, not a raw px literal', () => {
     expect(css).toMatch(
       /\.geo-map__caption\s*\{[^}]*font-size\s*:\s*var\(\s*--font-size-micro-label\s*\)/,
+    );
+  });
+
+  it('the land fill is the dark --geo-land token (white-map regression fix)', () => {
+    expect(css).toMatch(
+      /\.geo-map__land\s*\{[^}]*fill\s*:\s*var\(\s*--geo-land\s*\)/,
     );
   });
 

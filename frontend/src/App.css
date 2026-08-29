@@ -1,13 +1,19 @@
 /*
- * App shell chrome — re-skinned to "Harbor Signal" (spec-harbor-signal-reskin).
+ * App shell chrome — matched to `frontend/portwatch-tuas/client/src`
+ * (spec-portwatch-tuas-chrome).
  *
- * A persistent left command rail (--rail-width / --rail-width-collapsed, a 2px
- * seafoam active-edge bar) + a --topbar-height bar + the 296 | flex | 400
- * three-column body, per `ux-PSA CODE SPRINT-2026-08-29/DESIGN.md`. Colour,
- * spacing and type route through Story 2.1 tokens; the active-route treatment
- * is perceptible without relying on colour (UX-DR11): heavier weight + the
- * seafoam edge bar + an underline. The only bare literals are non-colour
- * layout values (min-width, the 2px marker, viewport-relative heights).
+ * The `.app-shell` harbor grid (::before) + film grain (::after), a translucent
+ * blurred `.app-rail` with the beacon + PORTWATCH / TUAS lockup, an `OPERATIONS`
+ * eyebrow, `.rail-button`-styled nav links with a glowing seafoam active edge
+ * bar, a foot status line, and a real `.topbar` (breadcrumb + LIVE chip +
+ * ticking SGT clock). Every colour / radius routes through a token; unreused
+ * rgba(...) stops stay inline (guardrail #6 bans raw hex / named colours).
+ * portwatch's 5px / 7px radii snap to --radius-sm / --radius-md.
+ *
+ * Behavioural contracts preserved: the 2px seafoam active-edge bar + heavier
+ * weight + underline are a colour-independent active cue (UX-DR11); `.app-route`
+ * stays the programmatic focus target; the fixed kill-switch banner offsets the
+ * rail + body by --banner-height.
  */
 
 .app {
@@ -18,11 +24,35 @@
   position: relative;
   min-height: 100vh;
   background: var(--bg);
+  overflow: hidden;
 }
 
-/* Kill switch engaged: the fixed top banner (KillSwitchControl.css) is
-   --banner-height tall — push the fixed rail and the body clear of it so the
-   safety bar is never covered. */
+/* Faint fixed harbor grid, fading downward. */
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--grid-opacity);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0) 76%);
+}
+
+/* ~2.5% film grain (feTurbulence data-URI, transcribed verbatim). */
+.app-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+}
+
+/* Kill switch engaged: push the fixed rail + body clear of the fixed banner. */
 .app-shell--kill-engaged .app-rail {
   top: var(--banner-height);
 }
@@ -31,8 +61,6 @@
   margin-top: var(--banner-height);
 }
 
-/* Programmatic focus target on route change — no visible ring (the view's own
-   content and landmarks carry the context). */
 .app-route:focus {
   outline: none;
 }
@@ -45,51 +73,62 @@
   z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
   width: var(--rail-width);
-  padding: var(--space-6) var(--space-3);
-  background: var(--surface);
-  border-right: 1px solid var(--divider);
+  padding: 22px 14px 18px;
+  background: var(--rail-bg);
+  backdrop-filter: blur(var(--chrome-backdrop-blur));
+  border-right: 1px solid var(--rail-border);
 }
 
 .app-shell--rail-collapsed .app-rail {
   width: var(--rail-width-collapsed);
-  padding-left: var(--space-2);
-  padding-right: var(--space-2);
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
+/* Brand lockup — beacon mark + PORTWATCH / TUAS wordmark. */
 .app-rail__brand {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-2) var(--space-4);
+  gap: 10px;
+  padding: 0 9px 22px;
 }
 
 .app-rail__mark {
   flex: none;
+  display: inline-flex;
   color: var(--accent-500);
-  font-size: var(--font-size-section-title);
+  filter: drop-shadow(0 0 10px rgba(102, 224, 210, 0.25));
+}
+
+.app-rail__mark svg {
+  width: 31px;
+  height: 31px;
 }
 
 .app-rail__wordmark {
-  font-family: var(--font-mono);
-  font-weight: var(--font-weight-heading);
+  font-family: var(--font-heading);
+  font-weight: 700;
   font-size: var(--font-size-micro-label);
-  letter-spacing: var(--letter-spacing-micro-label);
+  letter-spacing: 0.15em;
+  line-height: 0.88;
   color: var(--text);
-  line-height: 1.1;
 }
 
 .app-rail__wordmark small {
   display: block;
-  margin-top: var(--space-1);
+  margin-top: 5px;
   color: var(--accent-500);
-  font-size: var(--font-size-caption);
-  letter-spacing: var(--letter-spacing-micro-label);
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-pico);
+  letter-spacing: 0.24em;
 }
 
 .app-shell--rail-collapsed .app-rail__wordmark,
-.app-shell--rail-collapsed .app-nav__text {
+.app-shell--rail-collapsed .app-rail__eyebrow,
+.app-shell--rail-collapsed .app-nav__text,
+.app-shell--rail-collapsed .app-rail__foot {
   display: none;
 }
 
@@ -97,6 +136,18 @@
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
+}
+
+/* OPERATIONS eyebrow. */
+.app-rail__eyebrow {
+  margin: 0 9px 10px;
+  color: var(--rail-eyebrow);
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-nano);
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .app-rail__collapse {
@@ -109,7 +160,7 @@
   padding: 0;
   color: var(--accent-500);
   background: var(--surface-elevated);
-  border: 1px solid var(--divider);
+  border: 1px solid var(--rail-collapse-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -123,39 +174,19 @@
   outline-offset: 2px;
 }
 
-/* --- Primary nav (kept: role="navigation" aria-label="Primary") ---------- */
+/* --- Primary nav — the `.rail-button` LOOK is the ONE source (ported in
+   PortwatchPrimitives.css and applied to the nav <a> in App.tsx). Only the
+   nav-specific bits live here: it is a link (no underline), its own focus
+   ring, and the colour-independent active cue (weight + underline) the
+   IncidentArchive test pins. --- */
 
 .app-nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-family: var(--font-heading);
-  font-weight: var(--font-weight-body);
-  font-size: var(--font-size-micro-label);
-  letter-spacing: var(--letter-spacing-micro-label);
-  text-transform: uppercase;
+  display: grid;
+  gap: 3px;
 }
 
 .app-nav__link {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-2);
-  color: var(--text-muted);
   text-decoration: none;
-  border-radius: var(--radius-sm);
-}
-
-.app-nav__icon {
-  flex: none;
-  font-size: var(--font-size-body);
-}
-
-.app-nav__link:hover {
-  color: var(--text);
-  background: var(--surface-elevated);
 }
 
 .app-nav__link:focus-visible {
@@ -163,26 +194,11 @@
   outline-offset: 2px;
 }
 
-/* Active route: weight + underline (colour-independent, IncidentArchive test)
-   PLUS the DESIGN.md 2px seafoam left-edge bar with a soft glow (a position
-   cue, not colour alone). */
+/* Active route: weight + underline on top of `.rail-button.active`'s gradient
+   fill + glowing seafoam edge bar — a cue that survives with colour removed. */
 .app-nav__link[aria-current='page'] {
   font-weight: var(--font-weight-heading);
   text-decoration: underline;
-  color: var(--text);
-  background: var(--surface-elevated);
-}
-
-.app-nav__link[aria-current='page']::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 2px;
-  height: 24px;
-  transform: translateY(-50%);
-  background: var(--accent-500);
-  box-shadow: 0 0 12px var(--rail-active-glow);
 }
 
 .app-shell--rail-collapsed .app-nav__link {
@@ -191,7 +207,36 @@
   padding-right: 0;
 }
 
-/* --- Body (offset by the rail) ------------------------------------------- */
+.app-shell--rail-collapsed .rail-button.active::before {
+  left: -10px;
+}
+
+/* Foot status line. */
+.app-rail__foot {
+  margin-top: auto;
+  padding: 12px 9px 0;
+  color: var(--rail-foot);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+  line-height: 1.55;
+}
+
+.app-rail__foot strong {
+  color: var(--rail-foot-strong);
+  font-weight: var(--font-weight-body);
+}
+
+.app-rail__status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: var(--rail-status);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+}
+
+/* --- Body (offset by the rail) ----------------------------------------- */
 
 .app-body {
   margin-left: var(--rail-width);
@@ -201,29 +246,75 @@
   margin-left: var(--rail-width-collapsed);
 }
 
-.app-header {
+/* --- Topbar (replaces .app-header; the <header> keeps role="banner") --- */
+
+.topbar {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  justify-content: space-between;
+  gap: 22px;
   height: var(--topbar-height);
-  padding: 0 var(--space-6);
-  background: var(--surface);
-  border-bottom: 1px solid var(--divider);
+  padding: 0 34px;
+  background: var(--topbar-bg);
+  backdrop-filter: blur(var(--chrome-backdrop-blur));
+  border-bottom: 1px solid var(--topbar-border);
 }
 
-.app-header__brand {
-  margin: 0;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--breadcrumb);
   font-family: var(--font-mono);
-  font-weight: var(--font-weight-heading);
-  font-size: var(--font-size-micro-label);
-  letter-spacing: var(--letter-spacing-micro-label);
+  font-size: var(--font-size-nano);
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--text);
 }
 
-.app-header__kill {
-  margin-left: auto;
+.breadcrumb strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--breadcrumb-strong);
+  font-weight: var(--font-weight-body);
 }
+
+.topbar__actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--live-chip-border);
+  color: var(--live-chip-text);
+  background: var(--live-chip-bg);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-nano);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar-time {
+  color: var(--topbar-time);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-nano);
+}
+
+/* `.status-dot` / `.status-dot.pulse` / `@keyframes dot-pulse` are the single
+   source in PortwatchPrimitives.css (imported by App.tsx); the .live-chip dot
+   reuses them. prefers-reduced-motion suppression is the global block in
+   index.css. */
 
 /* Live Console: the three-column grid + the full-width agent roster row. */
 .app-live {

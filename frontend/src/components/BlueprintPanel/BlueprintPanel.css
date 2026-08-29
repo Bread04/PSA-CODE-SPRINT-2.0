@@ -1,27 +1,30 @@
 /*
- * BlueprintPanel — the universal Portwatch container primitive, re-skinned to
- * "Harbor Signal" (spec-harbor-signal-reskin). The component keeps its name
- * and class hooks; only the CSS changed.
+ * BlueprintPanel — re-implemented to portwatch-tuas's `.panel`
+ * (spec-portwatch-tuas-chrome). The component keeps its name and public API;
+ * the treatment is now the Harbor Signal instrument surface transcribed from
+ * `frontend/portwatch-tuas/client/src/index.css`:
  *
- * Visual spec follows `ux-PSA CODE SPRINT-2026-08-29/DESIGN.md`
- * `components.panel` + Elevation & Depth:
- *   - 1px `--divider` edge, `--radius-md` (8px), `--surface` fill
- *   - one soft ambient shadow (`--shadow-panel`), `overflow: hidden`
- *   - a 1px seafoam L-bracket at the top-left (~18px) drawn on `::before` — the
- *     signature bridge-instrument motif
- *   - the four `.blueprint-panel__corner` spans restyled as small 3px seafoam
- *     registration dots, one inset at each corner (all four kept in the DOM,
- *     `aria-hidden`, non-interactive) — deliberately distinct from the L-bracket
- *     so the top-left corner is not double-drawn
+ *   .panel  — 1px --panel-border edge, --panel-bg fill, --radius-md (8px),
+ *             one soft ambient shadow + a 1px inner top highlight, overflow
+ *             hidden.
+ *   ::before — a single 18px seafoam L-bracket at the top-left (--panel-bracket).
+ *   .corner-mark — a single 9px seafoam ⌐ at the bottom-right
+ *             (--corner-mark-border). Exactly one, in the DOM (not four spans).
  *
- * Every value routes through a Story 2.1 token or a small structural literal
- * (the 18px bracket, the 3px dot, 1px strokes). No ad hoc hex.
+ * The companion `.panel-header` / `.panel-body` / `.panel-index` /
+ * `.panel-accent` / `.panel-interactive` rules live in
+ * ../PortwatchPrimitives/PortwatchPrimitives.css and are keyed on `.panel`,
+ * which BlueprintPanel also carries.
+ *
+ * Colour + radius route through tokens; unreused rgba(...) stops stay inline
+ * (guardrail #6 bans raw hex / named colours, not rgba literals). portwatch's
+ * 5px / 7px radii snap to --radius-sm / --radius-md.
  */
 
 /*
- * Caller override hook. Registered so the property has a typed syntax and a
- * defined initial value even where the cascade does not supply one; the CSS
- * rule below still carries an explicit `var(..., var(--space-4))` fallback.
+ * Caller override hook for inner padding — registered so the property has a
+ * typed syntax and a defined initial value; the rule below still carries an
+ * explicit `var(..., var(--space-4))` fallback.
  */
 @property --blueprint-panel-padding {
   syntax: "<length-percentage>";
@@ -29,60 +32,47 @@
   initial-value: 16px;
 }
 
-.blueprint-panel {
-  /* self-contained regardless of any global reset */
+.blueprint-panel,
+.panel {
   box-sizing: border-box;
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--divider);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-panel);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(191, 255, 245, 0.025);
   overflow: hidden;
+}
+
+.blueprint-panel {
   padding: var(--blueprint-panel-padding, var(--space-4));
 }
 
-/* The 1px seafoam L-bracket, top-left, ~18px — the bridge-instrument motif.
+/* The single 18px seafoam L-bracket, top-left — the bridge-instrument motif.
    Structural, not decorative: its presence means "this panel is live". */
-.blueprint-panel::before {
+.blueprint-panel::before,
+.panel::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
+  top: -1px;
+  left: -1px;
   width: 18px;
   height: 18px;
-  border-top: 1px solid var(--bracket-seafoam);
-  border-left: 1px solid var(--bracket-seafoam);
+  border-top: 1px solid var(--panel-bracket);
+  border-left: 1px solid var(--panel-bracket);
   pointer-events: none;
 }
 
-/* Small 3px seafoam registration dots — one inset at each corner. Distinct
-   from the top-left L-bracket so nothing is double-drawn. */
-.blueprint-panel__corner {
+/* The single 9px seafoam corner mark, bottom-right. One per panel, in the DOM
+   as a `<span class="corner-mark">` (BlueprintPanel + the CornerMark primitive). */
+.corner-mark {
   position: absolute;
-  width: 3px;
-  height: 3px;
-  background: var(--bracket-seafoam);
-  border-radius: var(--radius-full);
+  right: 10px;
+  bottom: 10px;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid var(--corner-mark-border);
+  border-bottom: 1px solid var(--corner-mark-border);
   pointer-events: none;
-  opacity: 0.55;
-}
-
-.blueprint-panel__corner--tl {
-  top: 5px;
-  left: 5px;
-}
-
-.blueprint-panel__corner--tr {
-  top: 5px;
-  right: 5px;
-}
-
-.blueprint-panel__corner--bl {
-  bottom: 5px;
-  left: 5px;
-}
-
-.blueprint-panel__corner--br {
-  bottom: 5px;
-  right: 5px;
 }

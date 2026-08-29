@@ -15,39 +15,31 @@ export interface BlueprintPanelProps extends ComponentPropsWithoutRef<'div'> {
   as?: ElementType;
 }
 
-/** The four corner registration marks, in DOM order. */
-const CORNER_SUFFIXES = ['tl', 'tr', 'bl', 'br'] as const;
-
 /**
- * BlueprintPanel — the shared Portwatch visual container.
+ * BlueprintPanel — the shared Portwatch visual container, re-implemented to
+ * portwatch-tuas's `.panel` (spec-portwatch-tuas-chrome).
  *
- * Renders a bordered, square, `--surface` box with four decorative 11px
- * crosshair corner marks offset 6px outside each corner (see BlueprintPanel.css;
- * all visual values come from Story 2.1 tokens). `children` render inside the
- * box; the corner marks are `aria-hidden` and never intercept pointer events.
+ * Renders the Harbor Signal instrument surface: a 1px seafoam L-bracket drawn
+ * on `::before` (top-left, 18px) and a single `.corner-mark` ⌐ (bottom-right,
+ * 9px) appended after `children`. The four decorative corner registration marks
+ * are gone. All visual values come from BlueprintPanel.css via tokens.
  *
- * Caller `className` / `style` merge with — never replace — the component's own,
- * and unknown DOM props (`role`, `aria-*`, `data-*`, `onClick`, `id`, …) are
- * spread onto the root element. Padding defaults to `--space-4` and is
- * overridable via the `--blueprint-panel-padding` custom property.
+ * Caller `className` / `style` merge with — never replace — the component's own
+ * (`blueprint-panel panel`), and unknown DOM props (`role`, `aria-*`, `data-*`,
+ * `onClick`, `id`, …) spread onto the root element. The `.corner-mark` span is
+ * `aria-hidden` and never intercepts pointer events.
  */
 export const BlueprintPanel = forwardRef<HTMLDivElement, BlueprintPanelProps>(
   function BlueprintPanel({ as, className, style, children, ...rest }, ref) {
     const Root: ElementType = as ?? 'div';
-    const mergedClassName = ['blueprint-panel', className]
+    const mergedClassName = ['blueprint-panel', 'panel', className]
       .filter(Boolean)
       .join(' ');
 
     return (
       <Root ref={ref} className={mergedClassName} style={style} {...rest}>
         {children}
-        {CORNER_SUFFIXES.map((suffix) => (
-          <span
-            key={suffix}
-            className={`blueprint-panel__corner blueprint-panel__corner--${suffix}`}
-            aria-hidden="true"
-          />
-        ))}
+        <span className="corner-mark" aria-hidden="true" />
       </Root>
     );
   },

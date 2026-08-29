@@ -41,7 +41,7 @@
 }
 
 .geo-map__land {
-  fill: var(--accent-100);
+  fill: var(--geo-land);
   stroke: var(--divider);
   stroke-width: 1px;
 }

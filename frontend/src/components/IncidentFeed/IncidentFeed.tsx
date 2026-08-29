@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import { IncidentRow } from './IncidentRow';
 import {
   formatAge,
@@ -65,9 +66,13 @@ export function IncidentFeed({
       className="incident-feed"
       aria-labelledby={TITLE_ID}
     >
-      <h2 className="incident-feed__title" id={TITLE_ID}>
-        Incidents
-      </h2>
+      <PanelHeader
+        eyebrow="Feed"
+        title="Incidents"
+        level={3}
+        titleId={TITLE_ID}
+        titleClassName="incident-feed__title"
+      />
 
       {showStale && (
         <div className="incident-feed__stale" role="status">

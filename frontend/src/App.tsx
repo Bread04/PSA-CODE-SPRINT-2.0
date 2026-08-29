@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 
+import './components/PortwatchPrimitives/PortwatchPrimitives.css';
 import { AgentRoster } from './components/AgentRoster';
 import { AskPortwatch } from './components/AskPortwatch';
 import { ExecutionTrace } from './components/ExecutionTrace';
@@ -14,18 +16,33 @@ import { useAskPortwatch } from './hooks/useAskPortwatch';
 import { useHashRoute } from './hooks/useHashRoute';
 import { useIncidents } from './hooks/useIncidents';
 import { useKillSwitch } from './hooks/useKillSwitch';
+import { formatIncidentLabel } from './lib/incident';
+import { readCollapsed, writeCollapsed } from './lib/railCollapse';
 import type { ApprovalAction } from './api/client';
 
 import './App.css';
 
-const RAIL_COLLAPSE_KEY = 'portwatch.rail.collapsed';
+/** `SGT HH:MM:SS`, Singapore wall-clock, 24-hour (h23 avoids `24:00:00`). */
+function formatSgtClock(now: Date): string {
+  return now.toLocaleTimeString('en-GB', {
+    timeZone: 'Asia/Singapore',
+    hourCycle: 'h23',
+  });
+}
 
-export function readCollapsed(): boolean {
-  try {
-    return sessionStorage.getItem(RAIL_COLLAPSE_KEY) === '1';
-  } catch {
-    return false;
-  }
+/**
+ * Topbar live clock — its own component so the 1s state tick re-renders only
+ * this node, not the whole app tree. The tick is a state update (allowed under
+ * `prefers-reduced-motion`), not a looping animation; the interval is cleared
+ * on unmount.
+ */
+function TopbarClock() {
+  const [clock, setClock] = useState<string>(() => formatSgtClock(new Date()));
+  useEffect(() => {
+    const id = setInterval(() => setClock(formatSgtClock(new Date())), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="topbar-time">SGT {clock}</span>;
 }
 
 /** 14px line icons — decorative, `aria-hidden`; safe glyphs are tofu-prone. */
@@ -115,11 +132,7 @@ function App() {
   const toggleRail = useCallback(() => {
     setRailCollapsed((prev) => {
       const next = !prev;
-      try {
-        sessionStorage.setItem(RAIL_COLLAPSE_KEY, next ? '1' : '0');
-      } catch {
-        /* session storage unavailable — collapse still works for this view */
-      }
+      writeCollapsed(next);
       return next;
     });
   }, []);
@@ -162,10 +175,10 @@ function App() {
             <span className="app-rail__mark" aria-hidden="true">
               <BeaconMark />
             </span>
-            <span className="app-rail__wordmark">
+            <h1 className="app-rail__wordmark">
               PORTWATCH
               <small>TUAS</small>
-            </span>
+            </h1>
           </div>
 
           <button
@@ -181,36 +194,59 @@ function App() {
             <Chevron direction={railCollapsed ? 'right' : 'left'} />
           </button>
 
+          <p className="app-rail__eyebrow">Operations</p>
+
           <nav className="app-nav" aria-label="Primary">
             <a
-              className="app-nav__link"
+              className={`app-nav__link rail-button${route === 'live' ? ' active' : ''}`}
               href="#/"
               aria-label="Live Console"
               aria-current={route === 'live' ? 'page' : undefined}
             >
-              <span className="app-nav__icon" aria-hidden="true">
-                <LiveConsoleIcon />
-              </span>
+              <LiveConsoleIcon />
               <span className="app-nav__text">Live Console</span>
             </a>
             <a
-              className="app-nav__link"
+              className={`app-nav__link rail-button${route === 'archive' ? ' active' : ''}`}
               href="#/archive"
               aria-label="Archive"
               aria-current={route === 'archive' ? 'page' : undefined}
             >
-              <span className="app-nav__icon" aria-hidden="true">
-                <ArchiveIcon />
-              </span>
+              <ArchiveIcon />
               <span className="app-nav__text">Archive</span>
             </a>
           </nav>
+
+          <div className="app-rail__foot">
+            <div className="app-rail__status">
+              <span className="status-dot pulse" aria-hidden="true" />
+              All systems nominal
+            </div>
+            <span>
+              Portwatch <strong>Tuas Port</strong> · disruption orchestration
+            </span>
+          </div>
         </div>
 
         <div className="app-body">
-          <header className="app-header">
-            <h1 className="app-header__brand">Portwatch Console</h1>
-            <div className="app-header__kill">
+          <header className="topbar">
+            <div className="breadcrumb">
+              <span>Portwatch</span>
+              <ChevronRight size={12} aria-hidden="true" />
+              <strong>
+                {route === 'archive'
+                  ? 'Archive'
+                  : selected
+                    ? formatIncidentLabel(selected)
+                    : 'Dashboard'}
+              </strong>
+            </div>
+            <div className="topbar__actions">
+              <span className="live-chip">
+                <span className="status-dot pulse" aria-hidden="true" />
+                Live feed connected
+              </span>
+              <TopbarClock />
               <KillSwitchControl
                 engaged={kill.engaged}
                 pending={kill.pending}

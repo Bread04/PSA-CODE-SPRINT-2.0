@@ -281,12 +281,16 @@ describe('row selection', () => {
 // Container, empty state, stale line
 // ---------------------------------------------------------------------------
 describe('feed container + non-row states', () => {
-  it('renders the list inside one BlueprintPanel (border + four corner marks)', () => {
+  it('renders the list inside one portwatch .panel (one L-bracket + one corner mark)', () => {
     const { container } = renderFeed([tier1Resolved]);
-    const panel = container.querySelector('.blueprint-panel');
+    const panel = container.querySelector('.blueprint-panel.panel');
     expect(panel).not.toBeNull();
-    expect(panel?.querySelectorAll('.blueprint-panel__corner')).toHaveLength(4);
+    expect(panel?.querySelectorAll('.blueprint-panel__corner')).toHaveLength(0);
+    expect(panel?.querySelectorAll('.corner-mark')).toHaveLength(1);
     expect(screen.getByText('Incidents')).toBeInTheDocument();
+    expect(container.querySelector('.panel-header .eyebrow')?.textContent).toBe(
+      'Feed',
+    );
   });
 
   it('empty list → a plain "No incidents" line, not an error', () => {
@@ -320,7 +324,7 @@ describe('accessible semantics', () => {
   it('the panel is a region labelled by the "Incidents" heading', () => {
     renderFeed([tier1Resolved]);
     const heading = screen.getByRole('heading', { name: 'Incidents' });
-    expect(heading.tagName).toBe('H2');
+    expect(heading.tagName).toBe('H3');
     const region = screen.getByRole('region', { name: 'Incidents' });
     expect(region).toHaveAttribute('aria-labelledby', heading.id);
     expect(region).not.toHaveAttribute('aria-label');

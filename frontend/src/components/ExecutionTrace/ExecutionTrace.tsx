@@ -1,5 +1,8 @@
+import { useId } from 'react';
+
 import type { TraceEntry } from '../../types/incident';
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import './ExecutionTrace.css';
 
 export interface ExecutionTraceProps {
@@ -23,11 +26,22 @@ export interface ExecutionTraceProps {
  * lint; all visual values live in ExecutionTrace.css and route through tokens.
  */
 export function ExecutionTrace({ trace }: ExecutionTraceProps) {
+  const headingId = useId();
   const rows = [...trace].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
   return (
-    <BlueprintPanel as="section" className="execution-trace" aria-label="Execution trace">
-      <h3 className="execution-trace__heading">Execution Trace</h3>
+    <BlueprintPanel
+      as="section"
+      className="execution-trace"
+      aria-labelledby={headingId}
+    >
+      <PanelHeader
+        eyebrow="Audit Log"
+        title="Execution Trace"
+        level={3}
+        titleId={headingId}
+        titleClassName="execution-trace__heading"
+      />
       <div
         className="execution-trace__log"
         role="log"

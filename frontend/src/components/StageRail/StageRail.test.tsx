@@ -66,17 +66,23 @@ function getRail(): HTMLElement {
 }
 
 describe('StageRail — structure & accessibility', () => {
-  it('renders one region named by its <h3>, inside the BlueprintPanel', () => {
+  it('renders one region named by its SectionHeading <h2>, inside the BlueprintPanel', () => {
     render(<StageRail incident={makeIncident()} />);
     const rail = getRail();
 
     expect(rail.tagName).toBe('SECTION');
     expect(rail).toHaveClass('blueprint-panel');
+    expect(rail).toHaveClass('panel');
     expect(rail).toHaveClass('stage-rail');
 
     const heading = within(rail).getByRole('heading', { level: 3, name: 'Pipeline' });
+    expect(heading).toHaveClass('panel-header__title');
+    expect(heading).toHaveClass('stage-rail__heading');
     expect(rail.getAttribute('aria-labelledby')).toBe(heading.id);
     expect(rail).not.toHaveAttribute('aria-label');
+    expect(rail.querySelector('.panel-header .eyebrow')?.textContent).toBe(
+      'Orchestra',
+    );
   });
 
   it('renders exactly 10 list items', () => {
@@ -207,7 +213,7 @@ describe('StageRail — state projection', () => {
     expect(getRail()).toHaveClass('blueprint-panel', 'stage-rail', 'x');
 
     rerender(<StageRail incident={makeIncident()} className="   " />);
-    expect(getRail().className).toBe('blueprint-panel stage-rail');
+    expect(getRail().className).toBe('blueprint-panel panel stage-rail');
   });
 });
 

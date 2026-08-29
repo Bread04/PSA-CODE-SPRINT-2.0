@@ -1,6 +1,7 @@
 import { useId } from 'react';
 
 import { BlueprintPanel } from '../BlueprintPanel';
+import { PanelHeader } from '../PortwatchPrimitives';
 import './MapPanel.css';
 
 export interface MapPanelProps {
@@ -44,9 +45,13 @@ export function MapPanel({ variant = 'strait', className }: MapPanelProps) {
 
   return (
     <BlueprintPanel as="section" className={rootClassName} aria-labelledby={headingId}>
-      <h3 id={headingId} className="map-panel__heading">
-        {heading}
-      </h3>
+      <PanelHeader
+        level={3}
+        eyebrow="Port Canvas"
+        title={heading}
+        titleId={headingId}
+        titleClassName="map-panel__heading"
+      />
       <svg
         className="map-panel__svg"
         role="img"

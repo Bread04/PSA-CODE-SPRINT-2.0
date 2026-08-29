@@ -43,9 +43,15 @@ describe('IncidentArchiveList', () => {
 
     const panel = screen.getByRole('region', { name: 'Incident Archive' });
     expect(panel).toHaveClass('blueprint-panel');
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Incident Archive' }),
-    ).toBeInTheDocument();
+    expect(panel).toHaveClass('panel');
+    const heading = screen.getByRole('heading', {
+      level: 3,
+      name: 'Incident Archive',
+    });
+    expect(heading).toHaveClass('panel-header__title', 'incident-archive__title');
+    expect(panel.querySelector('.panel-header .eyebrow')?.textContent).toBe(
+      'Session',
+    );
   });
 
   it('shows only resolved incidents and does not mutate the input array', () => {
