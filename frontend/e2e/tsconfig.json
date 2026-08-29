@@ -1,0 +1,16 @@
+{
+  "//": "Scopes the Playwright specs + playwright.config.ts for the IDE and Playwright's own transpile. Deliberately NOT referenced by the root tsconfig, so `npm run build` (tsc -b) stays limited to src/.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts", "../playwright.config.ts"]
+}

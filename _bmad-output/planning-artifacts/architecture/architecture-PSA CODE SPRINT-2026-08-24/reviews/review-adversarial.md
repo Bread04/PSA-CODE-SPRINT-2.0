@@ -1,157 +1,171 @@
-# Adversarial Review — Portwatch Architecture Spine
+# Adversarial Incompatible-Build Review — 2026-08-30
 
-**Target:** `ARCHITECTURE-SPINE.md` (Portwatch, 2026-08-24)
-**Method:** for each candidate hole, construct two concrete build units (people/lanes/components) that each follow every applicable AD to the letter, yet ship incompatible code. A pair "breaks" the spine if no AD, Rule, or Convention row actually pins down the shared contract they both depend on.
-
-**Verdict: FAIL** — several load-bearing shared-data shapes (Incident, TraceEntry, arbiter "option", API endpoint surface, approval payload) are referenced by name across 2+ lanes but never given field-level shape. In a 4-person/6-day build these will diverge by day 2 and only surface at integration on Day 5-6.
-
----
-
-## Finding 1 (Critical) — `Incident` record has no field-level shape
-
-**AD-4** says "one `Incident` record per `incident_id`... embedded append-only `trace` list." **Models/** source tree says `models/` holds "Incident, TraceEntry data shapes" but the spine never enumerates them.
-
-**Adversarial pair:** Person A (orchestrator, writes `Incident`) vs Person C (frontend `IncidentFeed`/`StatusQuery` components, reads `Incident` via API).
-
-- Person A, obeying AD-4 + AD-8 + Consistency table literally, builds `Incident` with: `incident_id`, `status` (free string like `"awaiting_approval"`), `tier` (`1|2|3`), `confidence` (int), `trace: []`, and stuffs the arbiter's ranked options inside the *last trace entry's* payload (since "the trace list *is* the log" — Consistency Convention, row 3 — and no other field is specified for holding pending options).
-- Person C, obeying AD-6 ("dashboard... approval card... poll the same read-only Incident endpoint") and AD-11 (approval card acts on "the arbiter's existing 2-3 ranked options"), builds the approval card assuming `Incident.pending_options: Option[]` is a **top-level field**, not something to be mined out of the trace array.
-
-Both are letter-compliant. Integration breaks: the approval card either can't find options, or Person C writes trace-parsing logic Person A never designed the trace format to support (see Finding 2).
-
-**Fix:** add an AD (or extend AD-4) with the literal `Incident` field list: `incident_id, status, tier, confidence, entity_refs, pending_options, trace, created_at, updated_at` at minimum — with `pending_options` explicitly a top-level field, not derived from trace.
+**Target:** `ARCHITECTURE-SPINE.md` (Portwatch, status: final)
+**Lens:** Construct two units one level down that each obey every AD (AD-1..AD-19) and every Consistency Convention to the letter, yet build incompatibly. Each such pair is a hole to close with a new or tightened AD.
+**Method:** read the spine against the shipped backend (`backend/orchestrator/run.py`, `orchestrator/trace.py`, `registry/incident_registry.py`, `agents/dispatch.py`, `agents/base.py`, `models/incident.py`, `api/demo_seed.py`) and the governing UX companion (`ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md`, *The Orchestra*).
 
 ---
 
-## Finding 2 (Critical) — `TraceEntry` shape given only a `stage` enum, nothing else
+## Verdict: FAIL
 
-Consistency Convention row 1 pins `stage` values (`INGEST`, `CORRELATE`, ... SCREAMING_SNAKE). Row 2 pins the **separate** error shape `{stage, error, retried, fallback_used}` (FR5). Nothing says what a *normal* (non-error) trace entry looks like, and nothing says how the FR5 error shape relates to a trace entry — is it a trace entry (reusing the `stage` field so there are two different enums sharing one key), or a sibling structure attached to one?
-
-**Adversarial pair:** Person A (orchestrator emits trace entries at each pipeline stage) vs Person D (integration/demo scripting, builds the failure-injection demo scenario for FR5 and must read trace to script/verify it on stage).
-
-- Person A builds trace entries as `{stage: "AGENT_CALL", timestamp, agent: "berth", data: {...}}` — one entry per agent call (3 entries fan out for berth/crane/yard), each with agent-specific payload shape.
-- Person D, scripting the FR5 "agent timeout/failure" demo beat, needs to detect and highlight failure entries in the trace for the live demo. Reading only the Consistency table, Person D assumes failures appear as trace entries with `stage: "AGENT_CALL"` and a `retried`/`fallback_used` boolean sitting alongside `data` — but Person A (never told the error shape nests inside trace) instead pushed a **separate top-level `Incident.errors[]` list**, since AD-4 never said errors must live in `trace`.
-
-Person D's demo script polls trace for `fallback_used: true` and finds nothing; the fallback narration silently never fires live.
-
-**Fix:** state explicitly whether `{stage, error, retried, fallback_used}` (FR5) *is* a `TraceEntry` variant (same array, discriminated by presence of `error`) or a separate `Incident.errors` list — and give the full non-error `TraceEntry` shape (minimum: `stage, timestamp, summary/data`). Also pin: does fan-out to 3 specialist agents produce 3 trace entries or 1 aggregated `AGENT_CALL` entry? Frontend's `ExecutionTrace` component and the demo script need to agree on cardinality.
+Not because the spine is unbuildable — most of it is already built — but because at least three constructed pairs below build to the letter of every AD and still produce a **broken flagship demo surface**: the DG-forced-re-plan beat renders green, the approval button posts an action string the backend rejects, and the "whole orchestra" agent chips cannot show the run-states EXPERIENCE.md specifies. Each is closable by tightening one AD or adding one convention line. Details and the full pair list follow.
 
 ---
 
-## Finding 3 (Critical) — arbiter's "ranked option" shape is a three-way shared contract with zero field spec
+## Pair 1 — DG_CHECK `detail` shape: two owners, two shapes, one key that decides the render
 
-FR4/AD-11 both reference "the arbiter's existing 2-3 ranked options" as if it's a known structure. It is consumed by: (a) the Policy Engine (to classify tier — AD-8's pipeline runs DG-gate per option, tier classification presumably per top option or per all), (b) the DG/IMDG gate (checks each option for DG conflicts, AD-8), and (c) the frontend approval card (renders options, AD-11's `select_alternative(option_id)` needs an `option_id` to exist).
+**Unit A — `backend/policy/dg_gate.py` + `orchestrator/run.py` (live path), built to AD-8 + the cross-lane sync line.**
+The cross-lane sync convention says: `DG_CHECK -> violation (+ reason / rejected_option on a violation)`. The shipped live path (`run.py:271-292`) emits exactly this: `{"violation": True, "reason": ...}` on a conflict, `{"violation": False}` on a pass. `violation` is always present.
 
-**Adversarial pair:** Person A (arbiter + policy engine + DG gate — all one person, so internally this one might stay consistent) is not the risk here; the real adversarial pair is **Person A's arbiter output** vs **Person C's `ApprovalPanel` component**, since Person C never sees Person A's Python types and works only from the spine + verbal/API contract.
+**Unit B — `backend/api/demo_seed.py` (demo-seed path), built to AD-18's DG bullet.**
+AD-18 says: "DG-gate — `DG_CHECK` trace `detail` (`{violation: bool}` live; `{rejected_option, reason}` in the demo seed)". A builder following that bullet writes the demo-seed DG_CHECK with **no `violation` key** — and the shipped `demo_seed.py:99` does exactly that: `_tr("DG_CHECK", 15, {"rejected_option": "opt-3", "reason": "DG/IMDG segregation conflict"})`.
 
-- Person A, satisfying AD-11's "existing 2-3 ranked options," implements options as `List[dict]` with keys `id, plan, eta_minutes, dg_flag`.
-- Person C, building `ApprovalPanel` against AD-11's literal API contract text — `select_alternative(option_id)` — assumes the wire field is named `option_id` (matching the function-signature naming in the AD itself), not `id`. `select_alternative` calls fail or silently select the wrong option if the API doesn't validate the key name strictly (e.g. defaults to option 0 on missing/None `option_id`).
+**The incompatibility:** both units obey the spine (each cites a different spine sentence). Person C's DG-gate renderer keys on `detail.violation` (the cross-lane line tells them to). On the demo-seed incident that key is `undefined` → falsy → the DG hard gate renders **PASS (seafoam)** during the `demo-tier3-alts` incident, which is precisely the "VIOLATION → RE-PLANNING" demo beat EXPERIENCE.md §5 builds the whole console around. The spine contradicts itself: the cross-lane sync line says `violation` is always present; AD-18's DG bullet says the demo seed omits it.
 
-**Fix:** pin the Option shape verbatim (field names, exact match to the `select_alternative(option_id)` parameter name used in AD-11) in the spine, not just in a person's head.
-
----
-
-## Finding 4 (High) — "one read-only Incident endpoint" is ambiguous between one-endpoint-total and one-resource-family
-
-AD-6: "dashboard (incident feed, trace view, approval card, status query) all poll **the same read-only Incident endpoint** at a 2-3s interval." This sentence is read two different ways depending on which noun "same...endpoint" binds to.
-
-**Adversarial pair:** Person A/D (backend `api/` module) vs Person C (frontend, 5 different components: `IncidentFeed`, `ImpactGraph`, `ApprovalPanel`, `ExecutionTrace`, `StatusQuery`).
-
-- Backend reading AD-6 literally as "one endpoint" builds a single `GET /api/incident` (singular, no id) returning **one flat blob** with everything (feed list + trace + pending options) crammed into one JSON response, on the theory that "the same...endpoint" = literally one URL for the whole dashboard.
-- Frontend, needing feed (list of many incidents), per-incident trace (`ExecutionTrace`), and per-incident approval state (`ApprovalPanel`) as visually distinct components with independent poll cadences, builds against an assumed REST family: `GET /api/incidents`, `GET /api/incidents/{id}`, `GET /api/incidents/{id}/trace`. Four different fetches, all technically "the read-only Incident endpoint" as a resource concept, but four different URLs.
-
-Both readings are defensible from the sentence as written. Whichever side didn't win the argument rebuilds the API layer or the fetch layer on Day 5.
-
-**Fix:** the spine should give the literal endpoint list (method + path + response shape), not a prose description of a "read-only Incident endpoint" left to interpretation. This is exactly the kind of boundary AD-6 implies but doesn't pin.
+**Close it:** AD-18 (or a new AD) must pin one DG_CHECK `detail` schema for **both** paths — `violation: bool` mandatory always, `reason` and `rejected_option` optional-on-violation — and state that the demo seed MUST set `violation` explicitly. Delete the "`{rejected_option, reason}` in the demo seed" wording.
 
 ---
 
-## Finding 5 (High) — Approval endpoint wire shape (AD-11) unspecified beyond the three verbs
+## Pair 2 — Approval action string: AD-11 vs the governing UX companion
 
-AD-11 pins the *contract as a set of verbs* — `approve` / `reject` / `select_alternative(option_id)` — but not: HTTP method, whether `incident_id` is a path param or body field, whether it's one endpoint with an `action` discriminator or three endpoints, or the response shape (does approval return the updated `Incident`, or `204 No Content`, requiring the frontend to re-poll?).
+**Unit A — `backend/api/approval.py` route, built to AD-11 + the API seed.**
+AD-11 and the API seed pin the body as `{action: "approve" | "reject" | "select_alternative", option_id?: str}`.
 
-**Adversarial pair:** Person A (writes the approval endpoint handler, which is the *only* write path per AD-6/AD-4) vs Person C (`ApprovalPanel`, the only frontend component that writes).
+**Unit B — `frontend/src/components/ApprovalBanner.tsx`, built to EXPERIENCE.md's data-contract table.**
+EXPERIENCE.md "Data contract (backend reconciliation handoff)" row: `POST /incidents/{id}/approval — { action: approve|reject|modify, optionId, note }`. A frontend builder following the companion the spine names as *Governed by* posts `{action: "modify", optionId: "...", note: "..."}`.
 
-- Person A builds `POST /api/incidents/{id}/approval` with body `{"action": "approve"}` / `{"action": "select_alternative", "option_id": "..."}`, single endpoint, discriminated union.
-- Person C, working from AD-11's verb-per-function framing (`select_alternative(option_id)` reads like a function call, not a discriminator payload), builds three separate calls: `POST /api/incidents/{id}/approve`, `/reject`, `/select-alternative` with the id passed as a query param.
+**The incompatibility:** `"modify"` ≠ `"select_alternative"`; `optionId` ≠ `option_id`; `note` is absent from the spine contract entirely. The one write path the operator has in the demo (besides the kill switch) 400s or silently no-ops. AD-11 says "the spine wins on conflict", but no line in the spine actually reconciles the three string deltas, so two conformant builders diverge. The camelCase/snake_case split is systemic: EXPERIENCE.md's whole data-contract table is camel (`tierReason`, `dgGate`, `confidenceContribution`) while every backend model is snake.
 
-Neither violates AD-11's text (it never states HTTP method or endpoint count), so this is a straight 404 at integration.
-
-**Fix:** literal endpoint signature(s) with method, path, request body schema, response schema — same fix pattern as Finding 4, applied to the one write path the whole system has.
-
----
-
-## Finding 6 (High) — DG-gate loop-back re-entry point is internally inconsistent in the spine itself
-
-AD-8: "On conflict, control returns to the arbiter for a new recovery option, which is then re-classified from AD-4's policy stage." **AD-4 is the single-writer/Incident-state AD — it has no "policy stage."** The policy-tier-classification stage is described in the Design Paradigm's pipeline (`...synthesize → policy → DG-gate...`) and lives under AD-8's own "Binds: FR9" plus the Capability Map row D (`policy/policy_engine.py`, governed by AD-7/AD-8). This is very likely a typo for "the policy stage" (no AD-4 reference intended), but as written it's a broken cross-reference that two engineers can resolve differently.
-
-**Adversarial pair:** whoever builds the orchestrator's loop-control code (Person A) reading this at 11pm on Day 3, vs whoever later debugs/extends it (Person D, doing integration/demo scripting, who needs to know exactly what re-runs on a DG conflict to script a reliable demo beat).
-
-- Reading "re-classified from AD-4's policy stage" as sloppy shorthand for "recompute confidence + re-run policy tier classification" (since AD-4 does own trace/state and this is where confidence lives per the Confidence Formula box in the pipeline diagram), Person A's orchestrator on DG-conflict re-invokes: synthesize(new option) → confidence → policy → DG-gate again.
-- Person D, reading the same sentence as "just re-run tier classification on the new option, confidence is arbiter's job upstream and doesn't change," scripts the demo assuming confidence stays pinned across a DG-gate retry and only tier/DG re-evaluate. When Person A's implementation actually recomputes confidence and it comes back different (e.g. crosses a tier threshold), the live-demo narration ("still Tier 2, just a different option") is wrong on stage.
-
-Also unaddressed: **loop termination.** Nothing caps DG-gate retry count — if the arbiter keeps proposing options that keep failing DG, this loop-backs forever. No max-retry Rule exists (unlike, presumably, AGENT_CALL fallback logic implied by FR5's `retried: bool`).
-
-**Fix:** correct the cross-reference (should almost certainly read "re-classified from the policy stage," dropping "AD-4's"), state explicitly which pipeline stages re-run on DG-conflict (confidence? policy only? both?), and add a max-retry/terminal-failure Rule for the DG-gate loop.
+**Close it:** add a Consistency Convention line — "JSON wire format is snake_case verbatim from the Pydantic `model_dump()`; the frontend does not camelize; the approval action literal is `select_alternative`, never `modify`." And add `note` to the approval body seed (accept-and-ignore is fine) or state it is unsupported.
 
 ---
 
-## Finding 7 (Medium) — Entity key format for `IncidentRegistry` correlation is unspecified, and must match Person B's mock-service IDs
+## Pair 3 — Agent run-state (QUEUED/RUNNING/COMPLETE/TIMEOUT/FALLBACK) is not derivable from what AD-19 pins
 
-AD-5: registry "keyed by entity: vessel/berth/crane/yard-block." No format is given for what a key actually looks like (`"crane:CR07"`? `"CR07"`? `{type: "crane", id: "CR07"}`?). This key must originate from ingestion (normalizing raw signals — Person A's `ingestion/` per source tree) and must match whatever entity identifiers Person B's mock services (`crane_scheduler.py`, `yard_manager.py`, etc.) use internally, since specialist agents calling those mock services need the same entity reference the incident correlated on.
+**Unit A — `orchestrator` writer, built to AD-19 to the letter.**
+AD-19 pins `Incident.agents: list[SpecialistRecommendation]` with fields `agent, summary, actions, constraints, rationale` — **no `state` field** — plus one `AGENT_CALL` trace entry per specialist with `detail: {agent, mock_forced}` and the standard `{stage, error, retried, fallback_used}` shape on timeout/fallback. Shipped `models/incident.py:81` and `demo_seed.py:59-90` match: entries carry no run-state.
 
-**Adversarial pair:** Person A (`ingestion/` + `registry/`) vs Person B (mock services).
+**Unit B — `frontend/src/components/AgentRoster.tsx`, built to EXPERIENCE.md *The Orchestra* §2.**
+EXPERIENCE.md requires each chip to show "its run state (`QUEUED → RUNNING → COMPLETE`, or `TIMEOUT → FALLBACK` with the reason)" and, in the data-contract table, `agents[] — { name, state, recommendation, constraints, confidenceContribution }`.
 
-- Person A normalizes incoming signals to a composite string key `"{entity_type}:{entity_id}"` e.g. `"crane:C7-CR03"`, matching AD-12's terminal-block naming style (`Tuas C7`).
-- Person B, building `crane_scheduler.py` mock independently against FR3/FR13 with no visibility into the registry's key format, models cranes with a bare numeric `crane_id: int` (e.g. `crane_id: 3`), since nothing in the spine tells mock-service builders to align their entity ID scheme with the registry's.
+**The incompatibility, state by state:**
+- `COMPLETE` — derivable: `agent` present in `Incident.agents` and its `AGENT_CALL` row has `error == null`.
+- `FALLBACK` — derivable: that agent's `AGENT_CALL` row has `fallback_used: true`.
+- `TIMEOUT` — partially: `error != null && fallback_used == false`. But per FR5 a fallback always follows a timeout, so this is never a resting state the poll can catch.
+- `QUEUED` vs `RUNNING` — **not derivable at all.** `run_specialists` (`dispatch.py:74-116`) renders the brief once, fires `asyncio.gather` on all three, and the orchestrator appends the 1–3 `AGENT_CALL` entries only **after** `gather` returns. There is no per-agent "started" marker, and because `gather` resolves atomically the frontend never observes "berth COMPLETE, crane RUNNING". During the ~15 s the specialists run, `Incident.agents == []` and there are zero `AGENT_CALL` rows — all three chips sit in one indistinguishable "not started" bucket. EXPERIENCE.md explicitly wants the fan-out drawn "so it reads as 'these ran at once'", i.e. three simultaneously-RUNNING chips. AD-19 cannot produce that frame.
+- `confidenceContribution` per agent — not emitted anywhere. The confidence formula's `disagreement` input is a single aggregate bool (`run.py:149`); there is no per-specialist contribution.
 
-Result: the Crane specialist agent, given a correlated `incident_id` + entity key `"crane:C7-CR03"` from the orchestrator, cannot look up the right mock-service crane record — silent mismatch, not a crash, which is worse (wrong crane's data used in analysis, discovered late).
+Two conformant builders: Person A ships the 5-field `SpecialistRecommendation`; Person C's roster reads `.state` and `.confidenceContribution` off each entry and renders `undefined`.
 
-**Fix:** pin one canonical entity-ID scheme (format + example per entity type: vessel, berth, crane, yard-block) in the Consistency Conventions table, binding both ingestion/registry (Person A) and mock services (Person B) to it.
-
----
-
-## Finding 8 (Medium) — Tool manifest format (AD-3) unspecified; ambiguous who "owns" adding a tool for a new mock service
-
-AD-3: "each agent's allowed tools come from a static manifest (agent name → tool schema list)... Adding capability means editing the manifest, never the prompt." Source tree: manifests live under `agents/` alongside `berth.py`, `crane.py`, etc. — implying Person A owns them. But mock services (Person B's lane) are the actual tool *implementations* the manifest schemas describe (Anthropic tool-use schemas need name/description/input_schema matching what the mock service actually accepts).
-
-**Adversarial pair:** Person A (owns `agents/` manifests) vs Person B (owns `mock_services/`, e.g. `agv.py`, `gate.py` — added later per AD-12/FR17's Day-5 stretch scope for two-terminal-block routing).
-
-- Person A writes the Crane agent's tool manifest early (Day 1-2) with a schema for `query_crane_status(crane_id: str)`, matching whatever Person B's `crane_scheduler.py` mock looked like *at that time*.
-- Person B, extending `yard_manager.py` on Day 5 per AD-12 to support the two-terminal-block model, changes the mock's function signature to `query_block_utilization(terminal: Literal["Tuas C7","Pasir Panjang P2"])` — a reasonable, spine-compliant change (AD-12 explicitly mandates this) — but nothing in AD-3/AD-12 requires Person B to notify/update the manifest Person A owns. The manifest and the mock silently drift; the agent's tool call either 400s against the mock or the mock silently ignores an unexpected param shape.
-
-**Fix:** either (a) state the manifest is generated/derived from the mock service's own declared schema (single source of truth, no drift possible), or (b) explicitly assign manifest-update ownership to whoever changes a mock service's signature, and require the Day-5 AD-12 rollout to include a manifest-sync step.
+**Close it:** either (a) tighten AD-19 so the orchestrator writes a `state` field per agent AND emits an `AGENT_CALL` "started" entry (or a `run_state` map) before `gather`, so QUEUED/RUNNING/COMPLETE are real; or (b) amend EXPERIENCE.md to a 3-state chip (PENDING / DONE / DEGRADED) that AD-19's completion-only trace can actually feed, and delete `state` / `confidenceContribution` from the data-contract row. Right now the spine promises a surface it does not pin the data for.
 
 ---
 
-## Finding 9 (Low) — Kill switch access path is unspecified: who exposes it and where does the operator toggle it?
+## Pair 4 — CONFIDENCE `detail`: no pinned discriminator between structured and prose
 
-AD-7 pins *enforcement* (one flag, one check point, immediately pre-execution) precisely — that part is solid. It does not say where the flag lives (module ownership) or how it gets set to `true`. FR10 implies an operator-facing kill switch exists in the UI, but AD-6's write-path Rule says "No write path from frontend to Incident except the approval action (AD-11)" — the kill switch is not `Incident` state, so it's arguably exempt from that restriction, but no AD grants it a write path either.
+**Unit A — live `CONFIDENCE` writer** (`run.py:153-164`): `detail = {confidence:int, staleness_seconds, fallback_fields, mock_forced, disagreement, variance_exceeds}`.
+**Unit B — demo-seed `CONFIDENCE` writer** (`demo_seed.py:97`): `detail = {"reason": "Down from 91% — ..."}` — **no `confidence` int, no structured keys.**
 
-**Adversarial pair:** Person C (frontend, needs a kill-switch toggle control) vs Person A/D (backend, owns the flag per AD-7's "single global in-memory flag").
+AD-18 says "the frontend renders whichever is present". But it never names the discriminator key, and the two shapes are not defined as mutually exclusive. A conformant Person C picks `if "confidence" in detail` to mean "structured" → the demo-seed entry (which lacks `confidence`) falls through to a prose branch that then can't find `reason` if a different seed author included `confidence` for convenience. A second conformant Person C picks `if "staleness_seconds" in detail`. Both are "correct" against AD-18; they disagree on the demo seed.
 
-- Person C, reading AD-6's Rule as scoped only to `Incident` writes, builds a kill-switch toggle calling an assumed `POST /api/kill-switch {enabled: bool}` endpoint that doesn't exist yet, since no lane's source-tree entry mentions it (`api/` is described only as "read-only Incident/trace endpoints, approval endpoint").
-- Person A, building strictly from the source tree's `api/` description (read-only + approval only), never scaffolds a kill-switch endpoint at all — it's set only via a hardcoded config toggle or a debug script for the demo, since nothing assigns it an API surface.
-
-Demo-day risk: the kill switch, a Security §5 safety feature, may end up with no operator-facing control at all, or a frontend button pointing at a 404.
-
-**Fix:** add the kill-switch endpoint explicitly to the `api/` module description and Capability Map (currently absent — Section F/Security is the closest fit but doesn't list it), with method/path/payload.
+**Close it:** pin the discriminator explicitly — e.g. "the demo-seed path emits `detail.reason` (str) and NO structured keys; the live path emits the structured keys and NO `reason`; the frontend branches on `"reason" in detail`." State it as an invariant the seed MUST honor.
 
 ---
 
-## Summary Table
+## Pair 5 — Two writers of one `Incident`: AD-4 ("only the orchestrator") vs AD-5 (registry mutates + traces)
 
-| # | Severity | Pair | Missing contract |
-|---|---|---|---|
-| 1 | Critical | Person A orchestrator vs Person C frontend | `Incident` field-level shape |
-| 2 | Critical | Person A orchestrator vs Person D demo scripting | `TraceEntry` shape + FR5 error-entry relationship + fan-out cardinality |
-| 3 | Critical | Person A arbiter vs Person C `ApprovalPanel` | Arbiter "option" field shape |
-| 4 | High | Backend `api/` vs Frontend components | Literal endpoint list (AD-6) |
-| 5 | High | Backend `api/` vs `ApprovalPanel` | Approval endpoint wire shape (AD-11) |
-| 6 | High | Orchestrator loop-control vs demo scripting | DG-gate loop-back re-entry scope + broken AD-4 cross-ref + no max-retry |
-| 7 | Medium | Ingestion/Registry vs Mock services | Entity-ID key scheme |
-| 8 | Medium | Agent manifests vs Mock services | Manifest/mock schema sync ownership |
-| 9 | Low | Frontend vs Backend `api/` | Kill-switch endpoint existence/shape |
+**Unit A — `IncidentRegistry`, built to AD-5.** `correlate()` (`incident_registry.py:91-128`) **appends a `CORRELATE` `TraceEntry`** and mutates `incident.entity_refs` and `incident.last_signal_at` via `_merge_signal`.
+**Unit B — the per-incident orchestrator task, built to AD-4.** AD-4: "**Only** the orchestrator coroutine writes to `Incident` or appends trace entries."
 
-## Recommendation
+These two spine rules directly contradict on the literal text. Today it is benign only because correlation happens before the orchestrator task is spawned. But AD-5 also says: "A match within the 15-minute rolling window **routes the signal into the existing incident's orchestrator**." That is the race the prompt asks about, and the spine specifies **no mechanism** for it:
 
-Before Day 1 code starts, tighten AD-4 (add literal `Incident`/`TraceEntry` field lists), AD-6 and AD-11 (add literal endpoint signatures), and AD-8 (fix the "AD-4's policy stage" cross-reference and state DG-loop retry scope/cap). These five are the ones most likely to cause silent, late-discovered integration failures given the lane split, since they're each written by one person and consumed by another with no shared type definition to compile against.
+- A conformant Person A (ingestion) reads "routes into the existing incident's orchestrator" as **spawn a fresh orchestrator task for the same `incident_id`** → now two orchestrator tasks own one `Incident` → the exact double-writer AD-4 exists to forbid, with concurrent `incident.trace.append` and `incident.tier` writes.
+- A second conformant Person A reads it as **the registry mutates the live incident in place and the running orchestrator picks it up on its next stage** → the registry writes `entity_refs` / `last_signal_at` / a `CORRELATE` trace row into an `Incident` whose orchestrator is mid-`asyncio.gather`. Even under single-threaded asyncio (registry `correlate` is sync, so it won't interleave mid-function), the running analysis captured `entity_refs` **by alias** for the brief (`dispatch.py:74` renders once, but a naive specialist could hold `incident.entity_refs`), and a late `CORRELATE` entry lands in `trace` **after** `POLICY_DECISION` — the append-only trace is chronological, not pipeline-ordered.
+- A third conformant Person A reads AD-5's "routes into the orchestrator" as a no-op after correlation (the signal is recorded and dropped) → the second signal for a live incident never influences the recommendation at all.
+
+Three spine-conformant implementations, three different behaviors, and one of them re-opens AD-4.
+
+**Close it:** AD-4 must carve out the registry explicitly ("the `IncidentRegistry` writes `entity_refs`, `last_signal_at`, and the `CORRELATE` entry; after the orchestrator task is spawned, only the orchestrator writes — the registry hands a mid-flight signal to the running task via a single-consumer queue / re-entrancy hook, never a second task, never a direct write"). And a new AD must define what "route into the running orchestrator" *does*: re-run from `SYNTHESIZE`? annotate and continue? The spine currently leaves this to invention.
+
+---
+
+## Pair 6 — Stage-rail state derivation: the trace records completions only, but the rail needs pending/active/done
+
+**Unit A — trace producer**, built to AD-14 + `trace.py:STAGES`. Stages are written on **completion** (or on a bookkeeping boundary like `POLICY_START`). There is no `AGENT_CALL_START`, no `SYNTHESIZE_START`. On a DG re-plan (`run.py:269-289`) the loop re-emits `CONFIDENCE` and `POLICY_DECISION` and `DG_CHECK` but **never re-emits `SYNTHESIZE` or `AGENT_CALL`**.
+
+**Unit B — `StageRail.tsx`**, built to EXPERIENCE.md *The Orchestra* §1: every stage must show `pending | active | done | degraded | blocked`, and "the rail visibly loops back to `SYNTHESIZE`" on a DG violation.
+
+**The incompatibilities:**
+- "active" (the current, emphasised stage) is underivable. During the ~15 s specialists run, the last trace entry is `CORRELATE` and `AGENT_CALL` has not appeared. Is `AGENT_CALL` pending, active, or stalled? A conformant Person C using "lowest-order stage not yet in trace = active" and a second using "highest-order stage in trace = done, next = active" agree here but neither rule is sanctioned by the spine, and they diverge the moment a stage is skipped (e.g. Tier 1/2 has no `APPROVAL` entry — is `APPROVAL` pending forever, or skipped?).
+- The DG loop-back: EXPERIENCE.md says the rail loops to `SYNTHESIZE`; the trace's loop-back is visible only at `CONFIDENCE`/`POLICY_DECISION`. Person C animating "rail cursor returns to SYNTHESIZE" has no trace event to hang it on.
+- Multiple `POLICY_DECISION` / `CONFIDENCE` / `DG_CHECK` entries exist after a re-plan. Which is "current"? A conformant Person C taking the **first** `POLICY_DECISION.detail.tier` shows a tier that disagrees with `Incident.tier` (the last one). AD-18 says derive tier from `Incident.tier` — but derive the *reason* from "the selected `RecoveryOption`", and after a DG-forced Tier 3 `selected is None` (`run.py:279`) — there is no selected option, so AD-18's reason-derivation recipe has no defined input for its own headline case.
+
+**Close it:** add an AD that pins rail-state derivation from an append-only completion-only trace: "rail stage S is `done` iff a trace entry with `stage==S` (and no `error`) exists; `degraded` iff the latest `stage==S` entry has `error`; `blocked` iff `error` + `blocked` in detail; `active` = the lowest-order non-terminal stage with no entry; skipped stages (Tier 1/2 `APPROVAL`) are `done`/`n-a`, not `pending`. On re-plan, the rail reflects the **last** entry per stage." And give AD-18 a defined tier-reason for the `selected is None` case.
+
+---
+
+## Pair 7 — Entity-ref format: two examples, no grammar
+
+**Unit A — ingestion normalizer**, built to the cross-lane sync line ("`entity_refs` values are the exact ids the ingestion layer normalizes to, e.g. `vessel:MSC-ANNA`, `berth:C7-3`").
+**Unit B — Person B mock services + `frontend/src/lib/geo.ts` fixture (AD-17) + AD-12 Yard Manager.**
+
+The spine gives two example strings and no rule for: the type-prefix vocabulary (cross-lane line and demo use `vessel|berth|crane|yard|gate` — 5; AD-5 says "vessel/berth/crane/yard-block" — 4, and names it `yard-block`, not `yard`; `gate` appears in neither AD-5 nor the shape doc), case (`MSC-ANNA` upper — guaranteed? or is `msc-anna` also valid?), separator inside the token (`C7-3` uses `-`; so does the type separator `:` — but a token with a `:` would be ambiguous), and the allowed charset.
+
+Concrete divergence already in the seed: `demo_seed.py` carries the same yard block twice — as `entity_refs = ["yard:TUAS-C7", "yard:PASIR-PANJANG-P2"]` (upper, hyphen) and as CORRELATE payload keys `{"tuas_c7": 0.93, "pasir_panjang_p2": 0.44}` (lower, underscore). AD-12's Yard Manager keys its two blocks one way; a specialist tool call (AD-3 manifest) or a `geo.ts` lookup keyed the other way misses. Registry correlation (AD-5) is exact-string equality (`incident_registry.py:141`), so `berth:C7-3` and a yard `C7` never correlate even when they are the same quay.
+
+**Close it:** add a Consistency Convention: pinned prefix set, `type:TOKEN` grammar, `TOKEN` charset `[A-Z0-9-]`, upper-case canonical, and one owner (ingestion `make_entity_ref`) that both Person B and `geo.ts` import or mirror. Reconcile AD-5's `yard-block` vs the shape doc's `yard` and register `crane` / `gate`.
+
+---
+
+## Pair 8 — `run_specialists(incident)` / `synthesize_options(incident)` take the full mutable `Incident` — is that an AD-4 violation?
+
+AD-4: "do not pass a mutable `Incident` reference into any non-orchestrator function." The shipped `agents/dispatch.py` functions `run_specialists(incident)` and `synthesize_options(incident)` **do** receive the full mutable `Incident`; they mitigate by rendering a string brief once (`_incident_summary`) and never propagating the reference. But they live in `agents/`, not `orchestrator/`. A conformant Person A reading "non-orchestrator function" literally would flag these as violations and refactor them to take a pre-built `IncidentBrief` value — changing the call signature Person building the arbiter/specialists codes against. A second conformant Person A reads "the dispatch layer *is* part of the orchestrator" and passes `incident` freely, and a downstream specialist author then reads `incident.trace[-1].detail["payload"]` directly off the live object (as `base.py` docstring notes the brief does). Two readings, two call contracts, and one of them hands the live object to agent code.
+
+Compounding: AD-14 says "**every** stage transition writes a trace entry (AD-4)". A specialist author who internalizes AD-14 but not the depth of AD-4 will have the specialist append its own `AGENT_CALL` entry — a second trace writer. AD-19 rule 2 says the orchestrator writes `AGENT_CALL` on the specialists' behalf, but AD-14's "every stage transition writes" phrasing actively invites the violation.
+
+**Close it:** AD-4 should name the boundary in module terms ("`backend/orchestrator/**` and `agents/dispatch.py:run_specialists|synthesize_options` are the orchestrator; everything under `agents/berth|crane|yard|arbiter`, `policy/`, `mock_services/` receives values, never the `Incident`") and AD-14 should read "the orchestrator writes a trace entry for every stage transition" — not "every stage transition writes".
+
+---
+
+## Pair 9 — `predicted_impact` field names: spine shape vs governing companion
+
+Spine shape doc + AD-18 line 161 pin `predicted_impact: {delay_min: int, cost: "low"|"medium"|"high", yard_impact: str, risk: "low"|"medium"|"high"}`. EXPERIENCE.md data-contract row pins `predictedImpact{delay, cost, yard, risk}` and the decision-card copy implies `cost` is a displayed magnitude ("$1.2M"), not a 3-value enum. `demo_seed.py` follows the spine (`PredictedImpact(delay_min=..., cost="medium", yard_impact=..., risk=...)`). Person C building the decision card's "predicted impact (delay / cost / yard / risk)" row from EXPERIENCE.md reads `.delay` / `.yard` and gets `undefined`; renders `cost` expecting a string like "$1.2M" and gets `"medium"`.
+
+**Close it:** same fix as Pair 2 — one snake_case wire convention — plus an explicit "`cost` and `risk` are the literal enum `low|medium|high`, not free text; the card renders the enum" line so Person C doesn't build a currency formatter.
+
+---
+
+## Pair 10 — `mock_forced` double-penalty ambiguity (AD-16)
+
+AD-16 honesty requirement: a mock-forced response "applies the same -15pt missing-data penalty it uses for a fallback/cached-state field — a canned response is treated as missing real data". `run.py:145-151` passes `fallback_fields=fallback_field_count` and `mock_forced=mock_forced` as **separate** inputs to `ConfidencePenalties.from_inputs`. A conformant Person building `policy/confidence.py` reads "the same penalty it uses for a fallback field" as "fold `mock_forced` into the `fallback_fields` count" (one -15). A second conformant Person adds `mock_forced` as its own weighted term in the FR6 config (another -15). When an agent is both mock-forced AND has a stale field, the two builds diverge by 15 points — and the confidence number is on the decision card and the tier threshold (FR7), so this can flip a tier.
+
+**Close it:** the FR6 config module (named in the Consistency Conventions row) must state whether `mock_forced` is an increment to `fallback_fields` or an independent term, with the exact point value, in one place.
+
+---
+
+## Summary of holes to close (each = one tightened or new AD)
+
+| # | Hole | Fix |
+|---|------|-----|
+| 1 | DG_CHECK `detail` has two shapes; `violation` key optional on the demo path → DG-forced-re-plan beat renders PASS | AD-18: `violation: bool` mandatory on both paths; delete "`{rejected_option, reason}` in the demo seed" wording |
+| 2 | Approval action string `select_alternative` (spine) vs `modify` (governing UX companion); camel vs snake systemic | New Consistency Convention: snake_case wire format verbatim; `select_alternative` is the literal |
+| 3 | Agent-chip run-state QUEUED/RUNNING (and `state`, `confidenceContribution`) not derivable from AD-19's completion-only data | Tighten AD-19 to emit per-agent `state` + a pre-`gather` "started" marker, or amend EXPERIENCE.md to a 3-state chip |
+| 4 | CONFIDENCE structured-vs-prose has no pinned discriminator key | AD-18: pin `"reason" in detail` as the branch; make the two shapes mutually exclusive by rule |
+| 5 | AD-4 "only orchestrator writes" vs AD-5 registry writes + traces; "route into the running orchestrator" has no defined mechanism → double-task or lost signal | AD-4 carve-out for the registry + new AD defining re-correlation-into-a-live-incident behavior |
+| 6 | Stage-rail `pending/active/done` + DG loop-back not derivable from an append-only completion-only trace; "current" entry after re-plan undefined; AD-18 tier-reason has no input when `selected is None` | New AD pinning rail-state derivation rules; AD-18 tier-reason for the no-option case |
+| 7 | Entity-ref format: two examples, no grammar; `yard:TUAS-C7` vs payload key `tuas_c7`; AD-5 `yard-block` vs shape `yard`; `gate`/`crane` unregistered | Consistency Convention: pinned prefix set + `type:TOKEN` grammar + case + one owner |
+| 8 | "non-orchestrator function" (AD-4) undefined at the `agents/dispatch.py` boundary; AD-14 "every stage transition writes" invites a second trace writer | AD-4 names the boundary in module terms; AD-14 reads "the orchestrator writes…" |
+| 9 | `predicted_impact` field names (`delay_min`/`yard_impact`) vs companion (`delay`/`yard`); `cost` enum vs displayed magnitude | Same snake_case convention + "`cost`/`risk` are the `low|medium|high` enum" line |
+| 10 | `mock_forced` confidence penalty: fold-into-`fallback_fields` vs independent term → 15-pt divergence that can flip a tier | FR6 config module states the exact term and value in one place |
+
+## What holds up
+
+- AD-1/AD-9/AD-10 (single process, in-memory, no auth) — no incompatible pair constructible; they remove whole problem classes cleanly.
+- AD-7 (kill switch: one flag, one enforcement point) — `run.py:183` and `approve_incident` check exactly at the pre-execution boundary and nowhere else; a second builder cannot conformantly add a check elsewhere.
+- AD-13's `asyncio.gather` does **not** race AD-4 for the *within-incident* case: `dispatch.py` renders the brief once and specialists get an immutable string, so no mutable `Incident` reaches concurrent code. The race that survives is cross-coroutine (registry vs live orchestrator, Pair 5), not intra-analysis.
+- AD-8's 2-attempt DG cap + forced-Tier-3 escape is unambiguous and correctly bounded in code.
+- The frozen `SpecialistBundle` 3-tuple / `AgentName` literal / arbiter `len != 3` guard is genuinely locked and AD-18/AD-19 do not reopen it.
+
+## Recommended disposition
+
+Close holes 1, 2, 3, 5 before any further frontend build against the orchestra surfaces — they each break a demo-visible surface or re-open AD-4. Holes 4, 6, 7, 8, 9, 10 are one-line convention tightenings that should land in the same pass. None require re-architecting; all are under-specification in a spine that is otherwise coherent.

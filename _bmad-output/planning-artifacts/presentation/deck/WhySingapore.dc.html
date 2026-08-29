@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    h1{margin:0;font-weight:600;font-size:40px;line-height:1.12;letter-spacing:-0.03em;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .stat{border:1px solid #214459;border-radius:8px;background:#0D1C26;padding:22px 20px;display:flex;flex-direction:column;gap:12px;}
+    .stat .v{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:44px;letter-spacing:-0.06em;color:#66E0D2;}
+    .stat .k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#EAF7F9;}
+    .stat .d{font-size:13px;color:#A4B8C0;line-height:1.35;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">Why Singapore</div>
+
+  <div style="position:absolute;left:88px;top:130px;">
+    <h1>This isn&rsquo;t a generic terminal with the nouns swapped.</h1>
+  </div>
+
+  <div style="position:absolute;left:88px;right:88px;top:262px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;">
+    <div class="stat"><div class="v">80%</div><div class="k">Transshipment</div><div class="d">Box to box, not simple import&ndash;export.</div></div>
+    <div class="stat"><div class="v">2</div><div class="k">Terminals</div><div class="d">Tuas &#8646; Pasir Panjang, capacity balanced against each other.</div></div>
+    <div class="stat"><div class="v">#1</div><div class="k">Densest strait</div><div class="d">Vessels move through the world&rsquo;s busiest waterway.</div></div>
+    <div class="stat"><div class="v">MPA</div><div class="k">Throughout</div><div class="d">Compliance runs through the whole operation.</div></div>
+  </div>
+
+  <div class="note">Orchestrating <b>this</b> is the problem &mdash; not a template with port nouns dropped in.</div>
+  <div class="pageno">03 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

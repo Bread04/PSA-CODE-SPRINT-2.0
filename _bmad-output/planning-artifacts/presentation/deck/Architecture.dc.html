@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .box{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#EAF7F9;border:1px solid #214459;border-radius:4px;padding:10px 12px;background:#0D1C26;white-space:nowrap;}
+    .det{border-color:#66E0D2;color:#EAF7F9;position:relative;}
+    .det::after{content:'NO LLM';position:absolute;top:-8px;right:8px;background:#07141B;padding:0 4px;font-size:7.5px;letter-spacing:.14em;color:#66E0D2;}
+    .arw{color:#2C4655;align-self:center;font-family:'IBM Plex Mono',monospace;}
+    .chip{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#A4B8C0;border:1px solid #214459;border-radius:3px;padding:5px 8px;background:#122833;}
+    .cap{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;color:#86A8AA;line-height:1.5;}
+    .cap b{color:#66E0D2;font-weight:500;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">Architecture &middot; one pipeline</div>
+
+  <div style="position:absolute;left:88px;top:118px;font-weight:600;font-size:30px;letter-spacing:-0.025em;">One incident. One pipeline. One writer.</div>
+
+  <div style="position:absolute;left:88px;right:80px;top:198px;display:flex;gap:9px;flex-wrap:wrap;align-items:stretch;">
+    <div class="box">Ingest</div><div class="arw">&rarr;</div>
+    <div class="box">Correlate<br><span style="color:#5C7883;font-size:9px;">15-min window</span></div><div class="arw">&rarr;</div>
+    <div style="border:1px solid #214459;border-radius:6px;padding:8px;background:#0B1922;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.13em;color:#66E0D2;margin-bottom:6px;">AGENT_CALL &nbsp;&#8741;&nbsp; PARALLEL</div>
+      <div style="display:flex;gap:6px;"><span class="chip">Berth</span><span class="chip">Crane</span><span class="chip">Yard</span></div>
+    </div><div class="arw">&rarr;</div>
+    <div class="box">Arbiter<br><span style="color:#5C7883;font-size:9px;">2&ndash;3 options</span></div><div class="arw">&rarr;</div>
+    <div class="box">Confidence<br><span style="color:#5C7883;font-size:9px;">computed</span></div><div class="arw">&rarr;</div>
+    <div class="box det">Policy<br><span style="color:#5C7883;font-size:9px;">tier 1 / 2 / 3</span></div><div class="arw">&rarr;</div>
+    <div class="box det">DG Gate<br><span style="color:#5C7883;font-size:9px;">IMDG segregation</span></div><div class="arw">&rarr;</div>
+    <div class="box">Execute</div><div class="arw">&rarr;</div>
+    <div class="box">Verify</div>
+  </div>
+
+  <div style="position:absolute;left:88px;top:334px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;color:#EDB15C;">
+    DG_CHECK conflict &rarr; loop back to ARBITER (max 2&times;) &rarr; else forced TIER 3
+  </div>
+
+  <div style="position:absolute;left:88px;right:120px;top:398px;display:flex;flex-direction:column;gap:12px;">
+    <div class="cap"><b>&mdash;</b>&nbsp; 3 specialists run concurrently (<b>asyncio.gather</b>) &middot; single retry, short fixed timeout &mdash; one stall can&rsquo;t burn the budget.</div>
+    <div class="cap"><b>&mdash;</b>&nbsp; Static per-agent tool manifests &mdash; the berth agent <b>physically cannot</b> call the yard manager. Least privilege by construction.</div>
+    <div class="cap"><b>&mdash;</b>&nbsp; Single FastAPI process &middot; one <b>Incident</b> record with an embedded append-only trace &middot; only the orchestrator writes.</div>
+    <div class="cap"><b>&mdash;</b>&nbsp; Direct Anthropic Messages API (claude-sonnet-5) &mdash; no Agent SDK autonomy surface. Dashboard polls one read-only endpoint.</div>
+  </div>
+
+  <div class="note"><b>75 seconds.</b> This is the only architecture slide &mdash; the LLM proposes, this pipeline disposes.</div>
+  <div class="pageno">05 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

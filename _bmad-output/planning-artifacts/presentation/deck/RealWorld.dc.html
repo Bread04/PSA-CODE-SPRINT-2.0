@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .flow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.09em;text-transform:uppercase;border:1px solid #214459;border-radius:4px;padding:9px 13px;background:#0D1C26;color:#EAF7F9;}
+    .brk{border:1px solid #214459;border-radius:8px;background:#0D1C26;padding:18px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A4B8C0;display:flex;flex-direction:column;gap:9px;}
+    .brk .l{display:flex;justify-content:space-between;gap:24px;}
+    .brk .l b{color:#EDB15C;font-weight:500;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">Built for the real world</div>
+
+  <div style="position:absolute;left:88px;right:120px;top:126px;font-weight:600;font-size:38px;line-height:1.12;letter-spacing:-0.03em;">
+    A tool times out. It degrades &mdash; it doesn&rsquo;t crash &mdash; and it shows its work.
+  </div>
+
+  <div style="position:absolute;left:88px;top:266px;display:flex;gap:10px;align-items:center;">
+    <div class="flow">Timeout</div><span style="color:#2C4655;">&rarr;</span>
+    <div class="flow">Retry &times;1</div><span style="color:#2C4655;">&rarr;</span>
+    <div class="flow" style="border-color:#7A5A2E;color:#F7B267;">Fallback &mdash; last known state</div><span style="color:#2C4655;">&rarr;</span>
+    <div class="flow">Confidence degrades, logged</div>
+  </div>
+
+  <div style="position:absolute;left:88px;top:360px;display:flex;gap:34px;align-items:center;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:-0.07em;font-size:64px;color:#A4B8C0;">91%</div>
+    <div style="color:#2C4655;font-size:40px;">&rarr;</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:-0.07em;font-size:64px;color:#F7B267;">67%</div>
+    <div class="brk" style="flex:1;max-width:520px;">
+      <div class="l">Telemetry staleness <b>&minus;9</b></div>
+      <div class="l">Missing data / fallback penalty <b>&minus;24</b></div>
+      <div class="l" style="color:#5C7883;">= computed from staleness &middot; missing fields &middot; agent disagreement &middot; outcome spread</div>
+    </div>
+  </div>
+
+  <div class="note"><b>Never the model grading its own homework.</b> The number is computed; the reason is on screen.</div>
+  <div class="pageno">08 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

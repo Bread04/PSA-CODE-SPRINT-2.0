@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .step{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#EAF7F9;border:1px solid #214459;border-radius:4px;padding:11px 16px;background:#0D1C26;}
+    .sep{color:#2C4655;align-self:center;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">What it is</div>
+
+  <div style="position:absolute;left:88px;right:120px;top:210px;">
+    <div style="font-weight:600;font-size:52px;line-height:1.1;letter-spacing:-0.035em;">
+      A multi-agent layer <span style="color:#66E0D2;">on top of</span> PSA&rsquo;s existing automation.
+    </div>
+  </div>
+
+  <div style="position:absolute;left:88px;top:388px;display:flex;gap:12px;flex-wrap:wrap;">
+    <div class="step">Detect</div><div class="sep">&rarr;</div>
+    <div class="step">Correlate</div><div class="sep">&rarr;</div>
+    <div class="step">Decide</div><div class="sep">&rarr;</div>
+    <div class="step">Act</div><div class="sep">&rarr;</div>
+    <div class="step">Trace</div>
+  </div>
+
+  <div style="position:absolute;left:88px;top:472px;font-size:15px;color:#A4B8C0;">
+    Auto-executes what&rsquo;s safe &middot; escalates what isn&rsquo;t &middot; leaves an auditable trace of every decision.
+  </div>
+
+  <div class="note">It <b>augments</b> the existing automation &mdash; it doesn&rsquo;t replace it.</div>
+  <div class="pageno">04 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

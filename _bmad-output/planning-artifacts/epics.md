@@ -110,9 +110,9 @@ FR14: Epic 1 - execution trace
 FR15: Epic 2 - trace viewable in dashboard
 FR16: Epic 3 - concurrent incident proof
 FR17: Epic 3 - Pasir Panjang load-balancing (stretch, ranked 2nd)
-FR20: Epic 3 - AGV/Gate specialist agent (stretch, ranked 3rd)
+FR20: Epic 3 - AGV/Gate specialist agent (stretch, ranked 3rd) — DESCOPED 2026-08-29 (sprint-change-proposal-2026-08-29.md); frozen 3-specialist contract, not strictly additive
 FR19: Epic 3 - mocked MPA/digitalPORT@SG-style clearance check (stretch, ranked 5th)
-FR18: Epic 3 - Weather Circuit-Breaker agent (stretch, ranked last/6th)
+FR18: Epic 3 - Weather Circuit-Breaker agent (stretch, ranked last/6th) — DESCOPED 2026-08-29 (sprint-change-proposal-2026-08-29.md); same block as FR20
 
 ## Epic List
 
@@ -135,8 +135,8 @@ Operators watch incidents unfold on a dashboard, ask about any incident's status
 UX-DR10 (state patterns), UX-DR11 (accessibility floor), and UX-DR12 (voice & tone) are cross-cutting — each is distributed into groups 2–4's stories as acceptance criteria, not written as standalone stories (a story like "be accessible" isn't independently testable).
 
 ### Epic 3: Proven at Scale
-Portwatch resolves multiple simultaneous incidents without interference, and extends to a second terminal cluster (Pasir Panjang) using the same agents and policy engine, unchanged — direct evidence for the Scalability & Responsible AI judging criterion. **Stretch block (Day-5, strictly additive, ranked by the PRD's value/hour order — build only after FR16/FR17 and time permits):** disruption types beyond cargo/crane/yard, through the same trusted pipeline, proving the architecture generalizes rather than being purpose-built for one incident shape — an AGV/Gate specialist agent for gate-congestion signals (FR20, ranked third), a mocked meteorological-radar Weather agent (FR18, ranked last), and a mocked MPA-style clearance check (FR19, ranked last). Folded into this epic rather than kept as a separate peer epic (party-mode review, 2026-08-27): none of the three stretch items stand alone the way Epic 1-3's core FRs do — all three assume Epic 1-3's pipeline is already fully built and are ranked at or near the bottom of the PRD's Day-5 value/hour order, so treating them as a fourth co-equal epic overstated their independence. FR20 was minted during this same pass — the PRD named "AGV/Gate agent" in its Day-5 ranking without ever giving it an FR number; closed as an orphaned-requirement finding.
-**FRs covered:** FR16, FR17, FR20, FR19, FR18
+Portwatch resolves multiple simultaneous incidents without interference, and extends to a second terminal cluster (Pasir Panjang) using the same agents and policy engine, unchanged — direct evidence for the Scalability & Responsible AI judging criterion. **Stretch block (Day-5, strictly additive, ranked by the PRD's value/hour order — build only after FR16/FR17 and time permits):** disruption types beyond cargo/crane/yard, through the same trusted pipeline, proving the architecture generalizes rather than being purpose-built for one incident shape — an AGV/Gate specialist agent for gate-congestion signals (FR20, ranked third), a mocked meteorological-radar Weather agent (FR18, ranked last), and a mocked MPA-style clearance check (FR19, ranked last). Folded into this epic rather than kept as a separate peer epic (party-mode review, 2026-08-27): none of the three stretch items stand alone the way Epic 1-3's core FRs do — all three assume Epic 1-3's pipeline is already fully built and are ranked at or near the bottom of the PRD's Day-5 value/hour order, so treating them as a fourth co-equal epic overstated their independence. FR20 was minted during this same pass — the PRD named "AGV/Gate agent" in its Day-5 ranking without ever giving it an FR number; closed as an orphaned-requirement finding. **Update 2026-08-29 (`sprint-change-proposal-2026-08-29.md`):** FR20 and FR18 (Stories 3.3, 3.5) are DESCOPED — both need a 4th specialist, which cannot be added without unfreezing the Day-3-frozen `SpecialistBundle`/arbiter contract, failing this block's "strictly additive" rule. FR16 (3.1), FR17 (3.2) and FR19 (3.4) are delivered and carry the "architecture generalizes" evidence. Epic closed.
+**FRs covered:** FR16, FR17, FR19 (delivered) · FR20, FR18 (descoped 2026-08-29 — see summary)
 
 ### Epic 4: Operator Visibility (demo-critical)
 Added 2026-08-28 via `sprint-change-proposal-2026-08-28.md`. The console makes an in-flight incident legible at a glance — spatially (a real Singapore Strait / Tuas terminal map driven by mock incident state) and procedurally (a stage rail showing where in the agent pipeline the incident is). Additive, frontend-contained, reads only the existing polled trace data (AD-6 / AD-17). **Priority: P0 / demo-blocking — sequenced BEFORE Epic 3's Day-5 stretch items.** Does NOT touch the golden-path backend.
@@ -762,6 +762,16 @@ So that Portwatch demonstrates it extends to a second terminal cluster without r
 
 ### Story 3.3: AGV/Gate Specialist Agent
 
+> **DESCOPED 2026-08-29** (`sprint-change-proposal-2026-08-29.md`, Correct Course).
+> Implementing FR20 requires a 4th specialist, which forces unfreezing the Day-3-frozen
+> 3-specialist `SpecialistBundle`/arbiter contract (`backend/agents/base.py:97`,
+> `arbiter.py:217`, `test_specialists.py::test_bundle_requires_exactly_three_recommendations`).
+> That is not "strictly additive" per this epic's stretch rule, and FR20 is the #3-ranked
+> Day-5 stretch item. Epic 3's "architecture generalizes" goal is already evidenced by the
+> completed 3.1 (concurrency), 3.2 (second terminal cluster, agents unchanged) and 3.4
+> (new mock, same contract). Conditional-4th-specialist design preserved in
+> `implementation-artifacts/deferred-work.md` for post-sprint.
+
 As an operator,
 I want an AGV/Gate specialist agent that analyzes gate-queue and AGV-congestion signals and proposes recovery options,
 So that gate/AGV congestion is handled by the same trusted pipeline as berth/crane/yard disruptions (FR20, Day-5 stretch, ranked 3rd).
@@ -801,6 +811,12 @@ So that the pitch can show a compliance-interoperability angle without any live 
 **Then** it flows through the existing policy/execution path unchanged — no new tier rule
 
 ### Story 3.5: Weather Circuit-Breaker Agent
+
+> **DESCOPED 2026-08-29** (`sprint-change-proposal-2026-08-29.md`, Correct Course).
+> Same frozen-contract block as Story 3.3 — a Weather specialist is a 4th roster entry.
+> FR18 is the last-ranked Day-5 stretch item. The AC2 physical-safety Tier-3 requirement
+> was separately confirmed to need no new tier rule (existing `classify_tier` already routes
+> `reversible=False` / `risk="high"` to Tier 3). Design preserved in `deferred-work.md`.
 
 As an operator,
 I want a Weather agent that detects severe convective weather and proposes safety-first recovery options,

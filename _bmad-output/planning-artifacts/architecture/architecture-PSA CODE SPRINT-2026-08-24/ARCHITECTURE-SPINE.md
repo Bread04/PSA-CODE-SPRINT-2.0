@@ -7,7 +7,7 @@ paradigm: 'single-writer orchestrated pipeline (actor-per-incident)'
 scope: 'Portwatch multi-agent disruption orchestration system — full initiative, 6-day hackathon build'
 status: final
 created: '2026-08-24'
-updated: '2026-08-29'
+updated: '2026-08-30'
 binds: [FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17]
 sources: ['_bmad-output/planning-artifacts/prds/prd-PSA-CODE-SPRINT-2026-08-24/prd.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md']
 companions: ['_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md']
@@ -68,13 +68,16 @@ graph TD
 
 - **Binds:** FR1, FR14, FR15, FR16, all
 - **Prevents:** concurrent incidents, or independently-built agents/mock services, racing or double-writing shared state
-- **Rule:** one `Incident` record per `incident_id`, held by that incident's orchestrator task, with an embedded append-only `trace` list. Only the orchestrator coroutine writes to `Incident` or appends trace entries. Specialist agents, arbiter, policy engine, and mock services are pure call/return — they never touch shared state. The frontend/API layer only reads. Enforced by code review and module boundaries, not by the language (Python doesn't give private references) — an accepted tradeoff at this team size and timeline; do not pass a mutable `Incident` reference into any non-orchestrator function.
+- **Rule:** one `Incident` record per `incident_id`, held by that incident's orchestrator task, with an embedded append-only `trace` list. Only the orchestrator coroutine writes to `Incident` or appends trace entries — read "the orchestrator writes a trace entry for every stage transition", never "every stage writes its own". Specialist agents, arbiter, policy engine, and mock services are pure call/return — they never touch shared state. The frontend/API layer only reads.
+- **The orchestrator boundary, in module terms:** `backend/orchestrator/**` *and* the `agents/dispatch.py` entry points (`run_specialists`, `synthesize_options`) are the orchestrator — they may receive the `Incident`. Everything under `agents/{berth,crane,yard,arbiter}`, `policy/`, and `mock_services/` receives plain values (a rendered brief string, an option, an action dict), never the `Incident` object.
+- **Registry carve-out:** the `IncidentRegistry` (AD-5) is the one other writer — it sets `entity_refs` / `last_signal_at` and appends the `CORRELATE` entry, but **only before that incident's orchestrator task is spawned**. Once the task exists, a newly-correlated signal is handed to the *running* task through a single-consumer channel (an `asyncio.Queue` the orchestrator drains at stage boundaries), never by a direct registry write and never by spawning a second task for the same `incident_id`.
+- Enforced by code review and module boundaries, not by the language (Python doesn't give private references) — an accepted tradeoff at this team size and timeline.
 
 ### AD-5 — Central IncidentRegistry gates correlation
 
 - **Binds:** FR2
 - **Prevents:** duplicate/parallel incidents for what should be one correlated event; ingestion logic diverging on how correlation is decided
-- **Rule:** every incoming signal is checked against an in-memory `IncidentRegistry` (keyed by entity: vessel/berth/crane/yard-block) before dispatch. A match within the 15-minute rolling window routes the signal into the existing incident's orchestrator; no match spawns a new incident task.
+- **Rule:** every incoming signal is checked against an in-memory `IncidentRegistry` (keyed by `entity_refs`, format per the Consistency Conventions entity-ref grammar — prefixes `vessel|berth|crane|yard|gate`) before dispatch. No match spawns a new incident task. A match within the 15-minute rolling window is **routed into the existing incident**: the registry merges the new `entity_refs`, updates `last_signal_at`, appends one `CORRELATE` entry, and enqueues the signal on the running orchestrator's single-consumer channel (AD-4). The running orchestrator picks the merged signal up at its **next stage boundary** and folds it into the current analysis — it does not restart the pipeline and does not re-run completed stages. It never spawns a second task, and the signal is never silently dropped.
 
 ### AD-6 — Frontend reads via polling against one read-only Incident API
 
@@ -128,7 +131,7 @@ graph TD
 
 - **Binds:** FR13, NFR2, NFR3
 - **Prevents:** a mock-service or agent-call failure being swallowed and the pipeline proceeding as if it succeeded
-- **Rule:** every stage transition writes a trace entry (AD-4) regardless of outcome; a failed verification, timeout, or fallback is recorded with `error`/`fallback_used` set (per the error-shape convention below), never omitted. On an unrecoverable failure the incident's confidence degrades (FR6) and the incident continues in a reduced-confidence state — it does not crash the orchestrator task.
+- **Rule:** the orchestrator writes a trace entry for every stage transition (AD-4) regardless of outcome; a failed verification, timeout, or fallback is recorded with `error`/`fallback_used` set (per the error-shape convention below), never omitted. On an unrecoverable failure the incident's confidence degrades (FR6) and the incident continues in a reduced-confidence state — it does not crash the orchestrator task.
 
 ### AD-15 — Kill-switch-blocked Tier 1/2 decisions are marked, never silently dropped
 
@@ -141,7 +144,7 @@ graph TD
 - **Binds:** FR3, FR5, NFR1, NFR3
 - **Prevents:** a single live-LLM hiccup (latency spike, transient API error, rate limit) during judging cascading past FR5's automatic retry/fallback into a stalled or visibly-broken golden-path run, with no way for the operator to intervene mid-demo
 - **Rule:** each specialist agent call and the arbiter call reads a config-level override (one static map, e.g. `MOCK_AGENTS: {berth: bool, crane: bool, yard: bool, arbiter: bool}`, settable via env var or a single startup config value — no new UI control) that, when set for that agent, short-circuits the Messages API call and returns a canned, structurally-identical response (same shape as a real specialist/arbiter output) instead. This is a manual, pre-emptive override distinct from FR5: FR5 handles automatic in-incident recovery from a single failed call; AD-16 lets the operator take a misbehaving agent out of the live-LLM path entirely before or between demo runs, without touching correlation, policy, or execution — those stages consume the mocked output exactly as they would a real one. Source: competitive research recommendation (`research/competitive-psa-code-sprint-past-finalists-2026-08-26/research.md`, extending the PRD's existing Day-6 recorded-backup-run mitigation to per-agent granularity).
-- **Honesty requirement (closed 2026-08-27, party-mode review):** a mock-forced response must never be indistinguishable from a real one in the trace or confidence — that would contradict FR6's "confidence is never an LLM self-report" and the "LLM proposes, deterministic engine disposes" invariant above. Whenever `MOCK_AGENTS` short-circuits a call, the resulting `AGENT_CALL` trace entry's `detail` includes `mock_forced: true`, and the confidence formula (FR6) applies the same -15pt missing-data penalty it uses for a fallback/cached-state field — a canned response is treated as missing real data, not as equivalent to one. The frontend surfaces this via the same plain, non-alarmist microcopy as any other trace annotation (UX-DR12), e.g. a small "response mocked for demo stability" tag — never a hidden or silent substitution.
+- **Honesty requirement (closed 2026-08-27, party-mode review):** a mock-forced response must never be indistinguishable from a real one in the trace or confidence — that would contradict FR6's "confidence is never an LLM self-report" and the "LLM proposes, deterministic engine disposes" invariant above. Whenever `MOCK_AGENTS` short-circuits a call, the resulting `AGENT_CALL` trace entry's `detail` includes `mock_forced: true`, and the confidence formula (FR6) applies the same -15pt missing-data penalty it uses for a fallback/cached-state field — a canned response is treated as missing real data, not as equivalent to one. `mock_forced` counts as **exactly one** missing-data unit (-15), folded into the same `fallback_fields` term — it is not a second independent penalty term; if a mocked agent *also* has a stale/cached field, both units count. The exact term and point value live in the one FR6 config module (Consistency Conventions), not as a scattered constant. The frontend surfaces this via the same plain, non-alarmist microcopy as any other trace annotation (UX-DR12), e.g. a small "response mocked for demo stability" tag — never a hidden or silent substitution.
 
 ### AD-17 — Map surface is a bundled, read-only projection of polled incident state
 
@@ -154,10 +157,10 @@ graph TD
 - Added 2026-08-29. **Binds:** FR3, FR6, FR7, FR9, FR14, FR15, AD-4, AD-6, AD-16, AD-17; Person C build lane. Governed by the Harbor Signal UX companion (`ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md` -> *The Orchestra*).
 - **Prevents:** the 2026-08-29 visual pivot ("show the whole orchestra"; frontend follows `frontend/portwatch-tuas/src`) reopening the Day-3-frozen `SpecialistBundle`/arbiter contract or the golden path (cf. `sprint-change-proposal-2026-08-29.md` — zero code change); Person C requesting a bespoke `/pipeline` endpoint or a push channel for "live" stage updates; per-agent sub-state becoming a second source of incident truth outside the trace.
 - **Rule:** the pipeline **stage rail**, **DG-gate state**, **policy-tier**, and **confidence** all render from the existing `GET /incidents/{incident_id}` poll (AD-6) — the `Incident` record plus its append-only `trace`. No new endpoint, no SSE, no push channel; the frontend re-skin adds no route and no write path (approval + kill-switch stay the only writes). What the current frozen backend exposes today:
-  - stage rail — `trace[].stage` (SCREAMING_SNAKE vocab, `orchestrator/trace.py:STAGES`) + `error` shape for the degraded/blocked states;
-  - DG-gate — `DG_CHECK` trace `detail` (`{violation: bool}` live; `{rejected_option, reason}` in the demo seed) + AD-8 re-plan loop;
-  - tier — `Incident.tier` and `POLICY_DECISION` `detail.tier`. **No tier-reason string is emitted** — the frontend derives the reason label deterministically from `tier` + the selected `RecoveryOption.reversible` / `dg_involved` / `predicted_impact.cost` / `.risk` + `confidence` vs the FR7 threshold (all present in the payload);
-  - confidence — `Incident.confidence` int, always present. The **structured** FR6 breakdown (`staleness_seconds` / `fallback_fields` / `disagreement` / `variance_exceeds`) is emitted by the live `CONFIDENCE` trace but the demo-seed path emits a prose `detail.reason` instead — the frontend renders whichever is present;
+  - stage rail — `trace[].stage` (SCREAMING_SNAKE vocab, `orchestrator/trace.py:STAGES`) + `error` shape for the degraded/blocked states. **Rail-state derivation** (from a completion-only, append-only trace): stage `S` is `done` iff a `stage==S` entry with no `error` exists; `degraded` iff the *latest* `stage==S` entry carries an `error`; `blocked` iff that error also carries `blocked_by_kill_switch` or a DG violation; `active` = the lowest-order stage with no entry yet; a stage that a tier legitimately skips (Tier 1/2 has no `APPROVAL`) renders `done`/`n-a`, never a permanent `pending`. After a DG re-plan the rail reflects the **last** entry per stage; the loop-back to `SYNTHESIZE` is shown from the repeated `DG_CHECK` → `POLICY_DECISION` entries (the orchestrator re-emits those; it does not re-emit `AGENT_CALL`/`SYNTHESIZE`);
+  - DG-gate — `DG_CHECK` trace `detail`: `violation: bool` is **mandatory on both the live and the demo-seed path** (the demo seed MUST set it explicitly); `reason` and `rejected_option` are optional and present only on a violation. + AD-8 re-plan loop;
+  - tier — `Incident.tier` and `POLICY_DECISION` `detail.tier`. **No tier-reason string is emitted** — the frontend derives the reason label deterministically from `tier` + the selected `RecoveryOption.reversible` / `dg_involved` / `predicted_impact.cost` / `.risk` + `confidence` vs the FR7 threshold. When a DG-forced Tier 3 leaves no selected option (`selected is None`, AD-8), the reason label is the fixed string **"DG/IMDG segregation — human approval required"**;
+  - confidence — `Incident.confidence` int, always present. The two `CONFIDENCE` `detail` shapes are **mutually exclusive by rule**: the live path emits the structured FR6 breakdown (`staleness_seconds` / `fallback_fields` / `disagreement` / `variance_exceeds`) and **no** `reason`; the demo-seed path emits a prose `detail.reason` (str) and **none** of the structured keys. The frontend branches on `"reason" in detail`;
   - `Incident.options[].predicted_impact` — structured `{delay_min, cost, yard_impact, risk}` (FR4 seed); Notification mock already lists **MPA** (FR13).
 - **The per-specialist output** the agent roster shows (each agent's `summary` / `actions` / `constraints`) is not on the current API — it needs the small read-surface addition in **AD-19**. Everything else above is a zero-backend-change projection.
 - **The frozen contract stays locked:** the `SpecialistBundle` 3-tuple (`min_length=3, max_length=3`), `AgentName = Literal["berth","crane","yard"]`, the arbiter's `len(...) != 3` guard, and their frozen tests are untouched by AD-18 and AD-19 alike.
@@ -169,6 +172,7 @@ graph TD
 - **Rule:** after `run_specialists` returns, the orchestrator — still the sole writer (AD-4) — does two additive things:
   1. sets `Incident.agents: list[SpecialistRecommendation]` to the **validated bundle it already passes to the arbiter** (berth → crane → yard order; the same objects, not recomputed), read-only to the frontend;
   2. appends one `AGENT_CALL` trace entry per specialist — `detail: {agent, mock_forced}` (AD-16), plus the standard `{stage, error, retried, fallback_used}` shape on a timeout/fallback — so the stage rail's `AGENT_CALL` stage is real on the live path, not only in `demo_seed.py`. The stage rail collapses the 1–3 `AGENT_CALL` entries into its single `AGENT_CALL` stage (degraded if any carries an `error`); the per-agent view is the roster, driven by `Incident.agents`, not by counting trace rows.
+- **Roster chip state is a 3-state derivation, not a persisted field.** `SpecialistRecommendation` carries no `state` and no per-agent `confidenceContribution` — the FR6 `disagreement` input is a single aggregate, and `run_specialists` fires `asyncio.gather` so there is no observable `QUEUED`→`RUNNING` transition to persist. Person C derives each chip: **PENDING** while that agent has no `AGENT_CALL` entry and `Incident.agents` is empty (all three chips move together the moment analysis starts — drawn side-by-side as "these ran at once", per EXPERIENCE.md); **DONE** once its `AGENT_CALL` entry exists with `error == null`; **DEGRADED** when that entry carries an `error` / `fallback_used: true` (show the reason). EXPERIENCE.md's 5-label `QUEUED → RUNNING → COMPLETE / TIMEOUT → FALLBACK` chip text collapses to these three for the build — a matching correction to that companion is a follow-up.
 - **Boundary:** no new endpoint (rides `GET /incidents/{incident_id}`, AD-6); no push channel; `Incident.agents` is never written by anything but the orchestrator and never read as state by the backend. It does **not** change the roster's size or membership — `SpecialistBundle` stays exactly three, `AgentName` stays `berth|crane|yard`, the arbiter guard and every frozen specialist test are unchanged. This exposes what already exists.
 - **Scope cost:** a real but small backend change — ~1 model field + ~10–15 lines where `run_specialists` is awaited + a `demo_seed.py` update to populate `Incident.agents` on the demo incidents. It **supersedes `sprint-change-proposal-2026-08-29`'s "`backend/` byte-unchanged" for this one read-surface addition**; golden-path control flow, tiers, policy, DG gate, execution, and all frozen tests stay untouched. A display-data addition alongside the frozen path, not an unfreeze of it.
 
@@ -178,7 +182,9 @@ graph TD
 | --- | --- |
 | Naming (entities, files, interfaces, events) | `incident_id`: UUID4 string. Agent module names: `berth`, `crane`, `yard`, `arbiter` (lowercase). Trace entry `stage` values: `INGEST`, `CORRELATE`, `AGENT_CALL`, `SYNTHESIZE`, `CONFIDENCE`, `POLICY_DECISION`, `DG_CHECK`, `APPROVAL`, `EXECUTE`, `VERIFY` (SCREAMING_SNAKE). |
 | Data & formats (ids, dates, error shapes, envelopes) | Timestamps: ISO 8601 UTC. Confidence: int 0-100. Error/failure shape: `{stage, error, retried: bool, fallback_used: bool}` (FR5). Tier: literal `1` \| `2` \| `3`. |
-| State & cross-cutting (mutation, errors, logging, config, auth) | Mutation only via the incident's orchestrator (AD-4). The trace list *is* the log — no separate log store for incident-level events. Tier thresholds (FR7) and confidence weights (FR6) live as one static config module, not scattered constants — tunable in one place per the PRD's Open Items note on Day 1-2 threshold tuning. Auth: none (AD-10). |
+| JSON wire format | The API returns Pydantic `model_dump()` **verbatim — `snake_case`, no camelization**. The frontend consumes `snake_case` directly (`predicted_impact`, `blocked_by_kill_switch`, `entity_refs`, …); the camelCase field names in the UX companion's data-contract table (`tierReason`, `dgGate`, `confidenceContribution`, `predictedImpact`) are that doc's shorthand, not the wire shape. The approval action literal is `approve` \| `reject` \| `select_alternative` — **never `modify`** (that is the companion's UI verb for the same action; AD-11). `RecoveryOption.cost` and `.risk` are the literal enum `low` \| `medium` \| `high` — a magnitude to display, not free text or a currency string. |
+| Entity-ref grammar | `entity_refs` tokens are `type:TOKEN` where `type ∈ {vessel, berth, crane, yard, gate}` (this is the canonical set — AD-5's "yard-block" means `yard`) and `TOKEN` matches `[A-Z0-9-]+`, upper-case canonical (`vessel:MSC-ANNA`, `yard:TUAS-C7`, `berth:C7-3`). One owner — `ingestion.make_entity_ref` — produces them; Person B's mock services and `frontend/src/lib/geo.ts` (AD-17) import or mirror that function, never hand-format. Registry correlation (AD-5) is exact-string, so a drift in case/separator silently fails to correlate — hence the single owner. (Utilization-map keys *inside* a `CORRELATE`/agent `detail` payload, e.g. `tuas_c7`, are a separate display namespace, not `entity_refs`.) |
+| State & cross-cutting (mutation, errors, logging, config, auth) | Mutation only via the incident's orchestrator + the registry carve-out (AD-4). The trace list *is* the log — no separate log store for incident-level events. Tier thresholds (FR7) and confidence weights (FR6) — including whether `mock_forced` is folded into `fallback_fields` and its point value (AD-16) — live as one static config module, not scattered constants; tunable in one place per the PRD's Open Items note on Day 1-2 threshold tuning. Auth: none (AD-10). |
 
 ## Stack
 
@@ -189,8 +195,8 @@ graph TD
 | Anthropic Python SDK (Messages API, direct — not Agent SDK/Tool Runner/Managed Agents, see AD-2) | latest stable |
 | Claude model | `claude-sonnet-5` for all agent calls (specialists, arbiter, FR12 status-query) — cost/latency-appropriate for AD-13's ~20-30s budget across parallel calls. Swapping the arbiter alone to a stronger model if synthesis quality needs it is a same-day tuning knob, not an architecture change. |
 | React | 19.2.8 (verified current, mid-2026) |
-| TypeScript | 5.x current stable |
-| Vite | 8.1.3 (verified current, mid-2026) |
+| TypeScript | 7.x current stable (native compiler; Vite transpiles, so no `tsc` gate sits on the golden path) |
+| Vite | 8.2.x (current as of Aug 2026) |
 
 ## Structural Seed
 
@@ -219,6 +225,13 @@ graph LR
 The adversarial review confirmed that with zero field-level shape, Person A (orchestrator), Person B (mock services), and Person C (frontend) would each invent incompatible names for the same concepts. These are the minimum fields that must match across lanes; anything not listed here is free for the owning lane to extend.
 
 ```text
+Signal:                      # FR1 — the one normalized shape for all raw signal types; input to AD-5 correlation
+  entity_refs: list[str]     # 'type:TOKEN' format (Consistency Conventions entity-ref grammar)
+  signal_type: str           # recognized raw type, e.g. 'vessel_eta', 'equipment_alert', 'yard_metric', 'gate_metric', 'user_request'
+  payload: dict              # original raw signal, preserved for downstream consumers
+  received_at: str           # ISO 8601 UTC
+# RejectedSignal: {raw: dict, reason: str, received_at: str} — a rejected raw signal is returned structured, never an exception (NFR2)
+
 Incident:
   incident_id: str          # UUID4, set at creation (AD-5)
   status: "open" | "resolved"
@@ -259,7 +272,9 @@ TraceEntry:
 GET  /incidents                 -> list[Incident summary]
 GET  /incidents/{incident_id}   -> Incident (full, incl. trace)          # polled by dashboard, AD-6
 POST /incidents/{incident_id}/approval
-     body: {action: "approve" | "reject" | "select_alternative", option_id?: str}   # AD-11
+     body: {action: "approve" | "reject" | "select_alternative", option_id?: str, note?: str}   # AD-11
+                                 # `note` is accepted and recorded on the APPROVAL trace entry; optional, free text.
+                                 # `action` is exactly these three literals -- the UX companion's "modify" verb maps to "select_alternative".
 GET  /incidents/query?q={natural language text}&incident_id={optional}
      -> {answer: str}           # FR12, grounded by injecting current Incident state as context (AD-2).
                                  # incident_id is an OPTIONAL hint the frontend may pass when an incident
@@ -281,17 +296,24 @@ Local dev machines for the 6-day build; a single instance (localhost or one demo
 
 ### Source tree
 
+This was the cold-start seed; the backend now exists and **owns its own layout** — the tree below is kept for orientation, with the as-built deltas noted. Code wins on any discrepancy.
+
 ```text
 backend/
   ingestion/        # signal normalization (FR1)
   registry/          # IncidentRegistry (AD-5)
-  orchestrator/       # per-incident task, sole state writer (AD-4)
-  agents/             # berth.py, crane.py, yard.py, arbiter.py + tool manifests (AD-2, AD-3)
-  policy/             # policy_engine.py, confidence.py, dg_gate.py — pure functions (AD-8)
-  mock_services/      # tos.py, crane_scheduler.py, yard_manager.py, agv.py, gate.py, notification.py (recipients incl. MPA, FR13), dg_checker.py
-                       # every mock exposes one async def execute(action: dict) -> {ok: bool, result: dict, error: str | null} — one call shape for all 7, incl. injectable timeout/failure mode (FR5)
-  api/                # FastAPI routes: read-only Incident/trace endpoints, approval endpoint (AD-6, AD-11)
-  models/             # Incident, TraceEntry data shapes
+  orchestrator/       # run.py (per-incident task, sole state writer, AD-4), retry.py (FR5), trace.py (STAGES vocab)
+  agents/             # berth.py, crane.py, yard.py, arbiter.py; base.py (frozen SpecialistBundle 3-tuple contract, AD-18/19),
+                       # dispatch.py (run_specialists / synthesize_options — orchestrator boundary, AD-4), mock_override.py (AD-16),
+                       # yard_load_balancing.py (AD-12) + tool manifests (AD-2, AD-3)
+  policy/             # engine.py (policy tiers, FR7), confidence.py (FR6), dg_gate.py (AD-8), killswitch.py (AD-7) — pure functions
+  mock_services/      # services.py — a single class-based registry (as-built), not one file per mock. Covers TOS, Crane Scheduler,
+                       # Yard Manager, AGV, Gate, Notification (recipients incl. MPA, FR13), DG Checker, MpaClearanceService (FR19).
+                       # One action-execution shape for all, incl. injectable timeout/failure mode (FR5).
+  api/                # FastAPI routes: read-only Incident/trace endpoints, approval endpoint (AD-6, AD-11);
+                       # demo_seed.py (seeded incidents) and demo_driver.py ("Three-Way Disruption" live-run trigger) are
+                       # demo-only surfaces — they drive the real pipeline, they are not a second write path
+  models/             # incident.py (Incident, TraceEntry), signal.py (Signal, RejectedSignal), recovery.py (RecoveryOption, PredictedImpact)
 frontend/
   src/
     theme/             # Harbor Signal tokens (Space Grotesk + IBM Plex Mono, marine-ink palette,
@@ -328,5 +350,7 @@ frontend/
 - **Real PSA system integrations** — mocked services only for this build.
 - **Certified DG/legal compliance implementation** — the DG/IMDG ruleset is a simplified, representative subset for demo purposes, stated explicitly (per PRD Compliance Note) so it reads as intentional scoping.
 - **Persistence beyond the demo session** and **production auth** — revisit together if Portwatch is ever productionized (AD-9, AD-10).
-- **MPA-style clearance checking, weather/micro-climate events** — same mock-service pattern as DG Checker; structurally cheap to add later, not committed unless Day 5 has spare time after FR17 and the AGV/Gate agent.
+- **FR19 mocked MPA clearance check** — **built** (story 3-4, `MpaClearanceService` in `mock_services/`); a new mock on the existing `execute(action)` contract, no interface drift. Noted here only because it post-dates the spine's original scope line.
+- **FR18 Weather Circuit-Breaker agent and FR20 AGV/Gate specialist agent** — **formally descoped 2026-08-29** via `sprint-change-proposal-2026-08-29.md`: both require unfreezing the Day-3-frozen 3-specialist `SpecialistBundle`/arbiter contract, so neither is "strictly additive", and they are the #3 / last-ranked Day-5 stretch items. Epic 3's generalization goal is met by the delivered FR16/FR17/FR19 work. The conditional-4th-specialist design is preserved in `deferred-work.md` for post-sprint; these FRs are outside this spine's `binds` (FR1-FR17) either way.
+- **Micro-climate / additional mock-service event types** beyond the built roster — same `execute(action)` pattern; structurally cheap, not committed.
 - **Strait-Level Collision Avoidance, Transshipment MARL/GNN Optimization** — named in the PRD as roadmap-only, explicitly not hackathon-buildable; excluded from this spine entirely.

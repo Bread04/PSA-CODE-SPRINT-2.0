@@ -2,7 +2,7 @@
 title: 'AGV/Gate Specialist Agent'
 type: 'feature'
 created: '2026-08-29'
-status: 'blocked'
+status: 'descoped'
 baseline_revision: '2a269d4c505b8a724e7cd5268e564aa665dc5e81'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -64,3 +64,12 @@ Unresolved questions for a human:
 3. If neither is acceptable before the demo, is Story 3.3 a stretch cut (it is ranked 3rd of the Day-5 block, "cut from the bottom if time runs short")?
 
 No production or test code was changed. `backend/` is byte-unchanged at `2a269d4`.
+
+---
+
+## Descope Decision — 2026-08-29
+
+**Resolved via `_bmad-output/planning-artifacts/sprint-change-proposal-2026-08-29.md` (Correct Course).**
+Path chosen: **cut**. Unresolved question 1 (unfreeze the `SpecialistBundle`/`AgentName`/arbiter-guard/frozen-test "exactly 3" contract) was answered **no** — not for the #3-ranked Day-5 stretch item, with the golden path frozen and the demo imminent. Question 3 (stretch cut) answered **yes**.
+
+The intended conditional-4th-specialist design (Approach + I/O matrix above) is preserved verbatim in `_bmad-output/implementation-artifacts/deferred-work.md` as post-sprint work. `backend/` remains byte-unchanged at `2a269d4`.

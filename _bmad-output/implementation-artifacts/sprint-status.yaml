@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 08-27-2026 12:00
-last_updated: 08-29-2026 01:40
+last_updated: 08-29-2026 (correct-course + epic-3/epic-4 retrospectives)
 project: PSA CODE SPRINT
 project_key: NOKEY
 tracking_system: file-system
@@ -66,19 +66,22 @@ development_status:
   epic-4: done
   4-1-geographic-map-panel: done
   4-2-agent-action-stage-rail: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
 
-  epic-3: in-progress
+  epic-3: done
   3-1-concurrent-incident-proof: done
   3-2-pasir-panjang-load-balancing: done
-  # 3-3 / 3-5: bmad-build-auto HALTed blocked at planning — adding a 4th/5th
-  # specialist requires unfreezing the Day-3-frozen 3-specialist SpecialistBundle/
-  # arbiter contract + a frozen test; needs a human architecture decision.
-  # See spec-3-3-*.md / spec-3-5-*.md Auto Run Result.
-  3-3-agv-gate-specialist-agent: blocked
   3-4-mocked-mpa-clearance-check: done
-  3-5-weather-circuit-breaker-agent: blocked
-  epic-3-retrospective: optional
+  # 3-3 (AGV/Gate, FR20) and 3-5 (Weather, FR18) DESCOPED 2026-08-29 via
+  # sprint-change-proposal-2026-08-29.md (Correct Course). Both required
+  # unfreezing the Day-3-frozen 3-specialist SpecialistBundle/arbiter contract —
+  # not "strictly additive" per the Epic 3 stretch rule, and they are the #3 and
+  # last-ranked Day-5 stretch items. Epic 3's generalization goal is met by the
+  # completed 3-1/3-2/3-4. Conditional-4th-specialist design preserved in
+  # deferred-work.md for post-sprint.
+  # 3-3-agv-gate-specialist-agent: descoped
+  # 3-5-weather-circuit-breaker-agent: descoped
+  epic-3-retrospective: done
 action_items:
   - id: "epic-1-retro-item-1-add-policy_start-to-stages-enum-in-trace"
     epic: 1
@@ -108,7 +111,10 @@ action_items:
     epic: 1
     action: "Commit Epic 1.5-1.13 backend work"
     owner: "dev"
-    status: open
+    status: done
+    note: "Closed 2026-08-29 (epic-3 retro follow-through): Epic 1.5-1.13 committed at
+      4667b96 / aaaeba1; FastAPI HTTP layer committed at 49ce0d2 via epic-2-retro-item-6;
+      working tree clean."
     ref: "C:\\Users\\braed\\OneDrive\\Desktop\\PSA CODE SPRINT\\_bmad-output\\implementation-artifacts\\\
       epic-1-retro-08-27-2026.md"
   - id: "epic-2-retro-item-5-build-the-integrating-live-console-story"
@@ -173,3 +179,50 @@ action_items:
     owner: "process"
     status: done
     ref: "_bmad-output/implementation-artifacts/epic-2-retro-08-28-2026.md"
+  - id: "epic-3-retro-item-1-brief-demo-narration-proof-vs-enforcement"
+    epic: 3
+    action: "Brief the demo narration: frame Epic 3's 'architecture generalizes' claim as
+      proven by the concurrency + extensibility test suite; describe Pasir Panjang reroute
+      and MPA clearance as designed-and-proven integration points, not live pipeline behaviour"
+    owner: "PM / demo lead"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-08-29-2026.md"
+  - id: "epic-3-retro-item-2-extract-fakeasyncanthropic-shared-test-helper"
+    epic: 3
+    action: "Extract the FakeAsyncAnthropic test double (_Block/_Response/_Messages/_text_response)
+      into one shared backend/tests helper; de-dupe the 3 copies (test_arbiter, test_specialists,
+      test_load_balancing)"
+    owner: "backend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-08-29-2026.md"
+  - id: "epic-3-retro-item-3-preflight-frozen-contract-check-for-additive-stories"
+    epic: 3
+    action: "Process: before accepting an 'additive' story, list the frozen contracts its
+      stated approach would touch; 'reuse the pattern' != 'extend the roster'"
+    owner: "process"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-08-29-2026.md"
+  - id: "epic-3-retro-item-4-ad-backing-for-yard-thresholds-on-fr20-revival"
+    epic: 3
+    action: "If FR20/FR18 are revived from deferred-work.md, attach an AD/rationale to
+      TUAS_HIGH_THRESHOLD / PASIR_PANJANG_HEADROOM_CEILING before wiring the helper into
+      the live path"
+    owner: "backend / architect"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-08-29-2026.md"
+  - id: "epic-4-retro-item-1-geomap-handle-policy_start-stage"
+    epic: 4
+    action: "Add case 'POLICY_START' to GeoMapPanel.stageToStateKey (-> 'deciding', matching
+      stageRail's fold) + a unit test; removes the map/rail disagreement when a poll lands
+      on POLICY_START"
+    owner: "frontend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-4-retro-08-29-2026.md"
+  - id: "epic-4-retro-item-2-note-dual-stage-mapping-projections"
+    epic: 4
+    action: "Record in the frontend context that GeoMapPanel.stageToStateKey and
+      stageRail.RAIL_STAGES are two hand-maintained projections of backend trace.py STAGES
+      and must be updated together"
+    owner: "frontend"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-4-retro-08-29-2026.md"

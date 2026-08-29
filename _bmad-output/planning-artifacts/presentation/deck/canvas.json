@@ -1,0 +1,15 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",           "x": 0,    "y": 0,   "w": 1280, "h": 720, "title": "01 — Title" },
+    { "file": "Gap.dc.html",            "x": 1360, "y": 0,   "w": 1280, "h": 720, "title": "02 — The gap" },
+    { "file": "WhySingapore.dc.html",   "x": 2720, "y": 0,   "w": 1280, "h": 720, "title": "03 — Why Singapore" },
+    { "file": "WhatItIs.dc.html",       "x": 4080, "y": 0,   "w": 1280, "h": 720, "title": "04 — What it is" },
+    { "file": "Architecture.dc.html",   "x": 5440, "y": 0,   "w": 1280, "h": 720, "title": "05 — Architecture" },
+    { "file": "CoreRule.dc.html",       "x": 0,    "y": 860, "w": 1280, "h": 720, "title": "06 — The core rule" },
+    { "file": "TieredAutonomy.dc.html", "x": 1360, "y": 860, "w": 1280, "h": 720, "title": "07 — Tiered autonomy" },
+    { "file": "RealWorld.dc.html",      "x": 2720, "y": 860, "w": 1280, "h": 720, "title": "08 — Built for the real world" },
+    { "file": "ScaleAudit.dc.html",     "x": 4080, "y": 860, "w": 1280, "h": 720, "title": "09 — Scale & audit" },
+    { "file": "Roadmap.dc.html",        "x": 5440, "y": 860, "w": 1280, "h": 720, "title": "10 — Roadmap & close" }
+  ],
+  "launch": { "view": "canvas" }
+}

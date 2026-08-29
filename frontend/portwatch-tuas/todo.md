@@ -1,0 +1,36 @@
+# Portwatch-Tuas follow-up
+
+- [x] Fix overlapping KPI footer delta and coordinate-label text.
+- [x] Make Berths, Yards, and Routes map controls clickable with visible transitions.
+- [x] Remove visible demo-control language from the live operations view.
+- [x] Add calm monitoring state, in-world inspection entry points, system-detected logs, and automatic return to monitoring.
+- [x] Refine the weather monitor panel and remove the failed-image artifact.
+- [x] Add fleet tabs, vessel cards, and a collapsible vessel detail inspector to the Command Center.
+- [x] Connect vessel selection to map markers and live incident status updates.
+- [x] Remove Autonomy & Policy, Architecture, and Roadmap from the sidebar navigation.
+- [x] Add a responsive sidebar collapse control for wider map visibility.
+- [x] Restructure Command Center into persistent vessel-detail, map, and event-log columns.
+- [x] Add the stable idle vessel inspector state and responsive no-shift layout.
+- [x] Tune the Live Twin desktop grid to explicit 25% vessel detail / 50% map / 25% event log proportions.
+- [x] Fine-tune the Live Twin desktop grid to approximately 24% vessel detail / 52% map / 24% event log.
+- [x] Remove the Command Center, Live Operations, and Audit Trail view-intro headers and descriptions.
+- [x] Add frontline workforce load-balancing recommendations with explicit human approval and live incident context.
+- [x] Add a disruption-type dropdown with alternate staffing recommendations.
+- [x] Add an approval history drawer with timestamps, affected shifts, and approving operator details.
+- [x] Add a visual projected yard-efficiency impact chart driven by the selected staffing recommendation.
+- [x] Integrate the provided weather radar payload into the microclimate watch.
+- [x] Add visible Tier 1 / Tier 2 / Tier 3 human decision controls for vessel and equipment watch recommendations.
+- [x] Refactor vessel/equipment watch into a Tier 3 controlled-recovery approval surface with Option A/B/C cards.
+- [x] Add clear Approve / Reject actions and preserve Tier 1/2/3 semantics.
+- [x] Merge Inspection / Vessel Detail and Fleet Monitoring / Local View into one continuous left panel.
+- [x] Restructure the Command Center into a strict first-row 3-column grid plus full-width workforce row.
+- [x] Stretch the first-row columns to equal height and preserve responsive stacking.
+- [x] Simplify navigation to Home/Dashboard, Active Incidents, Audit Trail, and Settings.
+- [x] Rebuild the landing view around a simplified Tuas Port B1–B5 status map and Active Disruption Inbox.
+- [x] Make the human-in-the-loop action card the centerpiece with plain-English summary, three options, tier tag, and clear actions.
+- [x] Add visible tool-timeout fallback state and reduce the audit view to a chronological execution timeline.
+- [x] Remove the Settings subtab from the visible navigation.
+- [x] Place Human-in-the-Loop / Frontline Capacity directly beneath the Active Disruption Inbox.
+- [x] Refine workforce controls, standby recommendation disclosure, projected impact bars, and approval footer stats.
+- [x] Remove the marked workforce disruption-type and response-option dropdown section.
+- [x] Remove the marked projected-impact / yard-efficiency block.

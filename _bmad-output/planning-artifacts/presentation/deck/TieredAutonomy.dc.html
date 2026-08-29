@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .band{border:1px solid #214459;border-radius:8px;background:#0D1C26;padding:20px 24px;display:flex;align-items:center;gap:26px;}
+    .band .tag{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;min-width:96px;}
+    .band .hd{font-weight:600;font-size:20px;letter-spacing:-0.02em;min-width:230px;}
+    .band .ds{font-size:14px;color:#A4B8C0;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">Tiered autonomy</div>
+
+  <div style="position:absolute;left:88px;top:126px;font-weight:600;font-size:38px;letter-spacing:-0.03em;">Most incidents resolve invisibly. Only what needs a human surfaces.</div>
+
+  <div style="position:absolute;left:88px;right:88px;top:270px;display:flex;flex-direction:column;gap:16px;">
+    <div class="band">
+      <div class="tag" style="color:#66E0D2;">Tier 1</div>
+      <div class="hd">Silent</div>
+      <div class="ds">Fully reversible, no SLA exposure, no safety flag &mdash; executes end to end, nobody gets pinged.</div>
+    </div>
+    <div class="band">
+      <div class="tag" style="color:#66E0D2;">Tier 2</div>
+      <div class="hd">Auto + notify</div>
+      <div class="ds">Acts on its own, then tells the operator what it did.</div>
+    </div>
+    <div class="band" style="border-color:#7A5A2E;">
+      <div class="tag" style="color:#F7B267;">Tier 3</div>
+      <div class="hd" style="color:#F7B267;">Human approves</div>
+      <div class="ds">Degraded confidence, SLA-breach risk, or safety involvement &mdash; one decision card, then it waits.</div>
+    </div>
+  </div>
+
+  <div class="note">Most incidents are invisible. <b>That restraint is what gives an escalation its weight.</b></div>
+  <div class="pageno">07 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

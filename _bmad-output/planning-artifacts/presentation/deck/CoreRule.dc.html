@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .col{flex:1;border:1px solid #214459;border-radius:8px;background:#0D1C26;padding:24px 22px;display:flex;flex-direction:column;gap:16px;}
+    .col h3{margin:0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;}
+    .row{font-size:15px;color:#EAF7F9;display:flex;align-items:baseline;gap:10px;}
+    .row span{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5C7883;}
+    .foot{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;color:#86A8AA;margin-top:auto;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">The core rule</div>
+
+  <div style="position:absolute;left:88px;right:120px;top:140px;font-weight:600;font-size:46px;line-height:1.1;letter-spacing:-0.035em;">
+    The LLM <span style="color:#66E0D2;">proposes</span>. A deterministic engine <span style="color:#EAF7F9;">disposes</span>.
+  </div>
+
+  <div style="position:absolute;left:88px;right:88px;top:300px;display:flex;gap:24px;">
+    <div class="col" style="border-color:#2E5E5A;">
+      <h3 style="color:#66E0D2;">Proposes &nbsp;/&nbsp; LLM</h3>
+      <div class="row">Specialist agents <span>berth &middot; crane &middot; yard</span></div>
+      <div class="row">Arbiter <span>synthesises 2&ndash;3 ranked options</span></div>
+      <div class="foot">Recommend only. Never touches a system of record.</div>
+    </div>
+    <div class="col">
+      <h3 style="color:#A4B8C0;">Disposes &nbsp;/&nbsp; plain code</h3>
+      <div class="row">Confidence formula <span>staleness &middot; missing-data &middot; variance</span></div>
+      <div class="row">Policy engine <span>tier 1 / 2 / 3</span></div>
+      <div class="row">DG / IMDG hard gate <span>outside the tiers</span></div>
+      <div class="row">Kill switch <span>one flag, one check point</span></div>
+      <div class="foot">No model in the decision path.</div>
+    </div>
+  </div>
+
+  <div class="note">Our answer to <b>&ldquo;it&rsquo;s a black box.&rdquo;</b> Nothing autonomous ever executes on its own.</div>
+  <div class="pageno">06 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -3,7 +3,8 @@ title: Portwatch Architecture Walkthrough
 purpose: team walkthrough + judge-facing explainer
 source: ARCHITECTURE-SPINE.md
 status: final
-updated: '2026-08-29'
+updated: '2026-08-30'
+companion_deck: architecture-deck.html
 ---
 
 # Portwatch — Architecture Walkthrough
@@ -92,6 +93,14 @@ Runs after policy-tier classification, before execution, independent of tier. Co
 Every stage transition writes a trace entry regardless of outcome. A failed verification degrades confidence — it never crashes the task or gets swallowed.
 *Prevents:* a masked failure reading as a clean incident.
 
+**AD-15 — Kill-switch-blocked Tier 1/2 is marked, not dropped**
+If the kill switch is engaged when a Tier 1/2 decision reaches the execution gate, the orchestrator writes a `blocked_by_kill_switch` trace entry and sets the matching `Incident` field — the tier is never silently reclassified. Re-enabling doesn't auto-resume; the operator re-triggers via the existing approve action.
+*Prevents:* a Tier 1/2 incident sitting invisibly unresolved while the switch is engaged.
+
+**AD-16 — Per-agent demo-safety mock override**
+A static `MOCK_AGENTS` map lets the operator take one misbehaving specialist (or the arbiter) out of the live-LLM path before a demo run, returning a structurally-identical canned response. Honesty requirement: the trace marks it `mock_forced: true` and confidence takes the same missing-data penalty as a fallback — never an invisible substitution.
+*Prevents:* one live-LLM hiccup during judging cascading into a stalled golden path.
+
 ### Demo & scale
 
 **AD-11 — "Modify" = pick an alternative**
@@ -106,6 +115,12 @@ Specialist calls run concurrently via `asyncio.gather`, never sequentially. FR5'
 Yard Manager returns per-block utilization (Tuas C7, Pasir Panjang P2) from the start, even though FR17 routing is Day-5 stretch.
 *Prevents:* a schema change under Day-5 time pressure.
 
+### Map & visibility
+
+**AD-17 — Map surface is a bundled, read-only projection**
+The geographic map panel renders from the same `GET /incidents` poll — no new endpoint, no SSE. Basemap geometry is vendored into the frontend bundle; zero runtime calls to any tile service. Entity → coordinate is a static frontend fixture. The map is not a decision surface.
+*Prevents:* a live tile dependency becoming a demo failure point; the map becoming a second source of incident truth.
+
 ---
 
 ## 3. How the Architecture Answers the Judging Criteria
@@ -114,7 +129,7 @@ Yard Manager returns per-block utilization (Tuas C7, Pasir Panjang P2) from the 
 | --- | --- |
 | **Agentic AI Design & Technical Execution** | Fan-out/fan-in multi-agent analysis (AD-2, AD-13), deterministic policy engine outside LLM authority (paradigm), full execution trace (AD-4, AD-14). |
 | **Innovation & Originality** | Correlates cross-system signals no single PSA system owns; tiered autonomy (Tier 1/2/3) lets most incidents resolve invisibly while surfacing only what needs a human. |
-| **Scalability & Responsible AI** | Stateless-per-incident actors prove concurrency (AD-1, AD-4); FR17 reuses the same Yard Agent/policy engine unchanged (AD-12) as live evidence the architecture extends without redesign; Future Extensions named as roadmap, never demoed as working. |
+| **Scalability & Responsible AI** | Stateless-per-incident actors prove concurrency live (AD-1, AD-4); FR17 / FR19 extend the same Yard Agent, policy engine, and mock-call contract unchanged (AD-12) — proven by the concurrency + extensibility **test suite** (257 backend tests), described as designed-and-proven integration points rather than live pipeline behaviour; Future Extensions named as roadmap, never demoed as working. |
 | **Presentation & Clarity** | This walkthrough + the execution-trace example below — the same document serves the team build and the judge explanation. |
 
 ---
@@ -126,9 +141,12 @@ Yard Manager returns per-block utilization (Tuas C7, Pasir Panjang P2) from the 
 | Kill switch | Global flag, single enforcement point pre-execution (AD-7). Instant. |
 | Policy authority | Tier engine, DG gate, and confidence formula are plain deterministic functions — no LLM in the decision path. |
 | Least privilege | Static per-agent tool manifests (AD-3); Berth cannot reach the Yard Manager. |
-| DG/IMDG compliance | Simplified, representative ruleset for demo purposes — explicitly not a certified compliance implementation. |
-| Concurrency proof | ≥2 incidents resolved concurrently live, via stateless-per-incident tasks (AD-1, AD-4) — not simulated. |
-| Approval-bottleneck-at-scale | Named, not built. Future answer: prioritize by predicted-impact/SLA-risk, batch by shared root cause. |
+| API authentication | The console API is **unauthenticated by design for the demo** — single trusted operator, internal network, mock-only downstream services, no real actuation. Production sits behind the terminal's SSO / reverse-proxy with per-operator identity, RBAC on the `/approval` and `/kill-switch` routes, and request rate limiting. This is an edge concern: no domain-logic change, the pipeline is untouched. The one real secret (`ANTHROPIC_API_KEY`) is read from the environment and never logged or returned. |
+| DG/IMDG compliance | Simplified, representative ruleset built for demo purposes (PRD §6) — explicitly **not** a certified compliance implementation. The gate mechanism (hard, tier-independent, bounded re-plan) is production-shaped; the ruleset behind it would be replaced by the certified IMDG segregation matrix. |
+| Map data provenance | The geographic map is an **illustrative projection of mock incident state** (PRD §6a, AD-17): bundled basemap geometry, static entity→coordinate fixtures, zero runtime network calls, updated from the same `GET /incidents` poll as the rest of the console. It is explicitly **not** an AIS/VTS feed and carries no vessel-tracking claim — "Strait-Level Multi-Vessel Collision Avoidance" stays vision-only in Future Extensions, never demoed. |
+| Concurrency proof | ≥2 incidents resolved concurrently via stateless-per-incident tasks (AD-1, AD-4), asserted at the orchestrator layer by 4 deterministic isolation tests + an `asyncio.Barrier` simultaneity harness — genuinely non-vacuous, not wall-clock-dependent. |
+| Demo mock overrides | Per-agent `MOCK_AGENTS` (AD-16) + recorded-backup run; a canned response is always trace-marked and confidence-penalised, never passed off as real. |
+| Approval-bottleneck-at-scale | Named, not built (PRD §7). Many Tier-3 escalations during one large event would queue behind a single operator. Future answer: prioritize escalations by predicted-impact / SLA-risk score, batch by shared root cause. Stateless-per-incident design means this is a scheduling layer on top, not a re-architecture. |
 
 ---
 
@@ -169,7 +187,7 @@ Owns AD-12, mock call contract
 
 **Person C — Frontend** (Harbor Signal re-skin)
 Incident feed · decision card · execution trace · stage rail · agent roster (new) · geo map · Ask Portwatch · kill switch
-Owns AD-6, AD-11, AD-18 client side · consumes `Incident.agents` (AD-19)
+Owns AD-6, AD-11, AD-17, AD-18 client side · consumes `Incident.agents` (AD-19)
 
 **Person D — Integration & demo**
 Wires A + B + C together · Kill switch, demo scripting
@@ -193,7 +211,8 @@ Owns AD-1, AD-7
 - Approval-bottleneck-at-scale — named future work, not built.
 - Real PSA integrations — mocked services only.
 - Certified DG/legal compliance — simplified ruleset, stated explicitly.
-- MPA clearance checking, weather events — cheap-if-spare-time, not committed.
+- **FR20 (AGV/Gate specialist) + FR18 (weather circuit-breaker) — descoped 2026-08-29** (`sprint-change-proposal-2026-08-29.md`): both need a 4th roster entry, which cannot be added without unfreezing the Day-3-frozen `SpecialistBundle`/arbiter contract. Lowest-ranked Day-5 stretch items; conditional-4th-specialist design preserved in `deferred-work.md`.
+- Weather/micro-climate events beyond FR18 — same mock-service pattern, cheap-if-spare-time, not committed.
 - Strait collision avoidance, transshipment MARL/GNN — roadmap only, never claimed as working.
 
 ---

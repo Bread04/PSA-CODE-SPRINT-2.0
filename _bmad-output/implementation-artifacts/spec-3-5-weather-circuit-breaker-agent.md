@@ -2,7 +2,7 @@
 title: 'Weather Circuit-Breaker Agent'
 type: 'feature'
 created: '2026-08-29'
-status: 'blocked'
+status: 'descoped'
 baseline_revision: '7b309b76de0a27b3c90bdb496199d7b4da18254c'
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -64,3 +64,10 @@ Assessed and **not** blocking:
 Unresolved questions for a human: identical to `spec-3-3-agv-gate-specialist-agent.md` questions 1–3 (approve unfreezing the specialist-bundle contract to 3-or-N; conditional vs always-on 4th/5th specialist; or accept 3.3 + 3.5 as stretch cuts — 3.5 is ranked last of the Day-5 block).
 
 No production or test code was changed. `backend/` is byte-unchanged at `7b309b7`.
+
+---
+
+## Descope Decision — 2026-08-29
+
+**Resolved via `_bmad-output/planning-artifacts/sprint-change-proposal-2026-08-29.md` (Correct Course).**
+Path chosen: **cut** — same frozen-contract decision as Story 3.3, and FR18 is the last-ranked Day-5 stretch item. The AC2/AC3 finding stands: physical-safety Tier-3 routing needs no new tier rule (existing `classify_tier` already covers it), so only the specialist-roster half is deferred. Design preserved in `_bmad-output/implementation-artifacts/deferred-work.md`. `backend/` byte-unchanged at `7b309b7`.

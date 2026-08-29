@@ -12,5 +12,8 @@ export default defineConfig({
     // jsdom rendering of token-driven components stays faithful.
     css: true,
     setupFiles: ['./vitest.setup.ts'],
+    // `e2e/*.spec.ts` are Playwright specs (own runner) — keep them out of the
+    // Vitest run, which otherwise collects them via the default `*.spec.ts` glob.
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
   },
 });

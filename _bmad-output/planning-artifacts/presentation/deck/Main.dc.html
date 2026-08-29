@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .cm{position:absolute;right:52px;bottom:52px;width:9px;height:9px;border-right:1px solid #66E0D2;border-bottom:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="cm"></div>
+  <div class="eyebrow">Portwatch &middot; Tuas</div>
+
+  <div style="position:absolute;left:88px;top:236px;display:flex;align-items:center;gap:28px;">
+    <svg width="76" height="76" viewBox="0 0 64 64" fill="none" stroke="#66E0D2" stroke-width="1.4">
+      <circle cx="32" cy="46" r="4" fill="#66E0D2" stroke="none"></circle>
+      <path d="M18 42a18 18 0 0 1 28 0" opacity=".9"></path>
+      <path d="M12 36a26 26 0 0 1 40 0" opacity=".52"></path>
+      <path d="M7 30a33 33 0 0 1 50 0" opacity=".28"></path>
+    </svg>
+    <div>
+      <div style="font-weight:600;font-size:92px;letter-spacing:-0.045em;line-height:1;">PORTWATCH</div>
+      <div style="margin-top:18px;font-size:21px;color:#A4B8C0;letter-spacing:.005em;">AI-powered disruption orchestration for Tuas Port</div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:88px;right:88px;bottom:120px;display:flex;gap:10px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:#2C4655;">
+    <span>INGEST</span><span>&rarr;</span><span>CORRELATE</span><span>&rarr;</span><span>AGENT_CALL</span><span>&rarr;</span><span>SYNTHESIZE</span><span>&rarr;</span><span>CONFIDENCE</span><span>&rarr;</span><span>POLICY_DECISION</span><span>&rarr;</span><span>DG_CHECK</span><span>&rarr;</span><span>APPROVAL</span><span>&rarr;</span><span>EXECUTE</span><span>&rarr;</span><span>VERIFY</span>
+  </div>
+
+  <div class="note">PSA Code Sprint &middot; 4 people &middot; 6-day build. <b>Team + track &mdash; 5 seconds, move on.</b></div>
+  <div class="pageno">01 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

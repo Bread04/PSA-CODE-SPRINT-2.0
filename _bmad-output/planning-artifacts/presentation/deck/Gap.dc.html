@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    .slide{position:relative;width:1280px;height:720px;background:#07141B;color:#EAF7F9;font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;}
+    .grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(102,224,210,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(102,224,210,.05) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 72%);mask-image:linear-gradient(to bottom,#000,transparent 72%);}
+    .lb{position:absolute;top:52px;left:52px;width:22px;height:22px;border-left:1px solid #66E0D2;border-top:1px solid #66E0D2;}
+    .eyebrow{position:absolute;top:47px;left:88px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:#66E0D2;}
+    .pageno{position:absolute;right:64px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.17em;color:#5C7883;}
+    .note{position:absolute;left:88px;right:210px;bottom:44px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:#5C7883;}
+    .note b{color:#A4B8C0;font-weight:500;}
+    h1{margin:0;font-weight:600;font-size:40px;line-height:1.14;letter-spacing:-0.03em;text-wrap:balance;max-width:24ch;}
+    a{color:#66E0D2;}a:hover{color:#79D8C7;}
+    .silo{flex:1;border:1px solid #214459;border-radius:8px;background:#0D1C26;padding:18px 16px 20px;display:flex;flex-direction:column;justify-content:space-between;min-height:236px;}
+    .silo .name{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#EAF7F9;}
+    .silo .auto{display:flex;align-items:center;gap:7px;color:#5C7883;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;}
+  </style>
+</helmet>
+<div class="slide">
+  <div class="grid"></div>
+  <div class="lb"></div>
+  <div class="eyebrow">The gap</div>
+
+  <div style="position:absolute;left:88px;top:132px;">
+    <h1>Automation runs deep <span style="color:#66E0D2;">inside</span> each system. Disruptions cross every boundary.</h1>
+  </div>
+
+  <div style="position:absolute;left:88px;right:88px;top:330px;">
+    <div style="display:flex;gap:22px;position:relative;">
+      <div class="silo"><div class="name">Quay Cranes</div><div class="auto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v4h-4"></path></svg>optimises its own box</div></div>
+      <div class="silo"><div class="name">AGVs</div><div class="auto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v4h-4"></path></svg>optimises its own box</div></div>
+      <div class="silo"><div class="name">Yard Cranes</div><div class="auto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v4h-4"></path></svg>optimises its own box</div></div>
+      <div class="silo"><div class="name">Yard Planning</div><div class="auto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v4h-4"></path></svg>optimises its own box</div></div>
+
+      <div style="position:absolute;left:-14px;right:-14px;top:96px;height:2px;background:#E8695A;"></div>
+      <div style="position:absolute;left:0;top:70px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;color:#F2746D;">ETA SLIP &rarr; BERTH &rarr; CRANE &rarr; YARD &rarr; AGV &nbsp;&mdash;&nbsp; ONE CASCADE, NO OWNER</div>
+    </div>
+  </div>
+
+  <div class="note">Today a human correlates these by hand, <b>mid-incident, under a clock.</b></div>
+  <div class="pageno">02 / 10</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

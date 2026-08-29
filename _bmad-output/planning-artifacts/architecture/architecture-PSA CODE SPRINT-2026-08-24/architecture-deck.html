@@ -1,0 +1,872 @@
+<title>Portwatch Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* ============ Harbor Signal — marine-ink palette (dark-first ops console world) ============ */
+  :root {
+    --ground: #eef2f1;
+    --surface: #ffffff;
+    --surface-2: #f4f8f6;
+    --ink: #0b1620;
+    --ink-dim: #4d626b;
+    --line: #d3dddb;
+    --line-soft: #e3ebe8;
+    --seafoam: #17836b;
+    --seafoam-bg: #dcefe9;
+    --amber: #9a6512;
+    --amber-bg: #f5e9d5;
+    --red: #b23f39;
+    --red-bg: #f6e0de;
+    --rail-w: 232px;
+    --shadow: 0 1px 2px rgba(11,22,32,.06), 0 8px 24px -12px rgba(11,22,32,.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0b1620;
+      --surface: #12242f;
+      --surface-2: #162c38;
+      --ink: #e9eff0;
+      --ink-dim: #93a9b2;
+      --line: #243b47;
+      --line-soft: #1b303b;
+      --seafoam: #57c9ac;
+      --seafoam-bg: #10362f;
+      --amber: #e3a24c;
+      --amber-bg: #3a2c17;
+      --red: #e0605a;
+      --red-bg: #3a1f1d;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -14px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0b1620;
+    --surface: #12242f;
+    --surface-2: #162c38;
+    --ink: #e9eff0;
+    --ink-dim: #93a9b2;
+    --line: #243b47;
+    --line-soft: #1b303b;
+    --seafoam: #57c9ac;
+    --seafoam-bg: #10362f;
+    --amber: #e3a24c;
+    --amber-bg: #3a2c17;
+    --red: #e0605a;
+    --red-bg: #3a1f1d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -14px rgba(0,0,0,.55);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+  a { color: var(--seafoam); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  /* ============ Shell ============ */
+  .shell { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } }
+
+  /* ============ Left rail (echoes the console stage rail) ============ */
+  .rail {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--line);
+    background: var(--surface);
+    padding: 28px 20px 24px;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  @media (max-width: 900px) {
+    .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand svg { flex: none; }
+  .brand b { font-weight: 700; letter-spacing: -.01em; font-size: 15px; }
+  .brand span { display: block; font-size: 11px; color: var(--ink-dim); font-weight: 400; letter-spacing: .02em; }
+  .nav { display: flex; flex-direction: column; gap: 1px; }
+  .nav a {
+    display: grid; grid-template-columns: 26px 1fr; align-items: baseline; gap: 8px;
+    padding: 7px 8px; border-radius: 8px;
+    color: var(--ink-dim); text-decoration: none;
+    font-size: 13px; line-height: 1.3;
+    transition: background .15s, color .15s;
+  }
+  .nav a .n { font-family: "IBM Plex Mono", monospace; font-size: 11px; }
+  .nav a:hover { background: var(--surface-2); color: var(--ink); }
+  .nav a.active { background: var(--seafoam-bg); color: var(--ink); }
+  .nav a.active .n { color: var(--seafoam); }
+  .rail-foot { margin-top: auto; font-size: 11px; color: var(--ink-dim); }
+  .themetog {
+    appearance: none; border: 1px solid var(--line); background: var(--surface-2);
+    color: var(--ink-dim); font: inherit; font-size: 12px;
+    padding: 6px 10px; border-radius: 8px; cursor: pointer; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .themetog:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+  /* ============ Main ============ */
+  main { padding: 0 clamp(20px, 5vw, 72px); }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  section { padding: 68px 0; border-bottom: 1px solid var(--line-soft); scroll-margin-top: 24px; }
+  section:last-of-type { border-bottom: 0; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--seafoam); margin: 0 0 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--seafoam); display: inline-block; }
+  h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.06; letter-spacing: -.028em; margin: 0 0 18px; text-wrap: balance; font-weight: 700; }
+  h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); line-height: 1.12; letter-spacing: -.022em; margin: 0 0 16px; text-wrap: balance; font-weight: 600; }
+  h3 { font-size: 1.06rem; margin: 0 0 6px; letter-spacing: -.01em; font-weight: 600; }
+  p { margin: 0 0 16px; max-width: 68ch; }
+  .lede { font-size: 1.15rem; color: var(--ink); max-width: 64ch; }
+  .dim { color: var(--ink-dim); }
+  strong { font-weight: 600; }
+
+  /* ---- hero ---- */
+  .hero { padding-top: 84px; }
+  .hero-meta {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0;
+  }
+  .chip {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .02em;
+    padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink-dim);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* ---- paradigm cards ---- */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+  @media (max-width: 720px) { .duo { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: 20px; box-shadow: var(--shadow);
+  }
+  .card .k {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-dim); margin: 0 0 8px;
+  }
+  .card p { margin: 0; font-size: .95rem; }
+  .card p + p { margin-top: 10px; }
+
+  /* ============ Pipeline diagram ============ */
+  .diagram-frame {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px; box-shadow: var(--shadow); overflow-x: auto; margin: 8px 0 20px;
+  }
+  .pipeline { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; }
+  .pl-elabel { fill: var(--ink-dim); font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .06em; }
+
+  .pl-node .box {
+    fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5;
+    transition: fill .25s, stroke .25s;
+  }
+  .pl-node text { fill: var(--ink); font-family: "Space Grotesk", sans-serif; font-size: 12.5px; font-weight: 500; }
+  .pl-node .sub { fill: var(--ink-dim); font-family: "IBM Plex Mono", monospace; font-size: 9.5px; }
+  .pl-edge { stroke: var(--ink-dim); stroke-width: 1.5; fill: none; marker-end: url(#arrow); opacity: .7; }
+  .pl-edge.loop { stroke: var(--amber); stroke-dasharray: 4 3; opacity: .9; }
+  .pl-edge.gate { stroke: var(--red); stroke-dasharray: 2 3; }
+  .pl-lane { fill: var(--ink-dim); font-family: "IBM Plex Mono", monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+  .pl-band { fill: var(--surface-2); opacity: .45; }
+
+  .pl-node.is-active .box { fill: var(--seafoam-bg); stroke: var(--seafoam); stroke-width: 2.5; }
+  .pl-node.is-active text { fill: var(--ink); }
+  .pl-node.is-degraded .box { fill: var(--amber-bg); stroke: var(--amber); stroke-width: 2.5; }
+  .pl-node.is-violation .box { fill: var(--red-bg); stroke: var(--red); stroke-width: 2.5; }
+  .pl-node.is-active .box { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { stroke-opacity: 1; } 50% { stroke-opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .pl-node.is-active .box { animation: none; } }
+
+  /* ============ Trace player ============ */
+  .player {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .player-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; border-bottom: 1px solid var(--line-soft); background: var(--surface-2);
+  }
+  .player-bar .btn {
+    appearance: none; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); font: inherit; font-size: 13px; font-weight: 500;
+    padding: 6px 12px; border-radius: 7px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .player-bar .btn:hover:not(:disabled) { border-color: var(--seafoam); color: var(--seafoam); }
+  .player-bar .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .player-bar .btn.primary { background: var(--seafoam); border-color: var(--seafoam); color: #06231d; }
+  :root[data-theme="dark"] .player-bar .btn.primary,
+  :root:not([data-theme="light"]) .player-bar .btn.primary { color: #06231d; }
+  .player-bar .pos { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-dim); margin-left: auto; }
+  .track { list-style: none; margin: 0; padding: 6px; max-height: 340px; overflow-y: auto; }
+  .track li {
+    display: grid; grid-template-columns: 62px 132px 1fr; gap: 12px; align-items: baseline;
+    padding: 8px 12px; border-radius: 6px;
+    font-size: 13px; line-height: 1.45;
+    border-left: 2px solid transparent;
+  }
+  @media (max-width: 640px) { .track li { grid-template-columns: 54px 1fr; } .track li .st { grid-column: 1 / -1; } }
+  .track li .t { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-dim); }
+  .track li .st { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--seafoam); }
+  .track li.done { opacity: .5; }
+  .track li.cur { background: var(--seafoam-bg); border-left-color: var(--seafoam); opacity: 1; }
+  .track li.cur.warn { background: var(--amber-bg); border-left-color: var(--amber); }
+  .track li.cur.warn .st { color: var(--amber); }
+  .track li.cur.bad { background: var(--red-bg); border-left-color: var(--red); }
+  .track li.cur.bad .st { color: var(--red); }
+  .track li.future { opacity: .5; }
+  .caption { font-size: 12.5px; color: var(--ink-dim); margin: 10px 2px 0; }
+
+  /* ============ AD grid ============ */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 22px; }
+  .filters button {
+    appearance: none; font: inherit; font-size: 12.5px; cursor: pointer;
+    padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink-dim);
+  }
+  .filters button:hover { color: var(--ink); border-color: var(--ink-dim); }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+
+  .adgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .adgrid { grid-template-columns: 1fr; } }
+  .ad {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px 16px 14px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .ad.hide { display: none; }
+  .ad-top { display: flex; align-items: baseline; gap: 8px; }
+  .ad-id { font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; color: var(--seafoam); }
+  .ad-adopted { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: .1em; color: var(--amber); border: 1px solid var(--amber); border-radius: 4px; padding: 1px 5px; }
+  .ad h3 { font-size: .98rem; margin: 0; line-height: 1.3; }
+  .ad .rule { font-size: .88rem; margin: 0; color: var(--ink); }
+  .ad .prevents { font-size: .82rem; margin: 0; color: var(--ink-dim); }
+  .ad .prevents b { color: var(--red); font-weight: 600; font-family: "IBM Plex Mono", monospace; font-size: .78rem; letter-spacing: .04em; }
+  .ad .binds { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--ink-dim); margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .ad-cat { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+
+  /* ============ Tables ============ */
+  .tbl-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; background: var(--surface); }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td code, td .mono { font-size: 12px; }
+  td b { font-weight: 600; }
+
+  /* ============ Build lanes ============ */
+  .lanes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .lanes { grid-template-columns: 1fr; } }
+  .lane { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; box-shadow: var(--shadow); }
+  .lane .who { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--seafoam); margin: 0 0 4px; }
+  .lane h3 { margin: 0 0 8px; }
+  .lane p { font-size: .9rem; margin: 0 0 10px; }
+  .lane .owns { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-dim); }
+  .lane .owns b { color: var(--ink); }
+
+  /* ============ Deferred ============ */
+  .deferred { display: grid; gap: 8px; }
+  .deferred li {
+    list-style: none; padding: 12px 14px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 7px; font-size: 13.5px;
+    display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline;
+  }
+  .deferred li::before { content: "—"; color: var(--ink-dim); font-family: "IBM Plex Mono", monospace; }
+  .deferred li b { font-weight: 600; }
+
+  .foot { padding: 40px 0 80px; font-size: 12px; color: var(--ink-dim); }
+  .foot code { font-size: 11px; }
+
+  :focus-visible { outline: 2px solid var(--seafoam); outline-offset: 2px; border-radius: 4px; }
+</style>
+
+<div class="shell">
+  <!-- ================= LEFT RAIL ================= -->
+  <aside class="rail">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="var(--seafoam)" stroke-width="1.6"/>
+        <circle cx="12" cy="12" r="3.4" fill="var(--seafoam)"/>
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="var(--seafoam)" stroke-width="1.6"/>
+      </svg>
+      <div>
+        <b>Portwatch</b>
+        <span>Architecture spine · v final</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav" aria-label="Sections">
+      <a href="#overview"><span class="n">01</span><span>Overview</span></a>
+      <a href="#paradigm"><span class="n">02</span><span>Design paradigm</span></a>
+      <a href="#pipeline"><span class="n">03</span><span>The pipeline</span></a>
+      <a href="#trace"><span class="n">04</span><span>UJ-1 walked through</span></a>
+      <a href="#decisions"><span class="n">05</span><span>All 19 decisions</span></a>
+      <a href="#judging"><span class="n">06</span><span>Judging-criteria fit</span></a>
+      <a href="#safety"><span class="n">07</span><span>Safety &amp; scale</span></a>
+      <a href="#build"><span class="n">08</span><span>Build map</span></a>
+      <a href="#stack"><span class="n">09</span><span>Stack &amp; deferred</span></a>
+    </nav>
+
+    <div class="rail-foot">
+      <button class="themetog" id="themetog" type="button" aria-label="Toggle colour theme">
+        <span id="themelabel">Theme</span>
+      </button>
+      <p style="margin:14px 0 0">Generated from <code>ARCHITECTURE-SPINE.md</code><br>PSA Code Sprint · updated 2026-08-29</p>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main>
+    <div class="wrap">
+
+      <!-- 01 OVERVIEW -->
+      <section id="overview" class="hero">
+        <p class="eyebrow">PSA Code Sprint · 4 people · 6-day build</p>
+        <h1>One incident, one pipeline, one writer.</h1>
+        <p class="lede">Portwatch is a multi-agent orchestration layer for Tuas Port. It detects and correlates cross-system disruptions no single system sees end to end, analyses them with scoped specialist agents, auto-executes what is provably safe, escalates what is not, and leaves a complete auditable trace of every decision.</p>
+        <div class="hero-meta">
+          <span class="chip">altitude <b>initiative</b></span>
+          <span class="chip"><b>19</b> architecture decisions</span>
+          <span class="chip">paradigm <b>single-writer orchestrated pipeline</b></span>
+          <span class="chip">actor <b>per incident</b></span>
+          <span class="chip"><b>17</b> functional reqs bound</span>
+        </div>
+      </section>
+
+      <!-- 02 PARADIGM -->
+      <section id="paradigm">
+        <p class="eyebrow">02 — Design paradigm</p>
+        <h2>The LLM proposes. The deterministic engine disposes.</h2>
+        <p>Every incident runs as an isolated async task — an <em>actor</em> — that owns exactly one mutable <code>Incident</code> record with an embedded append-only trace. Work flows through fixed pipeline stages, fanning out to parallel specialist agents at analysis and fanning back in at synthesis. <strong>No stage other than the orchestrator ever writes shared state</strong>; everything else is called and returns data.</p>
+        <div class="duo">
+          <div class="card">
+            <p class="k">The proposal half</p>
+            <p>Specialist agents (berth, crane, yard) and the arbiter <em>recommend</em>. They call the Anthropic Messages API directly, each with a static, scoped tool manifest — never a broader autonomous-agent surface.</p>
+          </div>
+          <div class="card">
+            <p class="k">The decision half</p>
+            <p>Tier classification, the DG/IMDG gate, the confidence formula, and the kill switch are plain deterministic code with <strong>no model call in the decision path</strong>. This is the direct architectural answer to the "black-box AI" objection — it holds everywhere, not only where convenient.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 PIPELINE -->
+      <section id="pipeline">
+        <p class="eyebrow">03 — The pipeline</p>
+        <h2>Ingest to verify, with fan-out at analysis</h2>
+        <p>The orchestrator is the sole writer (AD-4). Specialist calls run concurrently (AD-13). The DG gate sits at a fixed position after policy classification and before execution, independent of tier (AD-8); a conflict loops back to the arbiter, capped at two re-plans. The kill switch gates exactly one point — immediately before any mock-service execution (AD-7). The dashboard only ever reads, by polling one endpoint every 2–3s (AD-6).</p>
+
+        <div class="diagram-frame">
+          <svg class="pipeline" viewBox="0 0 640 1012" role="img" aria-labelledby="pl-title pl-desc">
+            <title id="pl-title">Portwatch incident pipeline</title>
+            <desc id="pl-desc">Signal ingestion feeds a correlation registry, then a per-incident orchestrator that fans out to three concurrent specialist agents and back in to the arbiter, through the confidence formula, policy engine, and DG gate, to human approval or mock execution and verification. The kill switch gates execution; a read-only API serves the polling dashboard.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" fill="var(--ink-dim)"/>
+              </marker>
+            </defs>
+
+            <!-- analysis band -->
+            <rect class="pl-band" x="10" y="300" width="620" height="86" rx="10"/>
+            <text class="pl-lane" x="320" y="296" text-anchor="middle">Analysis · concurrent (asyncio.gather)</text>
+
+            <!-- edges: main spine -->
+            <path class="pl-edge" d="M320 82 V116"/>
+            <path class="pl-edge" d="M320 178 V212"/>
+            <path class="pl-edge" d="M320 272 V292 H112 V316"/>
+            <path class="pl-edge" d="M320 272 V316"/>
+            <path class="pl-edge" d="M320 272 V292 H528 V316"/>
+            <path class="pl-edge" d="M112 368 V392 H320 V416"/>
+            <path class="pl-edge" d="M320 368 V416"/>
+            <path class="pl-edge" d="M528 368 V392 H320 V416"/>
+            <path class="pl-edge" d="M320 476 V512"/>
+            <path class="pl-edge" d="M320 572 V608"/>
+            <path class="pl-edge" d="M320 668 V704"/>
+            <!-- dg gate splits to approval (Tier 3) and execute (Tier 1/2) -->
+            <path class="pl-edge" d="M320 764 V788 H164 V812"/>
+            <path class="pl-edge" d="M320 764 V788 H476 V812"/>
+            <path class="pl-edge" d="M264 840 H372"/>
+            <path class="pl-edge" d="M476 868 V896 H320 V920"/>
+            <!-- dg re-plan loop-back -->
+            <path class="pl-edge loop" d="M200 736 H168 V448 H200"/>
+            <!-- kill-switch gate -->
+            <path class="pl-edge gate" d="M476 786 V812"/>
+            <!-- read-only projection -->
+            <path class="pl-edge" style="stroke-dasharray:3 3;opacity:.5" d="M440 242 H452"/>
+
+            <!-- edge labels -->
+            <text class="pl-lane" x="150" y="600" text-anchor="middle" transform="rotate(-90 150 600)">re-plan ≤ 2× · AD-8</text>
+            <text class="pl-elabel" x="150" y="806">Tier 3</text>
+            <text class="pl-elabel" x="486" y="806">Tier 1 / 2</text>
+
+            <!-- nodes -->
+            <g class="pl-node" id="pl-ingest" transform="translate(200,26)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">Signal ingestion</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">INGEST — normalise entity refs</text>
+            </g>
+            <g class="pl-node" id="pl-registry" transform="translate(200,120)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">IncidentRegistry</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">CORRELATE — 15-min window</text>
+            </g>
+            <g class="pl-node" id="pl-orch" transform="translate(200,214)">
+              <rect class="box" width="240" height="56" rx="8" style="stroke-dasharray:5 3"/>
+              <text x="120" y="26" text-anchor="middle">Per-incident orchestrator</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">sole state writer — AD-4</text>
+            </g>
+
+            <g class="pl-node" id="pl-berth" transform="translate(24,316)">
+              <rect class="box" width="176" height="52" rx="8"/>
+              <text x="88" y="24" text-anchor="middle">Berth agent</text>
+              <text class="sub" x="88" y="39" text-anchor="middle">scoped tools — AD-3</text>
+            </g>
+            <g class="pl-node" id="pl-crane" transform="translate(232,316)">
+              <rect class="box" width="176" height="52" rx="8"/>
+              <text x="88" y="24" text-anchor="middle">Crane agent</text>
+              <text class="sub" x="88" y="39" text-anchor="middle">scoped tools — AD-3</text>
+            </g>
+            <g class="pl-node" id="pl-yard" transform="translate(440,316)">
+              <rect class="box" width="176" height="52" rx="8"/>
+              <text x="88" y="24" text-anchor="middle">Yard agent</text>
+              <text class="sub" x="88" y="39" text-anchor="middle">2-block model — AD-12</text>
+            </g>
+
+            <g class="pl-node" id="pl-arbiter" transform="translate(200,416)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">Arbiter</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">SYNTHESIZE — 2–3 ranked options</text>
+            </g>
+            <g class="pl-node" id="pl-confidence" transform="translate(200,512)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">Confidence formula</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">CONFIDENCE — 0–100, deterministic</text>
+            </g>
+            <g class="pl-node" id="pl-policy" transform="translate(200,608)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">Policy engine</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">POLICY_DECISION — Tier 1 / 2 / 3</text>
+            </g>
+            <g class="pl-node" id="pl-dgcheck" transform="translate(200,704)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">DG / IMDG gate</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">DG_CHECK — fixed position, all tiers</text>
+            </g>
+
+            <g class="pl-node" id="pl-approval" transform="translate(64,812)">
+              <rect class="box" width="200" height="56" rx="8"/>
+              <text x="100" y="26" text-anchor="middle">Human approval</text>
+              <text class="sub" x="100" y="42" text-anchor="middle">APPROVAL — approve / reject / alt</text>
+            </g>
+            <g class="pl-node" id="pl-execute" transform="translate(376,812)">
+              <rect class="box" width="200" height="56" rx="8"/>
+              <text x="100" y="26" text-anchor="middle">Mock execution</text>
+              <text class="sub" x="100" y="42" text-anchor="middle">EXECUTE — 7 services</text>
+            </g>
+            <g class="pl-node" id="pl-verify" transform="translate(200,920)">
+              <rect class="box" width="240" height="56" rx="8"/>
+              <text x="120" y="26" text-anchor="middle">Verify</text>
+              <text class="sub" x="120" y="42" text-anchor="middle">VERIFY — 4/4 checked, close</text>
+            </g>
+
+            <g class="pl-node" id="pl-kill" transform="translate(452,730)">
+              <rect class="box" width="172" height="52" rx="8" style="fill:var(--red-bg);stroke:var(--red)"/>
+              <text x="86" y="22" text-anchor="middle" style="fill:var(--red)">Kill switch</text>
+              <text class="sub" x="86" y="37" text-anchor="middle">one flag · one gate · AD-7</text>
+            </g>
+            <g class="pl-node" id="pl-api" transform="translate(452,212)">
+              <rect class="box" width="172" height="60" rx="8"/>
+              <text x="86" y="25" text-anchor="middle">Read-only API</text>
+              <text class="sub" x="86" y="41" text-anchor="middle">dashboard polls 2–3s</text>
+            </g>
+          </svg>
+        </div>
+        <p class="caption">Solid arrows: data flow. <span style="color:var(--amber)">Dashed amber</span>: DG re-plan loop-back (AD-8). <span style="color:var(--red)">Dotted red</span>: kill-switch gate (AD-7). The read-only API and dashboard are a projection of the same <code>Incident</code> record — never a second write path.</p>
+      </section>
+
+      <!-- 04 TRACE -->
+      <section id="trace">
+        <p class="eyebrow">04 — Audit trail in practice</p>
+        <h2>UJ-1, walked through the trace</h2>
+        <p>Priya, Ops Duty Manager. A vessel ETA slip and a crane fault correlate into one incident. A telemetry timeout drops confidence mid-analysis — <strong>logged, not hidden</strong> — and a DG conflict forces one re-plan before the approval card ever reaches her. Step through it; each entry lights its stage on the pipeline above.</p>
+
+        <div class="player">
+          <div class="player-bar">
+            <button class="btn" id="tp-prev" type="button">&#8592; Prev</button>
+            <button class="btn primary" id="tp-play" type="button">&#9654; Play</button>
+            <button class="btn" id="tp-next" type="button">Next &#8594;</button>
+            <button class="btn" id="tp-reset" type="button">Reset</button>
+            <span class="pos" id="tp-pos">00 / 14</span>
+          </div>
+          <ol class="track" id="tp-track"></ol>
+        </div>
+        <p class="caption" id="tp-note">Not started — press Play or Next.</p>
+      </section>
+
+      <!-- 05 DECISIONS -->
+      <section id="decisions">
+        <p class="eyebrow">05 — The consistency contract</p>
+        <h2>All 19 architecture decisions</h2>
+        <p>The calls that would let four independently-built lanes diverge — fixed once, here, so nobody re-decides them mid-build. Each names what it <em>binds</em> and the divergence it <em>prevents</em>. Filter by concern:</p>
+
+        <div class="filters" id="ad-filters">
+          <button type="button" data-cat="all" aria-pressed="true">All 19</button>
+          <button type="button" data-cat="boundaries" aria-pressed="false">Paradigm &amp; boundaries</button>
+          <button type="button" data-cat="state" aria-pressed="false">State &amp; data</button>
+          <button type="button" data-cat="safety" aria-pressed="false">Safety &amp; policy</button>
+          <button type="button" data-cat="demo" aria-pressed="false">Demo &amp; scale</button>
+          <button type="button" data-cat="visibility" aria-pressed="false">Map &amp; visibility</button>
+        </div>
+
+        <div class="adgrid" id="adgrid"></div>
+      </section>
+
+      <!-- 06 JUDGING -->
+      <section id="judging">
+        <p class="eyebrow">06 — Where the architecture answers the brief</p>
+        <h2>Judging-criteria fit</h2>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th style="width:30%">Criterion</th><th>Where the architecture answers it</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>Agentic AI Design &amp; Technical Execution</b></td>
+                <td>Fan-out / fan-in multi-agent analysis (AD-2, AD-13); deterministic policy engine outside LLM authority (paradigm); per-agent tool scoping at the call boundary (AD-3); full execution trace as a byproduct of control flow (AD-4, AD-14).</td>
+              </tr>
+              <tr>
+                <td><b>Innovation &amp; Originality</b></td>
+                <td>Correlates cross-system signals no single PSA system owns (AD-5); tiered autonomy (Tier 1/2/3) lets most incidents resolve invisibly while surfacing only what needs a human.</td>
+              </tr>
+              <tr>
+                <td><b>Scalability &amp; Responsible AI</b></td>
+                <td>Stateless-per-incident actors prove concurrency live (AD-1, AD-4); FR17 / FR19 extend the same yard agent, policy engine and mock-call contract unchanged (AD-12) — proven by the concurrency + extensibility <b>test suite</b> (257 backend tests), framed as designed-and-proven integration points, not live pipeline behaviour. Future extensions named as roadmap, never demoed as working.</td>
+              </tr>
+              <tr>
+                <td><b>Presentation &amp; Clarity</b></td>
+                <td>This deck plus the trace walkthrough above — the same artifact serves the team build and the judge explanation.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 07 SAFETY -->
+      <section id="safety">
+        <p class="eyebrow">07 — Positions held</p>
+        <h2>Safety, security, scale</h2>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th style="width:26%">Concern</th><th>Position</th></tr></thead>
+            <tbody>
+              <tr><td><b>Kill switch</b></td><td>Global flag, single enforcement point immediately pre-execution (AD-7). A Tier 1/2 decision blocked by it is trace-marked and flagged on the incident, never silently dropped or reclassified (AD-15).</td></tr>
+              <tr><td><b>Policy authority</b></td><td>Tier engine, DG gate and confidence formula are plain deterministic functions — no LLM in the decision path.</td></tr>
+              <tr><td><b>Least privilege</b></td><td>Static per-agent tool manifests (AD-3); berth's manifest cannot contain the yard-manager schema — the model can't call what it was never given.</td></tr>
+              <tr><td><b>DG / IMDG compliance</b></td><td>Simplified, representative ruleset for demo purposes — explicitly not a certified compliance implementation (stated, so it reads as intentional scoping).</td></tr>
+              <tr><td><b>Concurrency proof</b></td><td>&#8805;2 incidents resolved concurrently via stateless-per-incident tasks (AD-1, AD-4); asserted at the orchestrator layer by 4 deterministic isolation tests + an <code>asyncio.Barrier</code> simultaneity harness — non-vacuous, not wall-clock-dependent.</td></tr>
+              <tr><td><b>Demo mock overrides</b></td><td>Per-agent <code>MOCK_AGENTS</code> map (AD-16) plus a recorded-backup run. A canned response is always trace-marked <code>mock_forced: true</code> and takes the same missing-data confidence penalty as a fallback — never passed off as real.</td></tr>
+              <tr><td><b>Map surface</b></td><td>Read-only projection of the same poll; basemap vendored into the bundle, zero runtime tile calls (AD-17). Not a decision surface.</td></tr>
+              <tr><td><b>Approval bottleneck at scale</b></td><td>Named, not built. Future answer: prioritise by predicted-impact / SLA-risk, batch by shared root cause.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 08 BUILD -->
+      <section id="build">
+        <p class="eyebrow">08 — Who owns what</p>
+        <h2>Build map — four lanes, one shared contract</h2>
+        <p>The decisions above are exactly the seams between these lanes.</p>
+        <div class="lanes">
+          <div class="lane">
+            <p class="who">Person A</p>
+            <h3>Orchestration core</h3>
+            <p>Specialist agents, arbiter · policy engine, confidence, DG gate · sole state writer.</p>
+            <p class="owns">Owns <b>AD-2, AD-3, AD-4, AD-8, AD-13, AD-14, AD-15, AD-16</b> · writes <code>Incident.agents</code> (AD-19)</p>
+          </div>
+          <div class="lane">
+            <p class="who">Person B</p>
+            <h3>Mock services</h3>
+            <p>TOS, Crane Scheduler, Yard Manager (2-block), AGV, Gate, Notification (+ MPA), DG Checker · injectable timeout / failure modes.</p>
+            <p class="owns">Owns <b>AD-12</b> · the one <code>execute(action)</code> mock-call contract</p>
+          </div>
+          <div class="lane">
+            <p class="who">Person C</p>
+            <h3>Frontend — Harbor Signal re-skin</h3>
+            <p>Incident feed · decision card · execution trace · stage rail · agent roster (new) · geo map · Ask Portwatch · kill switch.</p>
+            <p class="owns">Owns <b>AD-6, AD-11, AD-17, AD-18</b> client side · consumes <code>Incident.agents</code> (AD-19)</p>
+          </div>
+          <div class="lane">
+            <p class="who">Person D</p>
+            <h3>Integration &amp; demo</h3>
+            <p>Wires A + B + C together · kill switch, demo scripting, recorded backup run.</p>
+            <p class="owns">Owns <b>AD-1, AD-7</b></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 STACK -->
+      <section id="stack">
+        <p class="eyebrow">09 — Stack &amp; deferred</p>
+        <h2>What it's built on, and what it isn't</h2>
+        <div class="tbl-scroll" style="margin-bottom:24px">
+          <table>
+            <thead><tr><th style="width:26%">Layer</th><th>Choice</th></tr></thead>
+            <tbody>
+              <tr><td><b>Backend</b></td><td>Python 3.12+ floor · FastAPI ~0.141.x · single deployable process, all lanes as modules (AD-1)</td></tr>
+              <tr><td><b>Agent calls</b></td><td>Anthropic Messages API, direct — not Agent SDK / Tool Runner / Managed Agents (AD-2) · <code>claude-sonnet-5</code> for all agent calls</td></tr>
+              <tr><td><b>Frontend</b></td><td>React 19.2.8 · TypeScript 5.x · Vite 8.1.3 · Harbor Signal tokens (Space Grotesk + IBM Plex Mono, marine ink, seafoam / amber / red signals)</td></tr>
+              <tr><td><b>Persistence</b></td><td>In-memory only — no database; state lost on restart, acceptable for a demo session (AD-9)</td></tr>
+              <tr><td><b>Auth</b></td><td>None — single fixed operator context (AD-10)</td></tr>
+              <tr><td><b>Deployment</b></td><td>Local dev machines for the build; one instance for the live demo. No containers, no cloud infra. Production strategy deferred.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 style="margin-bottom:10px">Deferred, with reason</h3>
+        <ul class="deferred">
+          <li><span>Production deployment / infra (containers, cloud, HA) — not needed for a 6-day demo.</span></li>
+          <li><span>Approval-bottleneck-at-scale — named future work, not built.</span></li>
+          <li><span>Real PSA system integrations — mocked services only for this build.</span></li>
+          <li><span>Certified DG / legal compliance — simplified representative ruleset, stated explicitly.</span></li>
+          <li><span><b>FR20 (AGV/Gate specialist) + FR18 (weather circuit-breaker) — descoped 2026-08-29.</b> Both need a 4th roster entry, which cannot be added without unfreezing the Day-3-frozen <code>SpecialistBundle</code> / arbiter contract. Lowest-ranked Day-5 stretch items; conditional-4th-specialist design preserved in <code>deferred-work.md</code>.</span></li>
+          <li><span>Strait-level collision avoidance, transshipment MARL / GNN optimisation — named in the PRD as roadmap-only, excluded from this spine entirely.</span></li>
+        </ul>
+      </section>
+
+      <p class="foot">
+        Generated from <code>ARCHITECTURE-SPINE.md</code> (status: final, updated 2026-08-29) ·
+        Portwatch · PSA Code Sprint 2026-08-24 ·
+        sources: <code>prd.md</code>, Harbor Signal UX companion (<code>DESIGN.md</code> / <code>EXPERIENCE.md</code>) ·
+        AD-17 added via Correct Course 2026-08-28 · AD-18 / AD-19 added for the Harbor Signal UX pivot 2026-08-29.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- theme toggle ---------- */
+  var root = document.documentElement;
+  var tog = document.getElementById("themetog");
+  var lbl = document.getElementById("themelabel");
+  function sysDark() { return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; }
+  function curTheme() { return root.getAttribute("data-theme") || (sysDark() ? "dark" : "light"); }
+  function setLabel() { lbl.textContent = curTheme() === "dark" ? "Light theme" : "Dark theme"; }
+  try {
+    var saved = localStorage.getItem("pw-arch-theme");
+    if (saved === "dark" || saved === "light") root.setAttribute("data-theme", saved);
+  } catch (e) {}
+  setLabel();
+  tog.addEventListener("click", function () {
+    var next = curTheme() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("pw-arch-theme", next); } catch (e) {}
+    setLabel();
+  });
+
+  /* ---------- scrollspy ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll("#nav a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        links.forEach(function (l) { l.classList.remove("active"); });
+        var a = byId[en.target.id];
+        if (a) a.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  document.querySelectorAll("main section").forEach(function (s) { spy.observe(s); });
+
+  /* ---------- architecture decisions data ---------- */
+  var CATS = {
+    boundaries: "Paradigm & boundaries", state: "State & data",
+    safety: "Safety & policy", demo: "Demo & scale", visibility: "Map & visibility"
+  };
+  var ADS = [
+    { id: "AD-1", cat: "boundaries", t: "Single-process modular monolith", binds: "all",
+      rule: "One deployable FastAPI process. All four build lanes live as modules within it — no microservices, queues, or containers.",
+      prevents: "infra / deployment complexity burning a 6-day, 4-person budget" },
+    { id: "AD-2", cat: "boundaries", t: "Agents call the Messages API directly", binds: "FR3, FR4, FR12",
+      rule: "Specialists, arbiter and the status-query handler are direct Anthropic Messages API calls — not Agent SDK, Tool Runner, or Managed Agents. Each call is a bounded, single-purpose request/response.",
+      prevents: "an agent inheriting tool / capability reach beyond its scoped role" },
+    { id: "AD-3", cat: "boundaries", t: "Per-agent tool scoping at the call boundary", binds: "FR3, Security §5",
+      rule: "Each agent's allowed tools come from a static manifest (agent name → tool schema list). Only manifest tools are ever passed into that agent's call. Adding capability means editing the manifest, never the prompt.",
+      prevents: "an agent calling a tool outside its role (berth calling Yard Manager)" },
+    { id: "AD-4", cat: "state", t: "Single-writer orchestrator owns Incident state + trace", binds: "FR1, FR14–16, all",
+      rule: "One Incident record per incident_id, held by that incident's orchestrator task, with an embedded append-only trace. Only the orchestrator coroutine writes. Agents, arbiter, policy, mocks are pure call/return; frontend only reads.",
+      prevents: "concurrent incidents or independently-built units racing / double-writing shared state" },
+    { id: "AD-5", cat: "state", t: "Central IncidentRegistry gates correlation", binds: "FR2",
+      rule: "Every signal is checked against an in-memory registry (keyed by vessel / berth / crane / yard-block) before dispatch. A match within the 15-minute window routes into the existing incident; no match spawns a new task.",
+      prevents: "duplicate / parallel incidents for one correlated event; correlation logic diverging" },
+    { id: "AD-6", cat: "state", t: "Frontend reads by polling one read-only Incident API", binds: "FR12, FR15, UJ-1/2",
+      rule: "Feed, trace view, approval card and status query all poll the same read-only endpoint at 2–3s. No write path from frontend except the approval action.",
+      prevents: "a push channel (SSE / WebSocket) becoming a second, divergent way to read incident state" },
+    { id: "AD-7", cat: "safety", t: "Kill switch: one flag, one enforcement point", binds: "FR10, Security §5",
+      rule: "A single global in-memory flag, checked at exactly one point — immediately before any mock-service execution call. Not checked at ingestion, correlation or analysis.",
+      prevents: "inconsistent kill-switch checks across code paths; execution slipping through between decision and action" },
+    { id: "AD-8", cat: "safety", t: "DG/IMDG gate has a fixed pipeline position, tier-independent", binds: "FR9",
+      rule: "The DG check runs after POLICY_DECISION and before EXECUTE, for every tier. On conflict, control returns to the arbiter for a new option, re-classified again. Capped at 2 re-plans; a third conflict forces Tier 3.",
+      prevents: "a DG violation slipping through because a tier was already approved; the loop spinning during a demo" },
+    { id: "AD-9", cat: "state", adopted: true, t: "In-memory persistence only", binds: "all",
+      rule: "Incident, registry and trace all live in process memory; no database. State is lost on restart — acceptable for a demo session. (Source: PRD Out-of-Scope.)",
+      prevents: "time spent on schema / migrations not needed for the golden path" },
+    { id: "AD-10", cat: "boundaries", adopted: true, t: "No authentication", binds: "all",
+      rule: "Single-user, no login / session management; dashboard and API assume one fixed operator context. (Source: PRD Out-of-Scope.)",
+      prevents: "time spent building a login / session layer the demo has no use for" },
+    { id: "AD-11", cat: "demo", t: "Tier-3 “modify” is alternative-selection, not free-form edit", binds: "FR11",
+      rule: "The approval-card contract is approve / reject / select_alternative(option_id) against the arbiter's existing 2–3 ranked options — never an open edit payload.",
+      prevents: "Person C building a generic plan-diff / edit UI not needed for the demo scenario" },
+    { id: "AD-12", cat: "demo", adopted: true, t: "Yard Manager models two terminal blocks from day 1", binds: "FR17",
+      rule: "The Yard Manager mock returns per-block utilisation (Tuas C7, Pasir Panjang P2) from the start of the build, even though FR17's routing logic is a Day-5 stretch.",
+      prevents: "a schema change under Day-5 time pressure" },
+    { id: "AD-13", cat: "demo", t: "Golden-path latency budget shapes the analysis stage", binds: "NFR1, FR3, FR5",
+      rule: "The ~20–30s golden-path target means specialist calls MUST run concurrently (asyncio.gather, not sequential awaits), and FR5's single retry has a fixed short timeout so one stalled call can't consume the whole budget.",
+      prevents: "specialist calls being built sequentially by default; an unbounded / blocking retry" },
+    { id: "AD-14", cat: "safety", t: "A failure is always a visible trace entry, never a silent success", binds: "FR13, NFR2/3",
+      rule: "Every stage transition writes a trace entry regardless of outcome; a failed verification, timeout or fallback is recorded with error / fallback_used set. On unrecoverable failure the incident degrades in confidence and continues — it never crashes the orchestrator task.",
+      prevents: "a mock-service or agent-call failure being swallowed and the pipeline proceeding as if it succeeded" },
+    { id: "AD-15", cat: "safety", t: "Kill-switch-blocked Tier 1/2 decisions are marked, never silently dropped", binds: "FR10, AD-7, AD-4, AD-11",
+      rule: "If the switch is engaged at the AD-7 point and the decision was Tier 1/2, the orchestrator does not execute: it appends a blocked_by_kill_switch trace entry and sets the Incident field. The tier is never reclassified to 3. Re-enabling does not auto-resume — the operator re-triggers via the existing approve action.",
+      prevents: "a Tier 1/2 incident sitting silently unresolved with no operator-visible signal while the switch is engaged" },
+    { id: "AD-16", cat: "safety", t: "Per-agent demo-safety mock override", binds: "FR3, FR5, NFR1/3",
+      rule: "Each specialist and the arbiter read a static MOCK_AGENTS map; when set, the call short-circuits to a structurally-identical canned response. Honesty requirement: the AGENT_CALL trace carries mock_forced: true and the confidence formula applies the same −15pt missing-data penalty as a fallback — never a silent substitution.",
+      prevents: "one live-LLM hiccup during judging cascading past FR5 into a stalled or visibly-broken golden-path run" },
+    { id: "AD-17", cat: "visibility", t: "Map surface is a bundled, read-only projection of polled state", binds: "FR15, UX-DR7/13, AD-6",
+      rule: "The map panel renders from the same GET /incidents poll — no new endpoint, no SSE. Basemap geometry is vendored into the frontend bundle; zero runtime calls to any map / tile service. Entity → coordinate is a static frontend fixture. The map is read-only and not a decision surface.",
+      prevents: "a live tile / geo dependency becoming a demo failure point; the map becoming a second source of incident truth" },
+    { id: "AD-18", cat: "visibility", t: "“Whole orchestra” surfaces are read-only projections of the poll", binds: "FR3/6/7/9/14/15, AD-4/6/16/17",
+      rule: "The stage rail, DG-gate state, policy tier and confidence all render from the existing GET /incidents/{id} poll — the Incident record plus its append-only trace. No new endpoint, no SSE, no push channel; the re-skin adds no route and no write path. The Day-3-frozen SpecialistBundle / arbiter contract is untouched.",
+      prevents: "the visual pivot reopening the frozen backend contract; Person C requesting a bespoke /pipeline endpoint or a push channel" },
+    { id: "AD-19", cat: "visibility", t: "Specialist bundle is exposed read-only for the agent roster", binds: "FR3/14/15, AD-4/6/16/18",
+      rule: "After run_specialists returns, the orchestrator (still sole writer) sets Incident.agents to the validated bundle it already passes to the arbiter, and appends one AGENT_CALL trace entry per specialist. A ~1-field + ~10–15-line additive change; supersedes “backend byte-unchanged” for this one read-surface. Roster size / membership unchanged — still exactly berth, crane, yard.",
+      prevents: "the roster being unable to show the orchestra it exists to show; Person C inventing a side-channel for specialist output" }
+  ];
+
+  var grid = document.getElementById("adgrid");
+  ADS.forEach(function (d) {
+    var el = document.createElement("article");
+    el.className = "ad";
+    el.setAttribute("data-cat", d.cat);
+    el.innerHTML =
+      '<div class="ad-top"><span class="ad-id">' + d.id + '</span>' +
+      (d.adopted ? '<span class="ad-adopted">ADOPTED</span>' : '') +
+      '<span class="ad-cat">' + CATS[d.cat] + '</span></div>' +
+      '<h3>' + d.t + '</h3>' +
+      '<p class="rule">' + d.rule + '</p>' +
+      '<p class="prevents"><b>PREVENTS</b> ' + d.prevents + '</p>' +
+      '<p class="binds">binds: ' + d.binds + '</p>';
+    grid.appendChild(el);
+  });
+
+  /* ---------- AD filter ---------- */
+  var fbtns = Array.prototype.slice.call(document.querySelectorAll("#ad-filters button"));
+  fbtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      fbtns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      var cat = b.getAttribute("data-cat");
+      document.querySelectorAll("#adgrid .ad").forEach(function (card) {
+        var show = cat === "all" || card.getAttribute("data-cat") === cat;
+        card.classList.toggle("hide", !show);
+      });
+    });
+  });
+
+  /* ---------- UJ-1 trace player ---------- */
+  var STEPS = [
+    { t: "t+0.0s", st: "INGEST", d: "vessel:MSC-ANNA ETA +90min · crane:C4 hydraulic_fault", stages: ["pl-ingest"] },
+    { t: "t+0.4s", st: "CORRELATE", d: "shared entity berth:C7-3, within 15-min window → INC-0417", stages: ["pl-registry"] },
+    { t: "t+1.2s", st: "AGENT_CALL", d: "berth · crane · yard agents dispatched concurrently", stages: ["pl-berth", "pl-crane", "pl-yard"] },
+    { t: "t+6.8s", st: "AGENT_CALL", d: "crane:C7 telemetry timeout → retry(1) → fallback to last-known state", stages: ["pl-crane"], mood: "warn" },
+    { t: "t+9.1s", st: "SYNTHESIZE", d: "arbiter returns 3 ranked options, recommends Option B", stages: ["pl-arbiter"] },
+    { t: "t+9.2s", st: "CONFIDENCE", d: "100 → 91 (staleness) → 67 (missing-data, fallback penalty logged)", stages: ["pl-confidence"], mood: "warn" },
+    { t: "t+9.4s", st: "POLICY_DECISION", d: "Option B classified TIER 3 — confidence < 70, SLA risk", stages: ["pl-policy"], mood: "warn" },
+    { t: "t+9.5s", st: "DG_CHECK", d: "Option B rejected — DG segregation conflict → re-plan (1/2)", stages: ["pl-dgcheck"], mood: "bad" },
+    { t: "t+14.0s", st: "SYNTHESIZE", d: "arbiter re-plans → Option B′, DG-clear", stages: ["pl-arbiter"] },
+    { t: "t+14.2s", st: "POLICY_DECISION", d: "Option B′ classified TIER 3 — SLA breach risk persists", stages: ["pl-policy"], mood: "warn" },
+    { t: "t+14.3s", st: "APPROVAL", d: "decision card presented to Priya — situation, recommendation, confidence 67, 2 alternatives", stages: ["pl-approval"] },
+    { t: "t+58.1s", st: "APPROVAL", d: "approve(Option B′) — human decision logged", stages: ["pl-approval"] },
+    { t: "t+58.4s", st: "EXECUTE", d: "4 mock services called: Crane Scheduler, Yard Manager, Notification (incl. MPA), TOS", stages: ["pl-execute"] },
+    { t: "t+61.9s", st: "VERIFY", d: "4/4 actions verified · incident closed", stages: ["pl-verify"] }
+  ];
+
+  var track = document.getElementById("tp-track");
+  var pos = document.getElementById("tp-pos");
+  var note = document.getElementById("tp-note");
+  var bPrev = document.getElementById("tp-prev");
+  var bNext = document.getElementById("tp-next");
+  var bPlay = document.getElementById("tp-play");
+  var bReset = document.getElementById("tp-reset");
+  var idx = -1, timer = null;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  STEPS.forEach(function (s, i) {
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="t">' + s.t + '</span><span class="st">' + s.st + '</span><span class="d">' + s.d + '</span>';
+    li.addEventListener("click", function () { stop(); go(i); });
+    track.appendChild(li);
+  });
+  var lis = Array.prototype.slice.call(track.children);
+
+  function clearStages() {
+    document.querySelectorAll(".pl-node").forEach(function (n) {
+      n.classList.remove("is-active", "is-degraded", "is-violation");
+    });
+  }
+  function paint() {
+    pos.textContent = String(Math.max(idx + 1, 0)).padStart(2, "0") + " / " + lis.length;
+    lis.forEach(function (li, i) {
+      li.className = "";
+      if (i < idx) li.classList.add("done");
+      else if (i === idx) {
+        li.classList.add("cur");
+        var m = STEPS[i].mood;
+        if (m) li.classList.add(m);
+      } else li.classList.add("future");
+    });
+    clearStages();
+    if (idx >= 0) {
+      var step = STEPS[idx];
+      var cls = step.mood === "bad" ? "is-violation" : step.mood === "warn" ? "is-degraded" : "is-active";
+      step.stages.forEach(function (id) {
+        var n = document.getElementById(id);
+        if (n) n.classList.add(cls);
+      });
+      note.textContent = step.st + " — " + step.d;
+      if (idx === lis.length - 1) note.textContent += "  ·  golden path complete in ~62s wall time (one re-plan, one human approval).";
+      lis[idx].scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    } else {
+      note.textContent = "Not started — press Play or Next.";
+    }
+    bPrev.disabled = idx <= 0;
+    bNext.disabled = idx >= lis.length - 1;
+  }
+  function go(i) { idx = Math.max(-1, Math.min(lis.length - 1, i)); paint(); }
+  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.innerHTML = "&#9654; Play"; } }
+  function play() {
+    if (timer) { stop(); return; }
+    if (idx >= lis.length - 1) go(-1);
+    bPlay.innerHTML = "&#10073;&#10073; Pause";
+    timer = setInterval(function () {
+      if (idx >= lis.length - 1) { stop(); return; }
+      go(idx + 1);
+    }, reduce ? 1400 : 1050);
+  }
+  bPrev.addEventListener("click", function () { stop(); go(idx - 1); });
+  bNext.addEventListener("click", function () { stop(); go(idx + 1); });
+  bReset.addEventListener("click", function () { stop(); go(-1); });
+  bPlay.addEventListener("click", play);
+  paint();
+})();
+</script>
