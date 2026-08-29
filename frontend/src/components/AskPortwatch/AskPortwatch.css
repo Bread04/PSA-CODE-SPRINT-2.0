@@ -3,10 +3,12 @@
  *
  * The read-only natural-language query panel (DESIGN.md line 146): a free-text
  * input + a primary "Ask" button + `button-ghost` suggestion chips, with the
- * answer shown in an `--accent-100` bubble.
+ * answer shown in a dark `--surface-subtle` bubble with a seafoam left edge.
+ * (Harbor Signal is a dark theme — the original `--accent-100` fill was
+ * near-white and left the answer text, `--text`, unreadable on it.)
  *
  * Colour routes entirely through Story 2.1 tokens (var(--text), var(--text-muted),
- * var(--divider), var(--surface), var(--accent-100), var(--accent-700),
+ * var(--divider), var(--surface), var(--surface-subtle), var(--accent-700),
  * var(--neutral-100)); type routes through the Story 2.1 ramp
  * (var(--font-size-body | -caption | -micro-label), var(--letter-spacing-label |
  * -micro-label)). Secondary text uses var(--text-muted) — a real colour, never
@@ -119,7 +121,8 @@
   font-weight: var(--font-weight-body);
   font-size: var(--font-size-body);
   color: var(--text);
-  background: var(--accent-100);
+  background: var(--surface-subtle);
+  border-left: 2px solid var(--accent-700);
   border-radius: 0;
   white-space: pre-wrap;
 }

@@ -168,7 +168,7 @@ describe('AskPortwatch', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('renders the answer string verbatim in an accent-100 bubble inside an aria-live polite region', () => {
+  it('renders the answer string verbatim in a bubble inside an aria-live polite region', () => {
     const answer = 'MSC Anna: berth B3, ETA +90m, awaiting approval.';
     const { container } = render(
       <AskPortwatch {...baseProps} answer={answer} />,
@@ -241,9 +241,12 @@ describe('AskPortwatch.css routes visual values through Story 2.1 tokens', () =>
     expect(css).toMatch(/:focus-visible\s*\{[^}]*outline-offset\s*:/);
   });
 
-  it('answer bubble background is var(--accent-100)', () => {
+  it('answer bubble is a readable dark surface with a seafoam left edge', () => {
     expect(css).toMatch(
-      /\.ask-portwatch__answer\s*\{[^}]*background\s*:\s*var\(\s*--accent-100\s*\)/,
+      /\.ask-portwatch__answer\s*\{[^}]*background\s*:\s*var\(\s*--surface-subtle\s*\)/,
+    );
+    expect(css).toMatch(
+      /\.ask-portwatch__answer\s*\{[^}]*border-left\s*:\s*2px\s+solid\s+var\(\s*--accent-700\s*\)/,
     );
   });
 
