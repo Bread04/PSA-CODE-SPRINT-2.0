@@ -78,6 +78,13 @@ class Incident(BaseModel):
         default=False,
         description="Set by Story 1.10 when the kill switch blocks a Tier 1/2 execution.",
     )
+    agents: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description=(
+            "Specialist bundle exposed read-only for the agent roster (AD-19); [] until AGENT_CALL runs. "
+            "Entry shape = SpecialistRecommendation."
+        ),
+    )
     trace: list[TraceEntry] = Field(default_factory=list, description="Append-only execution trace.")
 
     # --- Correlation bookkeeping (owned by IncidentRegistry, Story 1.2) ---

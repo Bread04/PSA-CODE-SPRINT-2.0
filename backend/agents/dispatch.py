@@ -104,6 +104,15 @@ async def run_specialists(incident: Incident, *, client: Any | None = None) -> S
             err.add_note(f"other specialist failures: {others}")
         raise err
 
+    # AD-19 integration point — for the FUTURE caller, not this function.
+    # When a live chain (ingestion → specialists → arbiter → policy) exists, the
+    # orchestrator that awaits this bundle — still the sole writer (AD-4) — must,
+    # before run_policy_and_execution:
+    #   incident.agents = [r.model_dump() for r in bundle.recommendations]
+    # and append one AGENT_CALL trace entry per recommendation, each with
+    # detail {agent, mock_forced} (AD-16) plus the standard
+    # {stage, error, retried, fallback_used} shape on a timeout/fallback.
+    # No live caller exists today; the demo path populates it in api/demo_seed.py.
     return SpecialistBundle(recommendations=list(results))
 
 

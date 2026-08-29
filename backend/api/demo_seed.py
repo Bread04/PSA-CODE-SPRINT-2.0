@@ -56,10 +56,44 @@ def demo_incidents() -> list[Incident]:
             approval_status="pending",
             created_at=_iso(22),
             last_signal_at=_iso(4),
+            agents=[
+                {
+                    "agent": "berth",
+                    "summary": "MSC Anna's ETA slip pushes her past the B3 window; Berth C7 slot 5 is the cleanest re-berth.",
+                    "actions": [
+                        "Release the B3 window for the next arrival",
+                        "Reserve Berth C7 slot 5 for MSC Anna",
+                    ],
+                    "constraints": ["C7 slot 5 only holds if EVER GIVEN keeps her current departure"],
+                    "rationale": "The slip exceeds the B3 buffer, and C7 slot 5 is the only open deep-draft window in the recovery horizon.",
+                },
+                {
+                    "agent": "crane",
+                    "summary": "Crane #4 hydraulic fault; #7 telemetry on last-known state after a timeout in the handoff window.",
+                    "actions": [
+                        "Isolate Crane #4",
+                        "Shift discharge to adjacent crane coverage via Crane #6",
+                    ],
+                    "constraints": ["Crane #7 confidence degraded — verify telemetry before committing moves"],
+                    "rationale": "A fault plus a telemetry timeout during the handoff window means the plan must not rely on Crane #7's reported state.",
+                },
+                {
+                    "agent": "yard",
+                    "summary": "Routing discharge via Crane #6 concentrates moves on the C7-adjacent blocks; a light reshuffle absorbs it.",
+                    "actions": [
+                        "Pre-stage a reshuffle on the C7-adjacent blocks",
+                        "Hold reefer slots clear for the diverted moves",
+                    ],
+                    "constraints": ["Keep C7-adjacent utilization under 85% to preserve the reshuffle lane"],
+                    "rationale": "The Crane #6 reroute is only feasible if the receiving blocks have slack, so the yard side needs a pre-staged reshuffle.",
+                },
+            ],
             trace=[
                 _tr("CORRELATE", 22, {"signal_type": "eta_slip", "matched": False}),
-                _tr("AGENT_CALL", 18, {"agent": "crane", "note": "Crane #7 telemetry timeout"},
+                _tr("AGENT_CALL", 19, {"agent": "berth", "mock_forced": False}),
+                _tr("AGENT_CALL", 18, {"agent": "crane", "mock_forced": False, "note": "Crane #7 telemetry timeout"},
                     error={"stage": "AGENT_CALL", "error": "crane #7 telemetry timeout", "retried": True, "fallback_used": True}),
+                _tr("AGENT_CALL", 17, {"agent": "yard", "mock_forced": False}),
                 _tr("CONFIDENCE", 16, {"reason": "Down from 91% — Crane #7 telemetry timed out; using last known state"}),
                 _tr("POLICY_DECISION", 15, {"tier": 3}),
                 _tr("DG_CHECK", 15, {"rejected_option": "opt-3", "reason": "DG/IMDG segregation conflict"}),
@@ -76,6 +110,7 @@ def demo_incidents() -> list[Incident]:
             options=[_opt("opt-1", "Refresh gate appointment schedule")],
             approval_status="n/a",
             blocked_by_kill_switch=True,
+            agents=[],
             created_at=_iso(12),
             last_signal_at=_iso(9),
             trace=[
@@ -94,6 +129,7 @@ def demo_incidents() -> list[Incident]:
             recommended_option_id="opt-1",
             options=[_opt("opt-1", "Adjust appointment slots for block Y4")],
             approval_status="n/a",
+            agents=[],
             created_at=_iso(140),
             last_signal_at=_iso(133),
             trace=[
@@ -112,10 +148,39 @@ def demo_incidents() -> list[Incident]:
             recommended_option_id="opt-1",
             options=[_opt("opt-1", "Reassign Crane #4 workload to Crane #6")],
             approval_status="approved",
+            agents=[
+                {
+                    "agent": "berth",
+                    "summary": "EVER GIVEN's berth window is unaffected; no berth action beyond monitoring the crane recovery.",
+                    "actions": ["Hold the current berth window"],
+                    "constraints": [],
+                    "rationale": "The disruption is crane-side; the berth plan stays valid as long as discharge keeps pace.",
+                },
+                {
+                    "agent": "crane",
+                    "summary": "Crane #4 is down with a mechanical fault; Crane #6 has spare capacity to absorb the workload.",
+                    "actions": [
+                        "Reassign Crane #4's remaining moves to Crane #6",
+                        "Raise a maintenance ticket for Crane #4",
+                    ],
+                    "constraints": ["Crane #6 runs at ~90% for the shift — no further reassignments onto it"],
+                    "rationale": "Crane #6 is the only adjacent crane with headroom for Crane #4's remaining moves within the window.",
+                },
+                {
+                    "agent": "yard",
+                    "summary": "Consolidating discharge on Crane #6 shifts the receiving moves one block over; slack is available.",
+                    "actions": ["Redirect the affected moves to the Crane #6 lane"],
+                    "constraints": [],
+                    "rationale": "The Crane #6 lane has open ground slots for the shift, so no reshuffle is required.",
+                },
+            ],
             created_at=_iso(200),
             last_signal_at=_iso(190),
             trace=[
                 _tr("CORRELATE", 200, {"signal_type": "crane_fault"}),
+                _tr("AGENT_CALL", 199, {"agent": "berth", "mock_forced": False}),
+                _tr("AGENT_CALL", 199, {"agent": "crane", "mock_forced": False}),
+                _tr("AGENT_CALL", 198, {"agent": "yard", "mock_forced": False}),
                 _tr("POLICY_DECISION", 197, {"tier": 3}),
                 _tr("APPROVAL", 195, {"action": "approve", "operator": True}),
                 _tr("EXECUTE", 194, {"tier": 3, "results": [{"service": "tos", "ok": True}, {"service": "crane_scheduler", "ok": True}]}),
@@ -131,6 +196,7 @@ def demo_incidents() -> list[Incident]:
             recommended_option_id="opt-1",
             options=[_opt("opt-1", "Delay TITAN departure by 90 minutes", delay=90)],
             approval_status="rejected",
+            agents=[],
             created_at=_iso(320),
             last_signal_at=_iso(310),
             trace=[
@@ -148,6 +214,7 @@ def demo_incidents() -> list[Incident]:
             recommended_option_id="opt-1",
             options=[_opt("opt-1", "Shift OOCL Tokyo to the next available window")],
             approval_status="n/a",
+            agents=[],
             created_at=_iso(6),
             last_signal_at=_iso(2),
             trace=[
@@ -186,6 +253,7 @@ def _load_balancing_incident() -> Incident:
         recommended_option_id="opt-1",
         options=[option],
         approval_status="n/a",
+        agents=[],
         created_at=_iso(19),
         last_signal_at=_iso(5),
         trace=[
