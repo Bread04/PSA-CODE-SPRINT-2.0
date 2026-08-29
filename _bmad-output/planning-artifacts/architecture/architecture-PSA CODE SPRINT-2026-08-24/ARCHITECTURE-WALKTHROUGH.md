@@ -3,7 +3,7 @@ title: Portwatch Architecture Walkthrough
 purpose: team walkthrough + judge-facing explainer
 source: ARCHITECTURE-SPINE.md
 status: final
-updated: '2026-08-24'
+updated: '2026-08-29'
 ---
 
 # Portwatch — Architecture Walkthrough
@@ -73,6 +73,10 @@ Every signal checks the `IncidentRegistry` (keyed by vessel/berth/crane/yard-blo
 **AD-6 — Polling, not push**
 Dashboard polls one read-only Incident endpoint every 2-3s. No SSE/WebSocket — indistinguishable from real-time against a ~20-30s golden path.
 *Prevents:* a second, divergent read path.
+
+**AD-18 / AD-19 — The "whole orchestra" is a read-only projection**
+The Harbor Signal console (UX pivot, 2026-08-29 — visual identity now follows `frontend/portwatch-tuas/src`) makes the full pipeline continuously visible: stage rail, agent roster, confidence breakdown, DG-gate state. All of it renders from the same `GET /incidents` poll — stage rail, tier, DG state, confidence, and impact need **zero** backend change (AD-18); the agent roster needs one small additive read-surface: the orchestrator exposes the already-computed specialist bundle as `Incident.agents` (AD-19). The frozen 3-specialist contract, the policy engine, the DG gate, and every frozen test are untouched.
+*Prevents:* a visual redesign reopening the Day-3-frozen golden path.
 
 ### Safety & policy
 
@@ -163,9 +167,9 @@ Owns AD-2, AD-3, AD-4, AD-8, AD-13, AD-14
 TOS, Crane Scheduler, Yard Manager (2-block), AGV, Gate, Notification (+MPA), DG Checker · Injectable timeout/failure modes
 Owns AD-12, mock call contract
 
-**Person C — Frontend**
-Incident feed, impact graph · Approval panel, execution trace view
-Owns AD-6, AD-11 client side
+**Person C — Frontend** (Harbor Signal re-skin)
+Incident feed · decision card · execution trace · stage rail · agent roster (new) · geo map · Ask Portwatch · kill switch
+Owns AD-6, AD-11, AD-18 client side · consumes `Incident.agents` (AD-19)
 
 **Person D — Integration & demo**
 Wires A + B + C together · Kill switch, demo scripting

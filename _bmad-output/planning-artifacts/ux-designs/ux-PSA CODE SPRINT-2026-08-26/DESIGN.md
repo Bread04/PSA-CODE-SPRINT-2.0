@@ -1,7 +1,8 @@
 ---
 name: Portwatch Console
 description: Internal desktop console for Tuas Port disruption orchestration — a precise, schematic "blueprint" instrument panel, matching the team's existing Portwatch Console design canvas exactly.
-status: final
+status: superseded
+superseded_by: "../ux-PSA CODE SPRINT-2026-08-29/DESIGN.md (Portwatch — Harbor Signal, 2026-08-29). This blueprint direction was retired when the user redirected visual identity to follow frontend/portwatch-tuas/src entirely."
 updated: 2026-08-26
 colors:
   bg: '#f2f2f3'

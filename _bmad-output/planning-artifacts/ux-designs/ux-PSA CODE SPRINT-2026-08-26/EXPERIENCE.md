@@ -1,6 +1,7 @@
 ---
 name: Portwatch Console
-status: final
+status: superseded
+superseded_by: "../ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md (Portwatch — Harbor Signal, 2026-08-29). Retired when visual identity was redirected to follow frontend/portwatch-tuas/src. Behavioral decisions (computed confidence, DG gate, session-scoped archive, no-color-only severity, IA scope) carried forward into the new spine."
 sources:
   - "{planning_artifacts}/prds/prd-PSA-CODE-SPRINT-2026-08-24/prd.md"
   - "{planning_artifacts}/architecture/architecture-PSA CODE SPRINT-2026-08-24/ARCHITECTURE-SPINE.md"

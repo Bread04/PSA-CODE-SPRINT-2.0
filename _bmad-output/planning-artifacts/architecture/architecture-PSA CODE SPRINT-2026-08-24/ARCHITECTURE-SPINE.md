@@ -7,10 +7,11 @@ paradigm: 'single-writer orchestrated pipeline (actor-per-incident)'
 scope: 'Portwatch multi-agent disruption orchestration system — full initiative, 6-day hackathon build'
 status: final
 created: '2026-08-24'
-updated: '2026-08-27'
+updated: '2026-08-29'
 binds: [FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17]
-sources: ['_bmad-output/planning-artifacts/prds/prd-PSA-CODE-SPRINT-2026-08-24/prd.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/EXPERIENCE.md']
-companions: ['_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-26/EXPERIENCE.md']
+sources: ['_bmad-output/planning-artifacts/prds/prd-PSA-CODE-SPRINT-2026-08-24/prd.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md']
+companions: ['_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/DESIGN.md', '_bmad-output/planning-artifacts/ux-designs/ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md']
+ux_companion_note: "UX spine pivoted to 'Harbor Signal' on 2026-08-29 (follows frontend/portwatch-tuas/src). Supersedes ux-PSA CODE SPRINT-2026-08-26. Presentation-only for this spine — see AD-18."
 ---
 
 # Architecture Spine — Portwatch
@@ -148,6 +149,29 @@ graph TD
 - **Prevents:** a live tile/geo dependency becoming a demo failure point (cf. FR19 rationale — a live external dependency is unacceptable demo risk); the map becoming a second write path or a second source of incident truth.
 - **Rule:** the map panel renders from the same `GET /incidents` poll (AD-6) — no new endpoint, no SSE. Basemap geometry (and tiles, if a raster option is ever chosen instead of the adopted d3-geo vector approach) is **vendored into the frontend bundle**; zero runtime network calls to any map or tile service. Entity → coordinate resolution is a static frontend fixture (`frontend/src/lib/geo.ts`) covering the demo-seed incidents; adding an entity means editing the fixture, never a backend change. The map is read-only and is **not** a decision surface — approve/reject/modify stays on the approval banner + incident detail (UX-DR4).
 
+### AD-18 — "Whole orchestra" visibility surfaces are read-only projections of the polled incident record
+
+- Added 2026-08-29. **Binds:** FR3, FR6, FR7, FR9, FR14, FR15, AD-4, AD-6, AD-16, AD-17; Person C build lane. Governed by the Harbor Signal UX companion (`ux-PSA CODE SPRINT-2026-08-29/EXPERIENCE.md` -> *The Orchestra*).
+- **Prevents:** the 2026-08-29 visual pivot ("show the whole orchestra"; frontend follows `frontend/portwatch-tuas/src`) reopening the Day-3-frozen `SpecialistBundle`/arbiter contract or the golden path (cf. `sprint-change-proposal-2026-08-29.md` — zero code change); Person C requesting a bespoke `/pipeline` endpoint or a push channel for "live" stage updates; per-agent sub-state becoming a second source of incident truth outside the trace.
+- **Rule:** the pipeline **stage rail**, **DG-gate state**, **policy-tier**, and **confidence** all render from the existing `GET /incidents/{incident_id}` poll (AD-6) — the `Incident` record plus its append-only `trace`. No new endpoint, no SSE, no push channel; the frontend re-skin adds no route and no write path (approval + kill-switch stay the only writes). What the current frozen backend exposes today:
+  - stage rail — `trace[].stage` (SCREAMING_SNAKE vocab, `orchestrator/trace.py:STAGES`) + `error` shape for the degraded/blocked states;
+  - DG-gate — `DG_CHECK` trace `detail` (`{violation: bool}` live; `{rejected_option, reason}` in the demo seed) + AD-8 re-plan loop;
+  - tier — `Incident.tier` and `POLICY_DECISION` `detail.tier`. **No tier-reason string is emitted** — the frontend derives the reason label deterministically from `tier` + the selected `RecoveryOption.reversible` / `dg_involved` / `predicted_impact.cost` / `.risk` + `confidence` vs the FR7 threshold (all present in the payload);
+  - confidence — `Incident.confidence` int, always present. The **structured** FR6 breakdown (`staleness_seconds` / `fallback_fields` / `disagreement` / `variance_exceeds`) is emitted by the live `CONFIDENCE` trace but the demo-seed path emits a prose `detail.reason` instead — the frontend renders whichever is present;
+  - `Incident.options[].predicted_impact` — structured `{delay_min, cost, yard_impact, risk}` (FR4 seed); Notification mock already lists **MPA** (FR13).
+- **The per-specialist output** the agent roster shows (each agent's `summary` / `actions` / `constraints`) is not on the current API — it needs the small read-surface addition in **AD-19**. Everything else above is a zero-backend-change projection.
+- **The frozen contract stays locked:** the `SpecialistBundle` 3-tuple (`min_length=3, max_length=3`), `AgentName = Literal["berth","crane","yard"]`, the arbiter's `len(...) != 3` guard, and their frozen tests are untouched by AD-18 and AD-19 alike.
+
+### AD-19 — Specialist bundle is exposed read-only for the agent roster
+
+- Added 2026-08-29. **Binds:** FR3, FR14, FR15, AD-4, AD-6, AD-16, AD-18; Person A (orchestrator write), Person C (`AgentRoster` read). Governed by the Harbor Signal UX companion (*The Orchestra*).
+- **Prevents:** the agent roster being unable to show the orchestra it exists to show; Person C inventing a side-channel for specialist output; Person A being asked to reopen the frozen specialist contract to satisfy a display need.
+- **Rule:** after `run_specialists` returns, the orchestrator — still the sole writer (AD-4) — does two additive things:
+  1. sets `Incident.agents: list[SpecialistRecommendation]` to the **validated bundle it already passes to the arbiter** (berth → crane → yard order; the same objects, not recomputed), read-only to the frontend;
+  2. appends one `AGENT_CALL` trace entry per specialist — `detail: {agent, mock_forced}` (AD-16), plus the standard `{stage, error, retried, fallback_used}` shape on a timeout/fallback — so the stage rail's `AGENT_CALL` stage is real on the live path, not only in `demo_seed.py`. The stage rail collapses the 1–3 `AGENT_CALL` entries into its single `AGENT_CALL` stage (degraded if any carries an `error`); the per-agent view is the roster, driven by `Incident.agents`, not by counting trace rows.
+- **Boundary:** no new endpoint (rides `GET /incidents/{incident_id}`, AD-6); no push channel; `Incident.agents` is never written by anything but the orchestrator and never read as state by the backend. It does **not** change the roster's size or membership — `SpecialistBundle` stays exactly three, `AgentName` stays `berth|crane|yard`, the arbiter guard and every frozen specialist test are unchanged. This exposes what already exists.
+- **Scope cost:** a real but small backend change — ~1 model field + ~10–15 lines where `run_specialists` is awaited + a `demo_seed.py` update to populate `Incident.agents` on the demo incidents. It **supersedes `sprint-change-proposal-2026-08-29`'s "`backend/` byte-unchanged" for this one read-surface addition**; golden-path control flow, tiers, policy, DG gate, execution, and all frozen tests stay untouched. A display-data addition alongside the frozen path, not an unfreeze of it.
+
 ## Consistency Conventions
 
 | Concern | Convention |
@@ -205,7 +229,15 @@ Incident:
   options: list[RecoveryOption]       # the arbiter's 2-3 ranked outputs (FR4)
   approval_status: "n/a" | "pending" | "approved" | "rejected"
   blocked_by_kill_switch: bool   # true if a Tier 1/2 decision was blocked from executing by the kill switch (AD-15)
+  agents: list[SpecialistRecommendation]   # the validated specialist bundle, read-only (AD-19); [] until AGENT_CALL runs
   trace: list[TraceEntry]    # append-only (AD-4)
+
+SpecialistRecommendation:     # one specialist's analysis, exposed for the Harbor Signal agent roster (AD-19)
+  agent: "berth" | "crane" | "yard"   # frozen roster — exactly these three, this order
+  summary: str
+  actions: list[str]
+  constraints: list[str]      # limits/preconditions the arbiter must respect
+  rationale: str
 
 RecoveryOption:               # arbiter output, shared by Policy Engine, DG Gate, ApprovalPanel (AD-11)
   option_id: str              # stable within one incident; select_alternative(option_id) refers to this
@@ -241,6 +273,7 @@ POST /kill-switch  {enabled: bool}   # AD-7
 
 - `entity_refs` values are the exact ids the ingestion layer normalizes to (e.g. `vessel:MSC-ANNA`, `berth:C7-3`) — Person B's mock services must emit/accept the same id format so registry correlation (AD-5) and mock-service calls agree on what an entity is.
 - Each agent's tool manifest (AD-3) references mock-service function names directly (one manifest entry per callable mock endpoint) — when Person B adds/renames a mock function, the manifest is the one place to update; it is not duplicated elsewhere.
+- **Trace `detail` key names are a Person A -> Person C contract (AD-18).** Because the Harbor Signal orchestra surfaces derive from `trace[].detail`, the keys the frontend reads are locked for the demo — Person A may add keys, never rename these: `CONFIDENCE` -> `confidence`, `staleness_seconds`, `fallback_fields`, `disagreement`, `variance_exceeds` (live path) **or** `reason` (demo-seed path); `POLICY_DECISION` -> `tier`; `DG_CHECK` -> `violation` (+ `reason` / `rejected_option` on a violation); `AGENT_CALL` -> `agent`, `mock_forced` (+ the standard `error` shape on TIMEOUT/FALLBACK) per AD-19. The frontend must tolerate a stage or key it doesn't recognise (`ExecutionTrace` already renders any stage). Beyond the AD-19 read-surface add, no backend change — this line records the shapes the code emits so the re-skin can't drift from them.
 
 ### Deployment & environments
 
@@ -261,12 +294,17 @@ backend/
   models/             # Incident, TraceEntry data shapes
 frontend/
   src/
-    routes/            # LiveConsole (default), IncidentArchive (session-scoped list, filters GET /incidents
-                       # client-side to resolved incidents -- no separate archive endpoint, per UX spine)
-    components/       # IncidentFeed, IncidentDetail, ApprovalBanner, ExecutionTrace, AskPortwatch,
-                       # MapPanel (strait/yard), KillSwitchControl, IncidentArchiveList
-                       # -- names and visual/behavioral spec owned by the UX spine (DESIGN.md/EXPERIENCE.md,
-                       # companions above); component set supersedes the earlier placeholder list
+    theme/             # Harbor Signal tokens (Space Grotesk + IBM Plex Mono, marine-ink palette,
+                       # seafoam/amber/red signals, 8px radius, 214/74px rail) -- retired blueprint
+                       # token set (Barlow Condensed, zero-radius, greyscale) re-skinned in place, AD-18
+    routes/            # LiveConsole (default), ActiveIncidents (filters GET /incidents to unresolved),
+                       # AuditTrail (session-scoped resolved list; was IncidentArchive) -- all share the
+                       # one polled API, no new endpoint (per UX spine + AD-6)
+    components/       # IncidentFeed, IncidentDetail (+ ConfidenceBreakdown), ApprovalBanner (decision card),
+                       # StageRail, AgentRoster (new -- reads Incident.agents, AD-19), ExecutionTrace,
+                       # AskPortwatch, GeoMapPanel (geographic, AD-17), KillSwitchControl
+                       # -- names and visual/behavioral spec owned by the Harbor Signal UX spine
+                       # (DESIGN.md/EXPERIENCE.md companions above); supersedes the 2026-08-26 blueprint set
 ```
 
 ## Capability → Architecture Map
@@ -274,12 +312,12 @@ frontend/
 | FR Group | Lives in | Governed by |
 | --- | --- | --- |
 | A — Signal ingestion & correlation (FR1-2) | `ingestion/`, `registry/` | AD-5 |
-| B — Multi-agent analysis (FR3-4) | `agents/`, `orchestrator/` | AD-2, AD-3, AD-4 |
+| B — Multi-agent analysis (FR3-4) | `agents/`, `orchestrator/` | AD-2, AD-3, AD-4, AD-19 (bundle exposed for the roster) |
 | C — Uncertainty & failure handling (FR5-6) | `policy/confidence.py` | AD-4 (trace capture), AD-16 (per-agent mock override) |
 | D — Policy & autonomy (FR7-10) | `policy/policy_engine.py`, `policy/dg_gate.py` | AD-7, AD-8, AD-15 |
 | E — Human interaction (FR11-12) | `api/` approval + query endpoints, status-query handler | AD-2, AD-6, AD-11 |
 | F — Execution & verification (FR13) | `mock_services/`, orchestrator execute stage | AD-7, AD-14 |
-| G — Audit & traceability (FR14-15) | `Incident.trace`, `api/` | AD-4, AD-14 |
+| G — Audit & traceability (FR14-15) | `Incident.trace`, `Incident.agents`, `api/` | AD-4, AD-14, AD-18, AD-19 |
 | H — Scalability proof (FR16) | per-incident orchestrator tasks | AD-1, AD-4, AD-13 |
 | I — Inter-Gateway load balancing (FR17, stretch) | `mock_services/yard_manager.py` | AD-12 |
 

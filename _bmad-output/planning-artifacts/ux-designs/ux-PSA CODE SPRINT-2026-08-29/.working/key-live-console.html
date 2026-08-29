@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portwatch — Harbor Signal · Live Console (Tier 3, orchestra visible)</title>
+<style>
+  /* Key-screen mock for EXPERIENCE.md Flow 1 + The Orchestra. Composition reference only — DESIGN.md tokens win on conflict. */
+  :root{
+    --ink:#07141B; --panel:#0D1C26; --elevated:#122833; --subtle:#183243;
+    --border:#214459; --tprimary:#EAF7F9; --tsecondary:#A4B8C0;
+    --seafoam:#66E0D2; --amber:#F7B267; --red:#E8695A;
+    --r-sm:4px; --r-md:8px; --r-lg:16px;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Space Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--tprimary);font-family:var(--sans);font-size:13px;line-height:1.5}
+  .shell{min-height:100vh;position:relative;overflow:hidden}
+  .shell::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.24;
+    background-image:linear-gradient(rgba(85,154,156,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(85,154,156,.055) 1px,transparent 1px);
+    background-size:40px 40px;-webkit-mask-image:linear-gradient(to bottom,#000,transparent 76%);mask-image:linear-gradient(to bottom,#000,transparent 76%)}
+  .eyebrow{font-family:var(--mono);font-weight:600;font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:var(--seafoam)}
+  .mono{font-family:var(--mono)}
+  .muted{color:var(--tsecondary)}
+
+  /* rail */
+  .rail{position:fixed;inset:0 auto 0 0;width:214px;padding:22px 14px;display:flex;flex-direction:column;gap:3px;
+    border-right:1px solid rgba(84,150,154,.2);background:rgba(6,20,27,.88)}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 9px 22px}
+  .beacon{width:26px;height:26px;display:grid;place-items:end;grid-auto-flow:column;gap:3px}
+  .beacon i{width:5px;background:var(--seafoam);border-radius:1px;display:block}
+  .beacon i:nth-child(1){height:12px}.beacon i:nth-child(2){height:20px}.beacon i:nth-child(3){height:16px}
+  .brand b{font-size:11px;letter-spacing:.15em;color:#ecfbf7}
+  .brand small{display:block;margin-top:4px;font-family:var(--mono);font-size:8px;letter-spacing:.24em;color:var(--seafoam)}
+  .rail .eyebrow{margin:0 9px 8px}
+  .navbtn{position:relative;min-height:44px;padding:0 10px;display:flex;align-items:center;gap:12px;color:#6a9196;background:transparent;border:0;border-radius:7px;font:600 12px var(--sans);text-align:left;cursor:pointer}
+  .navbtn:hover{color:#c2dcda;background:rgba(78,137,143,.1)}
+  .navbtn.active{color:#d8fbf3;background:linear-gradient(90deg,rgba(54,122,128,.24),rgba(40,82,89,.08))}
+  .navbtn.active::before{content:"";position:absolute;left:-14px;width:2px;height:24px;background:var(--seafoam);box-shadow:0 0 12px rgba(102,224,210,.55)}
+  .navbtn b{margin-left:auto;color:var(--amber);font:600 9px var(--mono)}
+  .rail-foot{margin-top:auto;padding-top:12px;font:10px/1.55 var(--mono);color:#52767b}
+
+  /* content */
+  .content{margin-left:214px}
+  .topbar{height:72px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid rgba(84,150,154,.16);background:rgba(7,20,27,.64)}
+  .crumb{font:10px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:#62868b}
+  .crumb b{color:#d6ebe8;font-weight:500}
+  .topbar-actions{display:flex;align-items:center;gap:14px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid rgba(102,224,210,.28);color:#89d9ce;background:rgba(36,109,108,.1);font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:var(--r-sm)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--seafoam);box-shadow:0 0 8px var(--seafoam)}
+  .kill{padding:8px 12px;border:1px solid rgba(232,105,90,.5);color:#f2a59b;background:rgba(232,105,90,.08);border-radius:var(--r-sm);font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+
+  .view{padding:22px 28px 40px}
+  .view h1{margin:6px 0 2px;font-size:clamp(28px,3.1vw,40px);letter-spacing:-.045em;font-weight:600;color:#e6f4f1}
+  .view .sub{color:var(--tsecondary);font-size:12px}
+
+  /* panel */
+  .panel{position:relative;border:1px solid var(--border);background:rgba(14,36,44,.73);border-radius:var(--r-md);
+    box-shadow:0 14px 40px rgba(0,0,0,.12),inset 0 1px 0 rgba(191,255,245,.025);overflow:hidden}
+  .panel.accent{border-color:rgba(102,224,210,.4)}
+  .panel::before{content:"";position:absolute;top:-1px;left:-1px;width:18px;height:18px;border-top:1px solid rgba(102,224,210,.65);border-left:1px solid rgba(102,224,210,.65)}
+  .panel.active::after{content:"";position:absolute;right:10px;bottom:10px;width:9px;height:9px;border-right:1px solid rgba(102,224,210,.38);border-bottom:1px solid rgba(102,224,210,.38)}
+  .phead{padding:15px 16px 12px;border-bottom:1px solid rgba(85,147,151,.15);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .phead h3{margin:4px 0 0;font-size:14px;font-weight:600;color:#d9eeeb;letter-spacing:-.01em}
+  .pbody{padding:16px}
+  .pidx{font:10px var(--mono);color:#557f84}
+
+  .grid3{display:grid;grid-template-columns:24% 52% 24%;gap:16px;margin-top:18px}
+  .stack{display:flex;flex-direction:column;gap:16px}
+
+  /* pills */
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:var(--r-sm);font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--border)}
+  .pill .d{width:5px;height:5px;border-radius:50%}
+  .t-teal{color:#79d8c7} .t-teal .d{background:#79d8c7}
+  .t-amber{color:#edb15c} .t-amber .d{background:#edb15c}
+  .t-red{color:#f2746d} .t-red .d{background:#f2746d}
+  .t-slate{color:#86a8aa} .t-slate .d{background:#86a8aa}
+
+  /* metrics */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .metric{border:1px solid var(--border);border-radius:var(--r-md);padding:12px;background:rgba(9,24,30,.5)}
+  .metric .l{font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#77999d}
+  .metric .v{margin-top:8px;font:600 26px var(--mono);letter-spacing:-.06em;color:#dff5f1}
+  .metric .f{margin-top:6px;font:9px var(--mono);color:#557b80}
+
+  /* stage rail */
+  .stagerail{display:flex;gap:0;flex-wrap:wrap}
+  .stage{flex:1 1 9%;min-width:96px;padding:10px 10px 12px;border:1px solid var(--border);border-right:0;background:rgba(9,24,30,.4)}
+  .stage:last-child{border-right:1px solid var(--border)}
+  .stage .n{font:9px var(--mono);letter-spacing:.06em;color:#8fb7b6}
+  .stage .s{margin-top:8px;font:8px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+  .stage.done{border-top:2px solid var(--seafoam)} .stage.done .s{color:#79d8c7}
+  .stage.active{border-top:2px solid var(--amber);background:rgba(91,67,33,.18)} .stage.active .s{color:#edb15c}
+  .stage.blocked{border-top:2px solid var(--red);background:rgba(232,105,90,.1)} .stage.blocked .s{color:#f2746d}
+  .stage.pending{opacity:.5} .stage.pending .s{color:#86a8aa}
+  .stage .ts{margin-top:4px;font:8px var(--mono);color:#557b80}
+
+  /* agent roster */
+  .roster{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+  .agent{border:1px solid var(--border);border-radius:var(--r-md);padding:12px;background:rgba(9,24,30,.5)}
+  .agent h4{margin:0 0 8px;font:600 12px var(--sans);color:#d9eeeb}
+  .agent p{margin:8px 0 0;font:10px/1.5 var(--mono);color:#8aa7a5}
+  .agent.fallback{border-color:rgba(247,178,103,.45)}
+
+  /* confidence */
+  .conf{display:flex;align-items:baseline;gap:14px}
+  .conf .big{font:600 40px var(--mono);letter-spacing:-.08em;color:#edb15c}
+  .conf .was{font:12px var(--mono);color:#557b80;text-decoration:line-through}
+  .breakdown{margin-top:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font:10px var(--mono);color:#8aa7a5}
+  .breakdown span b{color:#edb15c}
+
+  /* dg gate */
+  .dg{margin-top:14px;padding:12px 14px;border:1px solid rgba(232,105,90,.5);border-radius:var(--r-md);background:rgba(232,105,90,.08);font:10px var(--mono);color:#f2a59b;letter-spacing:.06em}
+  .dg b{color:#f2746d}
+
+  /* decision card */
+  .decision{border:1px solid rgba(102,224,210,.4);border-radius:var(--r-lg);background:rgba(14,36,44,.9);padding:0;margin-top:18px;position:relative;overflow:hidden}
+  .decision::before{content:"";position:absolute;top:-1px;left:-1px;width:22px;height:22px;border-top:1px solid var(--seafoam);border-left:1px solid var(--seafoam)}
+  .decision .dhead{padding:16px 20px;border-bottom:1px solid rgba(85,147,151,.18);display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .decision .dhead h3{margin:0;font-size:16px;font-weight:600}
+  .decision .dbody{padding:20px;display:grid;grid-template-columns:1.4fr 1fr;gap:24px}
+  .decision h5{margin:0 0 6px;font:9px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#69c8c0}
+  .decision p{margin:0 0 16px;font-size:13px;line-height:1.6}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);font:11px var(--mono);color:#b9d6d1;display:flex;justify-content:space-between;gap:10px}
+  .opt.sel{border-color:var(--seafoam);background:rgba(36,109,108,.12);color:#dff5f1}
+  .impact{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font:10px var(--mono);color:#8aa7a5}
+  .impact b{color:#dff5f1}
+  .actions{margin-top:18px;display:flex;gap:10px}
+  .btn{padding:10px 18px;border-radius:var(--r-sm);font:600 11px var(--sans);letter-spacing:.04em;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--tprimary)}
+  .btn.primary{background:var(--seafoam);color:#06232a;border-color:var(--seafoam)}
+  .btn.ghost{color:#f2a59b;border-color:rgba(232,105,90,.4)}
+
+  /* trace + feed rows */
+  .row{padding:11px 12px;border-bottom:1px solid rgba(85,147,151,.12);cursor:pointer}
+  .row:hover{background:rgba(78,137,143,.08)}
+  .row.sel{background:rgba(36,109,108,.14);border-left:2px solid var(--seafoam)}
+  .row .id{font:10px var(--mono);color:#79d8c7}
+  .row .t{margin-top:4px;font-size:12px;color:#d9eeeb}
+  .row .m{margin-top:6px;display:flex;gap:8px}
+  .trace{font:10px/1.7 var(--mono);color:#9ec1bf;max-height:280px;overflow:auto}
+  .trace div{padding:2px 0;border-bottom:1px dotted rgba(85,147,151,.14)}
+  .trace .st{color:#79d8c7}
+  .trace .stw{color:#edb15c}
+  .map{height:340px;border-radius:var(--r-md);border:1px dashed var(--border);display:grid;place-items:center;color:#5f8f91;font:10px var(--mono);text-transform:uppercase;letter-spacing:.1em;background:
+    radial-gradient(circle at 30% 40%,rgba(102,224,210,.06),transparent 40%),rgba(9,24,30,.5)}
+  .maptools{display:flex;gap:8px;margin-bottom:10px}
+  .maptools button{padding:6px 10px;border:1px solid var(--border);background:rgba(6,21,28,.6);color:#87a8aa;font:9px var(--mono);text-transform:uppercase;border-radius:var(--r-sm);cursor:pointer}
+  .maptools button.on{border-color:var(--seafoam);color:#dff5f1}
+  h2.section{margin:26px 0 0;font:9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#69c8c0}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail">
+    <div class="brand">
+      <span class="beacon"><i></i><i></i><i></i></span>
+      <span><b>PORTWATCH</b><small>TUAS</small></span>
+    </div>
+    <div class="eyebrow">Operations</div>
+    <button class="navbtn active">Dashboard</button>
+    <button class="navbtn">Active incidents <b>2</b></button>
+    <button class="navbtn">Audit trail</button>
+    <div class="rail-foot"><strong>Session</strong> demo-01<br/>Policy engine · 118 ms<br/>Feeds · nominal</div>
+  </nav>
+
+  <div class="content">
+    <header class="topbar">
+      <div class="crumb">Operations / <b>Live Console</b> / INC-4471</div>
+      <div class="topbar-actions">
+        <span class="chip"><span class="dot"></span> Live · poll 2.4s</span>
+        <span class="mono muted">23:11:07 SGT</span>
+        <button class="kill">Kill switch · armed</button>
+      </div>
+    </header>
+
+    <div class="view">
+      <div class="eyebrow">Tier 3 · approval pending</div>
+      <h1>Keep the handoff moving.</h1>
+      <div class="sub">MSC Anna ETA slipped 90 min · Crane #4 hydraulic fault · one correlated incident.</div>
+
+      <div class="metrics" style="margin-top:18px">
+        <div class="metric"><div class="l">Yard utilization</div><div class="v">78.4<span style="font-size:13px">%</span></div><div class="f">below soft cap</div></div>
+        <div class="metric"><div class="l">Vessels tracked</div><div class="v">14</div><div class="f">1 delayed</div></div>
+        <div class="metric"><div class="l">Equipment health</div><div class="v">17/18</div><div class="f">Crane #4 fault</div></div>
+        <div class="metric"><div class="l">Live confidence</div><div class="v" style="color:#edb15c">67</div><div class="f">was 91 · missing data</div></div>
+      </div>
+
+      <div class="grid3">
+        <!-- col 1: incident + agent detail -->
+        <div class="stack">
+          <section class="panel active">
+            <div class="phead"><div><div class="eyebrow">Incident</div><h3>INC-4471 · Berth B3</h3></div><span class="pidx">2 signals</span></div>
+            <div class="pbody">
+              <div class="row sel"><div class="id">SIG · AIS</div><div class="t">MSC Anna ETA revised +90 min — Malacca Strait congestion</div><div class="m"><span class="pill t-amber"><span class="d"></span>watch</span></div></div>
+              <div class="row"><div class="id">SIG · EQUIP</div><div class="t">Quay Crane #4 — hydraulic pressure fault</div><div class="m"><span class="pill t-red"><span class="d"></span>fault</span></div></div>
+              <div class="row"><div class="id">CORRELATE</div><div class="t">Same berth + 15-min window → one incident</div><div class="m"><span class="pill t-teal"><span class="d"></span>linked</span></div></div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="phead"><div><div class="eyebrow">Feed</div><h3>Active incidents</h3></div><span class="pidx">2</span></div>
+            <div class="pbody" style="padding:0">
+              <div class="row sel"><div class="id">INC-4471</div><div class="t">Berth B3 · vessel + crane</div><div class="m"><span class="pill t-red"><span class="d"></span>Tier 3</span><span class="pill t-amber"><span class="d"></span>67%</span></div></div>
+              <div class="row"><div class="id">INC-4472</div><div class="t">Gate G2 congestion blip</div><div class="m"><span class="pill t-teal"><span class="d"></span>Tier 1</span><span class="pill t-slate"><span class="d"></span>auto</span></div></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- col 2: map -->
+        <section class="panel active">
+          <div class="phead"><div><div class="eyebrow">Port canvas</div><h3>Tuas — berths · yards · routes</h3></div><span class="pidx">illustrative · mock state</span></div>
+          <div class="pbody">
+            <div class="maptools"><button class="on">Berths</button><button>Yards</button><button>Routes</button></div>
+            <div class="map">geographic berth / yard / route context — active route in seafoam, MSC Anna → B3 emphasised</div>
+            <p class="mono muted" style="font-size:9px;margin-top:10px">Not an AIS/VTS feed — illustrative visualisation of polled mock incident state (PRD §6a).</p>
+          </div>
+        </section>
+
+        <!-- col 3: trace -->
+        <section class="panel active">
+          <div class="phead"><div><div class="eyebrow">Execution trace</div><h3>INC-4471</h3></div><span class="pidx" aria-live="polite">live</span></div>
+          <div class="pbody">
+            <div class="trace">
+              <div><span class="mono">23:09:41</span> <span class="st">INGEST</span> AIS ETA delta normalised</div>
+              <div><span class="mono">23:09:44</span> <span class="st">CORRELATE</span> crane fault joined — shared berth B3</div>
+              <div><span class="mono">23:09:46</span> <span class="st">AGENT_CALL</span> berth · crane · yard dispatched (parallel)</div>
+              <div><span class="mono">23:09:52</span> <span class="stw">AGENT_CALL</span> crane#7 telemetry timeout → retry</div>
+              <div><span class="mono">23:09:57</span> <span class="stw">AGENT_CALL</span> retry failed → fallback to last known state</div>
+              <div><span class="mono">23:10:01</span> <span class="st">SYNTHESIZE</span> arbiter → 3 options, recommend B</div>
+              <div><span class="mono">23:10:03</span> <span class="stw">CONFIDENCE</span> 91 → 67 (missing-data −15, staleness −9)</div>
+              <div><span class="mono">23:10:05</span> <span class="stw">DG_CHECK</span> VIOLATION — Option B segregation conflict</div>
+              <div><span class="mono">23:10:06</span> <span class="st">SYNTHESIZE</span> re-plan → revised B′</div>
+              <div><span class="mono">23:10:09</span> <span class="stw">POLICY_DECISION</span> Tier 3 — SLA breach risk + confidence &lt; 70</div>
+              <div><span class="mono">23:10:10</span> <span class="stw">APPROVAL</span> awaiting duty manager…</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- full-width: the orchestra -->
+      <h2 class="section">The orchestra — pipeline</h2>
+      <section class="panel active" style="margin-top:10px">
+        <div class="pbody">
+          <div class="stagerail">
+            <div class="stage done"><div class="n">INGEST</div><div class="s">done</div><div class="ts">23:09:41</div></div>
+            <div class="stage done"><div class="n">CORRELATE</div><div class="s">done</div><div class="ts">23:09:44</div></div>
+            <div class="stage active"><div class="n">AGENT_CALL</div><div class="s">degraded</div><div class="ts">timeout · fallback</div></div>
+            <div class="stage done"><div class="n">SYNTHESIZE</div><div class="s">done · re-plan</div><div class="ts">23:10:06</div></div>
+            <div class="stage active"><div class="n">CONFIDENCE</div><div class="s">degraded</div><div class="ts">67</div></div>
+            <div class="stage active"><div class="n">POLICY_DECISION</div><div class="s">tier 3</div><div class="ts">23:10:09</div></div>
+            <div class="stage blocked"><div class="n">DG_CHECK</div><div class="s">violation</div><div class="ts">re-planned</div></div>
+            <div class="stage active"><div class="n">APPROVAL</div><div class="s">waiting</div><div class="ts">—</div></div>
+            <div class="stage pending"><div class="n">EXECUTE</div><div class="s">pending</div><div class="ts">—</div></div>
+            <div class="stage pending"><div class="n">VERIFY</div><div class="s">pending</div><div class="ts">—</div></div>
+          </div>
+
+          <div class="roster">
+            <div class="agent"><h4>Berth / Vessel agent</h4><span class="pill t-teal"><span class="d"></span>complete</span><p>Re-sequence B3 window; hold non-critical moves. Constraint: berth coupling limit.</p></div>
+            <div class="agent fallback"><h4>Crane agent</h4><span class="pill t-amber"><span class="d"></span>fallback</span><p>Crane #7 timeout → last known state. Isolate #4; adjacent capacity on C5/C8. Confidence contribution −15.</p></div>
+            <div class="agent"><h4>Yard agent</h4><span class="pill t-teal"><span class="d"></span>complete</span><p>C5 + C8 can absorb split discharge for ~2h. Constraint: no simultaneous weather stress.</p></div>
+          </div>
+
+          <div class="conf">
+            <span class="big">67</span><span class="was">91</span>
+            <span class="mono muted">computed · deterministic · not an LLM self-report (FR6)</span>
+          </div>
+          <div class="breakdown">
+            <span>staleness <b>−9</b> · telemetry age</span>
+            <span>missing-data <b>−15</b> · crane #7 cached</span>
+            <span>disagreement <b>0</b></span>
+            <span>variance <b>0</b> · options within 30%</span>
+          </div>
+
+          <div class="dg"><b>DG_CHECK — VIOLATION.</b> IMDG segregation rejects part of Option B. Arbiter re-planned → B′ before this card was raised. Hard gate, independent of tier.</div>
+        </div>
+      </section>
+
+      <!-- decision card -->
+      <div class="decision">
+        <div class="dhead">
+          <h3>Needs your approval</h3>
+          <div style="display:flex;gap:8px"><span class="pill t-red"><span class="d"></span>Tier 3</span><span class="pill t-amber"><span class="d"></span>confidence 67%</span></div>
+        </div>
+        <div class="dbody">
+          <div>
+            <h5>Situation</h5>
+            <p>MSC Anna is 90 minutes late into B3 and Crane #4 has a hydraulic fault. Crane #7 telemetry is on last-known state. The revised plan (B′) still risks an SLA breach on the downstream vessel.</p>
+            <h5>Recommendation — B′ · Split discharge across C5 / C8</h5>
+            <p>Distribute discharge across adjacent berth support lanes while Crane #4 is isolated. ~42 min vessel delay, +$18k handling, labour handoff across two blocks.</p>
+            <div class="actions">
+              <button class="btn primary">Approve</button>
+              <button class="btn">Modify</button>
+              <button class="btn ghost">Reject</button>
+            </div>
+          </div>
+          <div>
+            <h5>Predicted impact</h5>
+            <div class="impact">
+              <span>delay <b>42 min</b></span><span>cost <b>+$18k</b></span>
+              <span>yard <b>C5/C8 +12%</b></span><span>risk <b>medium</b></span>
+            </div>
+            <h5 style="margin-top:16px">Alternatives</h5>
+            <div class="opts">
+              <div class="opt sel"><span>B′ · Split C5 / C8</span><span>67%</span></div>
+              <div class="opt"><span>A · Re-sequence berth window</span><span>61%</span></div>
+              <div class="opt"><span>C · Hold and reassess</span><span>48%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
