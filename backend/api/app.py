@@ -14,6 +14,8 @@ orchestrator's `approve_incident`, and `policy.killswitch`.
 
 from __future__ import annotations
 
+import asyncio
+import os
 from contextlib import asynccontextmanager
 from typing import Literal
 
@@ -21,10 +23,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from api import demo_driver
 from api.approval import ApprovalError, apply_approval
 from api.demo_seed import seed_demo
 from api.query import answer_query
-from api.state import get_incident, list_incidents
+from api.state import get_incident, list_incidents, reset_state
 from models.incident import Incident
 from policy.killswitch import disengage_kill_switch, engage_kill_switch, is_kill_switch_engaged
 
@@ -46,6 +49,11 @@ class QueryResponse(BaseModel):
 
 class KillSwitchResponse(BaseModel):
     enabled: bool
+
+
+class DemoTriggerResponse(BaseModel):
+    started: bool
+    primary_incident_id: str | None
 
 
 @asynccontextmanager
@@ -99,6 +107,42 @@ async def post_approval(incident_id: str, body: ApprovalRequest) -> Incident:
     except ApprovalError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return inc
+
+
+# Module global: keeps the fire-and-forget demo driver task from being garbage
+# collected mid-run (asyncio holds only a weak reference to bare tasks).
+_demo_task: asyncio.Task[None] | None = None
+
+
+@app.post("/demo/three-way-disruption", response_model=DemoTriggerResponse)
+async def post_demo_trigger() -> DemoTriggerResponse:
+    """Dev-only: clear incident state and launch the live "Three-Way Disruption" run.
+
+    Gated by `PORTWATCH_DEMO_TRIGGER` (default `"1"`, on — like `demo_seed.py`'s
+    `PORTWATCH_SEED`): a prod deploy sets it to `"0"` and the route 404s.
+
+    One run at a time — a second POST while a driver task is running returns 409
+    and resets nothing. Strictly additive: this is the only `/demo/*` write path
+    and it drives the real specialist -> arbiter -> policy chain (spec-demo-
+    three-way-disruption-trigger).
+    """
+    global _demo_task
+    if os.environ.get("PORTWATCH_DEMO_TRIGGER", "1") == "0":
+        raise HTTPException(status_code=404, detail="demo trigger disabled")
+
+    if demo_driver.is_demo_run_active():
+        raise HTTPException(status_code=409, detail="a demo run is already in progress")
+
+    demo_driver.mark_demo_run_active(True)
+    try:
+        reset_state()
+        primary = demo_driver.create_primary_incident()
+        _demo_task = asyncio.create_task(demo_driver.run_three_way_disruption_demo(primary))
+    except Exception:
+        demo_driver.mark_demo_run_active(False)
+        raise
+
+    return DemoTriggerResponse(started=True, primary_incident_id=primary.incident_id)
 
 
 @app.post("/kill-switch", response_model=KillSwitchResponse)

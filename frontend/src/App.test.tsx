@@ -27,6 +27,10 @@ beforeEach(() => {
   vi.spyOn(client, 'postApproval').mockResolvedValue({ ok: true });
   vi.spyOn(client, 'postKillSwitch').mockResolvedValue({ enabled: true });
   vi.spyOn(client, 'fetchQuery').mockResolvedValue({ answer: 'stub answer' });
+  vi.spyOn(client, 'postDemoTrigger').mockResolvedValue({
+    started: true,
+    primary_incident_id: tier3WithAlternatives.incident_id,
+  });
 });
 
 afterEach(() => {
@@ -408,6 +412,32 @@ describe('App live data wiring', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('shows the dev-only "Run demo" button; a click posts once, auto-selects the primary incident, and refetches (FE_TRIGGER)', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await screen.findByRole('main');
+
+    const topbar = container.querySelector('header.topbar') as HTMLElement;
+    const btn = within(topbar).getByRole('button', { name: /run demo/i });
+    expect(btn).toBeInTheDocument();
+
+    vi.mocked(client.fetchIncidents).mockClear();
+    await user.click(btn);
+
+    // (1) exactly one POST
+    await waitFor(() =>
+      expect(client.postDemoTrigger).toHaveBeenCalledTimes(1),
+    );
+    // (2) onTriggered selected the mocked primary incident — breadcrumb names it
+    await waitFor(() =>
+      expect(
+        within(topbar).getByText(/MSC[ -]?ANNA/i, { selector: '.breadcrumb strong' }),
+      ).toBeInTheDocument(),
+    );
+    // (3) refetch() fired after the trigger resolved
+    await waitFor(() => expect(client.fetchIncidents).toHaveBeenCalled());
   });
 
   it('the kill switch control posts to /kill-switch and shows the global banner', async () => {

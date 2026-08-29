@@ -277,6 +277,89 @@ export async function postKillSwitch(
 }
 
 // ---------------------------------------------------------------------------
+// Write path (demo) — the dev-only "Three-Way Disruption" live run trigger.
+// ---------------------------------------------------------------------------
+
+/**
+ * POST the demo trigger:
+ *   POST ${API_BASE}/demo/three-way-disruption   (no body)
+ *
+ * Dev-only on the UI side (the button is gated on `import.meta.env.DEV`); the
+ * backend route clears incident state and launches a background driver that runs
+ * a real incident through the pipeline. Resolves with
+ * `{ started, primary_incident_id }` — a 2xx empty body is tolerated and
+ * resolves `{ started: true, primary_incident_id: null }`.
+ *
+ * Same failure discipline as {@link postKillSwitch}: a network reject, a non-2xx
+ * status (the {@link ApiError} carries `.status` — a 409 means a run is already
+ * in progress), an unparseable body, or the {@link REQUEST_TIMEOUT_MS} timeout
+ * all surface as an {@link ApiError}; a caller-initiated abort re-throws as-is.
+ *
+ * @param signal optional `AbortSignal` so an in-flight POST can be cancelled.
+ */
+export async function postDemoTrigger(
+  signal?: AbortSignal,
+): Promise<{ started: boolean; primary_incident_id: string | null }> {
+  const url = `${API_BASE.replace(/\/+$/, '')}/demo/three-way-disruption`;
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: combined,
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      throw new ApiError('POST /demo/three-way-disruption timed out');
+    }
+    if (isAbortError(err)) {
+      throw err;
+    }
+    throw new ApiError(
+      err instanceof Error
+        ? err.message
+        : 'Network request to /demo/three-way-disruption failed',
+    );
+  }
+
+  if (!res.ok) {
+    throw new ApiError(
+      `POST /demo/three-way-disruption failed with ${res.status}`,
+      res.status,
+    );
+  }
+
+  let text: string;
+  try {
+    text = await res.text();
+  } catch {
+    throw new ApiError('POST /demo/three-way-disruption returned an unreadable body');
+  }
+  if (!text) return { started: true, primary_incident_id: null };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new ApiError('POST /demo/three-way-disruption returned invalid JSON');
+  }
+  const obj =
+    typeof parsed === 'object' && parsed !== null
+      ? (parsed as { started?: unknown; primary_incident_id?: unknown })
+      : {};
+  return {
+    started: typeof obj.started === 'boolean' ? obj.started : true,
+    primary_incident_id:
+      typeof obj.primary_incident_id === 'string' && obj.primary_incident_id
+        ? obj.primary_incident_id
+        : null,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Read path (Story 2.6) — the natural-language query endpoint (FR12, AD-2).
 // ---------------------------------------------------------------------------
 

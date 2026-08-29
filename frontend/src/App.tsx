@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import './components/PortwatchPrimitives/PortwatchPrimitives.css';
 import { AgentRoster } from './components/AgentRoster';
 import { AskPortwatch } from './components/AskPortwatch';
+import { DemoTrigger } from './components/DemoTrigger';
 import { ExecutionTrace } from './components/ExecutionTrace';
 import { IncidentArchive } from './components/IncidentArchive';
 import { IncidentDetail } from './components/IncidentDetail';
@@ -13,6 +14,7 @@ import { KillSwitchBanner, KillSwitchControl } from './components/KillSwitchCont
 import { StageRail } from './components/StageRail';
 import { useApproval } from './hooks/useApproval';
 import { useAskPortwatch } from './hooks/useAskPortwatch';
+import { useDemoTrigger } from './hooks/useDemoTrigger';
 import { useHashRoute } from './hooks/useHashRoute';
 import { useIncidents } from './hooks/useIncidents';
 import { useKillSwitch } from './hooks/useKillSwitch';
@@ -121,6 +123,7 @@ function App() {
   const approval = useApproval(refetch);
   const ask = useAskPortwatch();
   const kill = useKillSwitch();
+  const demo = useDemoTrigger();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = useMemo(
@@ -143,6 +146,13 @@ function App() {
     },
     [approval, selectedId],
   );
+
+  const onRunDemo = useCallback(() => {
+    demo.trigger((primaryIncidentId) => {
+      if (primaryIncidentId) setSelectedId(primaryIncidentId);
+      refetch();
+    });
+  }, [demo.trigger, refetch]);
 
   // Move focus to the route container on a route change (not on first load) so
   // keyboard / screen-reader users land in the new view instead of staying on
@@ -247,6 +257,12 @@ function App() {
                 Live feed connected
               </span>
               <TopbarClock />
+              <DemoTrigger
+                running={demo.running}
+                pending={demo.pending}
+                error={demo.error}
+                onTrigger={onRunDemo}
+              />
               <KillSwitchControl
                 engaged={kill.engaged}
                 pending={kill.pending}
