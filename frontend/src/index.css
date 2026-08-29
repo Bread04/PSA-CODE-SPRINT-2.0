@@ -11,7 +11,7 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -38,4 +38,21 @@ button {
   border: none;
   border-radius: var(--radius-default);
   cursor: pointer;
+}
+
+/*
+ * Honour prefers-reduced-motion (EXPERIENCE.md Accessibility Floor, mirroring
+ * portwatch-tuas/index.css): the confidence-numeral tween, the status-dot
+ * breathing, and every panel / hover transition resolve instantly. State still
+ * reads correctly — nothing here is animation-dependent.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

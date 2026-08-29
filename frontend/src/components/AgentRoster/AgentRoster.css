@@ -1,0 +1,155 @@
+/*
+ * AgentRoster (Harbor Signal "Orchestra" — spec-harbor-signal-reskin, AD-19).
+ *
+ * A read-only, side-by-side fan-out of the specialist agents framed by the
+ * shared BlueprintPanel. Every colour / spacing / radius / type value routes
+ * through Story 2.1 tokens (var(--surface-*), var(--divider), var(--accent-*),
+ * var(--space-*), var(--radius-*), var(--font-*), var(--font-size-*)); the only
+ * bare literals are non-colour structural sizes (the state marker bar).
+ *
+ * Per-agent RUN STATE is carried by BOTH a class + text token
+ * (COMPLETE / TIMEOUT / FALLBACK) AND a shape cue (the left marker bar's
+ * thickness / style), never hue alone (EXPERIENCE.md Accessibility Floor).
+ */
+
+.agent-roster {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.agent-roster__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.agent-roster__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agent-roster__chip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--divider);
+  border-left: 3px solid var(--divider);
+  border-radius: var(--radius-sm);
+}
+
+/* State marker: colour AND left-border weight / style differ per state. */
+.agent-roster__chip--complete {
+  border-left: 3px solid var(--accent-500);
+}
+
+.agent-roster__chip--fallback {
+  border-left: 3px dashed var(--accent-2);
+}
+
+.agent-roster__chip--timeout {
+  border-left: 5px solid var(--accent-900);
+}
+
+.agent-roster__chip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agent-roster__agent {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-body);
+  color: var(--text);
+}
+
+.agent-roster__state {
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.agent-roster__state--complete {
+  color: var(--accent-500);
+}
+
+.agent-roster__state--fallback {
+  color: var(--accent-2);
+}
+
+.agent-roster__state--timeout {
+  color: var(--accent-900);
+}
+
+.agent-roster__summary {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-caption);
+  color: var(--text);
+}
+
+.agent-roster__detail {
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-caption);
+  color: var(--text-muted);
+}
+
+.agent-roster__detail-toggle {
+  display: block;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--accent-500);
+  cursor: pointer;
+}
+
+.agent-roster__detail-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.agent-roster__detail-toggle:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+.agent-roster__detail-label {
+  margin: var(--space-2) 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.agent-roster__detail-list {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text);
+}
+
+.agent-roster__rationale {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-caption);
+  color: var(--text);
+}

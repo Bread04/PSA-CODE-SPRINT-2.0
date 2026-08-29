@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import App from './App';
+import App, { readCollapsed } from './App';
 import * as client from './api/client';
 import {
   allIncidents,
@@ -27,6 +27,11 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   window.location.hash = '';
+  try {
+    sessionStorage.clear();
+  } catch {
+    /* noop */
+  }
 });
 
 describe('App routing', () => {
@@ -252,6 +257,67 @@ describe('App live data wiring', () => {
       expect(label).toContain('CMA-CGM-TITAN');
       expect(label).not.toContain('MSC-ANNA');
     });
+  });
+
+  it('shows the AgentRoster for a selected incident on #/ and hides it on #/archive', async () => {
+    const user = userEvent.setup();
+    window.location.hash = '';
+    render(<App />);
+
+    const feed = await screen.findByRole('region', { name: 'Incidents' });
+    const row = await within(feed).findByText(
+      /reroute affected yard moves through Crane #6/i,
+    );
+    await user.click(row.closest('button')!);
+
+    const roster = await screen.findByRole('region', { name: 'Agent Roster' });
+    // tier3WithAlternatives: crane AGENT_CALL carries error.fallback_used.
+    const crane = roster.querySelectorAll('.agent-roster__chip')[1];
+    expect(crane).toHaveClass('agent-roster__chip--fallback');
+    expect(within(crane as HTMLElement).getByText('FALLBACK')).toBeInTheDocument();
+
+    window.location.hash = '#/archive';
+    fireEvent(window, new HashChangeEvent('hashchange'));
+    await screen.findByRole('region', { name: 'Incident Archive' });
+    expect(
+      screen.queryByRole('region', { name: 'Agent Roster' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('the rail collapse toggle flips state, persists it, and is storage-failure safe', async () => {
+    const user = userEvent.setup();
+    window.location.hash = '';
+    const { container, unmount } = render(<App />);
+    await screen.findByRole('main');
+
+    const shell = container.querySelector('.app-shell')!;
+    const toggle = screen.getByRole('button', { name: /collapse navigation rail/i });
+    expect(shell).not.toHaveClass('app-shell--rail-collapsed');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    await user.click(toggle);
+    expect(shell).toHaveClass('app-shell--rail-collapsed');
+    expect(
+      screen.getByRole('button', { name: /expand navigation rail/i }),
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(readCollapsed()).toBe(true);
+
+    // Persists across a re-mount (sessionStorage).
+    unmount();
+    const remount = render(<App />);
+    expect(remount.container.querySelector('.app-shell')).toHaveClass(
+      'app-shell--rail-collapsed',
+    );
+
+    // readCollapsed() never throws when sessionStorage access throws.
+    const spy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('storage denied');
+      });
+    expect(() => readCollapsed()).not.toThrow();
+    expect(readCollapsed()).toBe(false);
+    spy.mockRestore();
   });
 
   it('the kill switch control posts to /kill-switch and shows the global banner', async () => {

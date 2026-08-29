@@ -119,10 +119,21 @@
   color: var(--text);
 }
 
+/*
+ * Fixed to the viewport top so the persistent left command rail (App.css,
+ * position: fixed) can never cover this safety-critical bar. App.tsx offsets
+ * the rail + body by --banner-height while it is engaged.
+ */
 .kill-switch-banner {
   box-sizing: border-box;
-  width: 100%;
-  padding: var(--space-2) var(--space-6);
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--banner-height);
+  padding: 0 var(--space-6);
   font-family: var(--font-heading);
   font-weight: var(--font-weight-heading);
   font-size: var(--font-size-micro-label);

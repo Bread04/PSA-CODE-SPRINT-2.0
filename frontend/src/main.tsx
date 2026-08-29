@@ -1,11 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-// Self-hosted fonts (bundled dependency, no network CDN) so the DESIGN.md
-// type spec — Barlow Condensed 600 for chrome, Barlow 400 for body — holds offline.
-import '@fontsource/barlow/400.css';
-import '@fontsource/barlow/600.css';
-import '@fontsource/barlow-condensed/600.css';
+// Self-hosted fonts (bundled dependency, no network CDN) so the Harbor Signal
+// type spec — Space Grotesk 400/600 for chrome + body, IBM Plex Mono 400/500
+// for values and status tokens — holds offline.
+import '@fontsource/space-grotesk/400.css';
+import '@fontsource/space-grotesk/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource/ibm-plex-mono/600.css';
 
 import './theme/tokens.css';
 import './index.css';

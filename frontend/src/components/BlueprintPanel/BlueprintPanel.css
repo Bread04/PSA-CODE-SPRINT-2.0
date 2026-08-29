@@ -1,16 +1,21 @@
 /*
- * BlueprintPanel — the universal Portwatch container primitive.
+ * BlueprintPanel — the universal Portwatch container primitive, re-skinned to
+ * "Harbor Signal" (spec-harbor-signal-reskin). The component keeps its name
+ * and class hooks; only the CSS changed.
  *
- * Visual spec is an EXACT match to DESIGN.md `components.blueprint-panel` and
- * the `.blueprint` / `.corner` rules in mockups/live-console.html:
- *   - 1px `--divider` border, zero radius, `--surface` fill, `position: relative`
- *   - default padding `--space-4` (13.6px), overridable by the caller via the
- *     `--blueprint-panel-padding` custom property (no component edit required)
- *   - four decorative 11x11px crosshair registration marks, offset -6px outside
- *     each corner, drawn as a 1px cross in `--text` at opacity 0.35
+ * Visual spec follows `ux-PSA CODE SPRINT-2026-08-29/DESIGN.md`
+ * `components.panel` + Elevation & Depth:
+ *   - 1px `--divider` edge, `--radius-md` (8px), `--surface` fill
+ *   - one soft ambient shadow (`--shadow-panel`), `overflow: hidden`
+ *   - a 1px seafoam L-bracket at the top-left (~18px) drawn on `::before` — the
+ *     signature bridge-instrument motif
+ *   - the four `.blueprint-panel__corner` spans restyled as small 3px seafoam
+ *     registration dots, one inset at each corner (all four kept in the DOM,
+ *     `aria-hidden`, non-interactive) — deliberately distinct from the L-bracket
+ *     so the top-left corner is not double-drawn
  *
- * Every value routes through a Story 2.1 token or the literal 11px / -6px / 1px
- * structural values the mock uses. No ad hoc hex. No non-zero radius.
+ * Every value routes through a Story 2.1 token or a small structural literal
+ * (the 18px bracket, the 3px dot, 1px strokes). No ad hoc hex.
  */
 
 /*
@@ -21,7 +26,7 @@
 @property --blueprint-panel-padding {
   syntax: "<length-percentage>";
   inherits: false;
-  initial-value: 13.6px;
+  initial-value: 16px;
 }
 
 .blueprint-panel {
@@ -30,56 +35,54 @@
   position: relative;
   background: var(--surface);
   border: 1px solid var(--divider);
-  border-radius: 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
   padding: var(--blueprint-panel-padding, var(--space-4));
 }
 
-.blueprint-panel__corner {
+/* The 1px seafoam L-bracket, top-left, ~18px — the bridge-instrument motif.
+   Structural, not decorative: its presence means "this panel is live". */
+.blueprint-panel::before {
+  content: "";
   position: absolute;
-  width: 11px;
-  height: 11px;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  border-top: 1px solid var(--bracket-seafoam);
+  border-left: 1px solid var(--bracket-seafoam);
   pointer-events: none;
 }
 
-.blueprint-panel__corner::before,
-.blueprint-panel__corner::after {
-  content: "";
+/* Small 3px seafoam registration dots — one inset at each corner. Distinct
+   from the top-left L-bracket so nothing is double-drawn. */
+.blueprint-panel__corner {
   position: absolute;
-  background: var(--text);
-  opacity: 0.35;
-}
-
-/* 5px centers the 1px stroke inside the 11px box: (11 - 1) / 2 */
-.blueprint-panel__corner::before {
-  width: 11px;
-  height: 1px;
-  top: 5px;
-  left: 0;
-}
-
-.blueprint-panel__corner::after {
-  width: 1px;
-  height: 11px;
-  top: 0;
-  left: 5px;
+  width: 3px;
+  height: 3px;
+  background: var(--bracket-seafoam);
+  border-radius: var(--radius-full);
+  pointer-events: none;
+  opacity: 0.55;
 }
 
 .blueprint-panel__corner--tl {
-  top: -6px;
-  left: -6px;
+  top: 5px;
+  left: 5px;
 }
 
 .blueprint-panel__corner--tr {
-  top: -6px;
-  right: -6px;
+  top: 5px;
+  right: 5px;
 }
 
 .blueprint-panel__corner--bl {
-  bottom: -6px;
-  left: -6px;
+  bottom: 5px;
+  left: 5px;
 }
 
 .blueprint-panel__corner--br {
-  bottom: -6px;
-  right: -6px;
+  bottom: 5px;
+  right: 5px;
 }

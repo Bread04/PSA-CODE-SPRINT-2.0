@@ -37,18 +37,18 @@ const designMdPath = join(
   '_bmad-output',
   'planning-artifacts',
   'ux-designs',
-  'ux-PSA CODE SPRINT-2026-08-26',
+  'ux-PSA CODE SPRINT-2026-08-29',
   'DESIGN.md',
 );
 
-/** Extract the `components.blueprint-panel` map from DESIGN.md front-matter. */
-function parseBlueprintPanelSpec(md: string): Record<string, string> {
+/** Extract the `components.panel` map from the Harbor Signal DESIGN.md. */
+function parsePanelSpec(md: string): Record<string, string> {
   const fm = md.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fm) throw new Error(`DESIGN.md front-matter not found at ${designMdPath}`);
   const lines = fm[1].split(/\r?\n/);
-  const start = lines.findIndex((l) => /^\s{2,}blueprint-panel:\s*$/.test(l));
+  const start = lines.findIndex((l) => /^\s{2,}panel:\s*$/.test(l));
   if (start === -1) {
-    throw new Error('components.blueprint-panel not found in DESIGN.md front-matter');
+    throw new Error('components.panel not found in DESIGN.md front-matter');
   }
   const baseIndent = lines[start].length - lines[start].trimStart().length;
   const spec: Record<string, string> = {};
@@ -62,7 +62,7 @@ function parseBlueprintPanelSpec(md: string): Record<string, string> {
   return spec;
 }
 
-const dmSpec = parseBlueprintPanelSpec(readFileSync(designMdPath, 'utf8'));
+const dmSpec = parsePanelSpec(readFileSync(designMdPath, 'utf8'));
 
 // ---------------------------------------------------------------------------
 // Row: Default render
@@ -139,83 +139,87 @@ describe('default render', () => {
 // Declaration matches are whitespace-tolerant regexes, not string contains.
 // ---------------------------------------------------------------------------
 describe('token-driven styling (static scan of BlueprintPanel.css)', () => {
-  it('panel rule declares border / radius / background / position / padding via tokens', () => {
+  it('panel rule declares border / radius / background / shadow / padding via tokens', () => {
     expect(css).toMatch(/border\s*:\s*1px\s+solid\s+var\(\s*--divider\s*\)\s*;/);
-    expect(css).toMatch(/border-radius\s*:\s*0\s*;/);
+    expect(css).toMatch(/border-radius\s*:\s*var\(\s*--radius-md\s*\)\s*;/);
     expect(css).toMatch(/background\s*:\s*var\(\s*--surface\s*\)\s*;/);
+    expect(css).toMatch(/box-shadow\s*:\s*var\(\s*--shadow-panel\s*\)\s*;/);
     expect(css).toMatch(/position\s*:\s*relative\s*;/);
+    expect(css).toMatch(/overflow\s*:\s*hidden\s*;/);
     expect(css).toMatch(
       /padding\s*:\s*var\(\s*--blueprint-panel-padding\s*,\s*var\(\s*--space-4\s*\)\s*\)\s*;/,
     );
   });
 
-  it('corner marks are 11px boxes with 1px crosshair strokes in var(--text) @ opacity 0.35', () => {
+  it('draws the 18px seafoam L-bracket on ::before via the bracket token', () => {
     expect(css).toMatch(
-      /\.blueprint-panel__corner\s*\{[^}]*width\s*:\s*11px\s*;[^}]*height\s*:\s*11px\s*;/,
-    );
-    expect(css).toMatch(/background\s*:\s*var\(\s*--text\s*\)\s*;/);
-    expect(css).toMatch(/opacity\s*:\s*0\.35\s*;/);
-    expect(css).toMatch(
-      /::before\s*\{[^}]*width\s*:\s*11px\s*;[^}]*height\s*:\s*1px\s*;/,
+      /\.blueprint-panel::before\s*\{[^}]*width\s*:\s*18px\s*;[^}]*height\s*:\s*18px\s*;/,
     );
     expect(css).toMatch(
-      /::after\s*\{[^}]*width\s*:\s*1px\s*;[^}]*height\s*:\s*11px\s*;/,
+      /::before\s*\{[^}]*border-top\s*:\s*1px\s+solid\s+var\(\s*--bracket-seafoam\s*\)\s*;/,
+    );
+    expect(css).toMatch(
+      /::before\s*\{[^}]*border-left\s*:\s*1px\s+solid\s+var\(\s*--bracket-seafoam\s*\)\s*;/,
     );
   });
 
-  it('contains no ad hoc hex color and no non-zero border-radius', () => {
+  it('the four corner spans are small seafoam registration dots (no crosshair, no doubled L)', () => {
+    expect(css).toMatch(
+      /\.blueprint-panel__corner\s*\{[^}]*width\s*:\s*3px\s*;[^}]*height\s*:\s*3px\s*;/,
+    );
+    expect(css).toMatch(
+      /\.blueprint-panel__corner\s*\{[^}]*background\s*:\s*var\(\s*--bracket-seafoam\s*\)\s*;/,
+    );
+    expect(css).toMatch(
+      /\.blueprint-panel__corner\s*\{[^}]*border-radius\s*:\s*var\(\s*--radius-full\s*\)\s*;/,
+    );
+    // No longer a filled square / crosshair in --text.
+    expect(css).not.toMatch(
+      /\.blueprint-panel__corner[^{]*\{[^}]*background\s*:\s*var\(\s*--text\s*\)/,
+    );
+    // The top-left L is drawn once (the ::before bracket), not also on --tl.
+    const tl = css.match(/\.blueprint-panel__corner--tl\s*\{([^}]*)\}/);
+    expect(tl).not.toBeNull();
+    expect(tl![1]).not.toMatch(/border-(top|left)\s*:/);
+  });
+
+  it('contains no ad hoc hex color; every border-radius routes through a radius token', () => {
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     const radii = [...css.matchAll(/border-radius\s*:\s*([^;}]+)/g)].map((m) =>
       m[1].trim(),
     );
     expect(radii.length).toBeGreaterThan(0);
-    for (const r of radii) expect(r).toBe('0');
+    for (const r of radii) expect(r).toMatch(/^var\(--radius-[a-z-]+\)$/);
   });
 });
 
 // ---------------------------------------------------------------------------
-// DESIGN.md conformance: BlueprintPanel.css implements the parsed contract.
+// DESIGN.md conformance: BlueprintPanel.css implements components.panel.
 // ---------------------------------------------------------------------------
-describe('BlueprintPanel.css conforms to DESIGN.md components.blueprint-panel', () => {
-  it('DESIGN.md declares the blueprint-panel contract this CSS implements', () => {
-    expect(dmSpec.border).toBe('1px solid {colors.divider}');
-    expect(dmSpec.radius).toBe('{rounded.DEFAULT}'); // rounded.DEFAULT === 0px
-    expect(dmSpec.cornerMarks).toBe('true');
-    expect(dmSpec.cornerMarkSize).toBe('11px');
-    expect(dmSpec.cornerMarkOffset).toBe('-6px');
+describe('BlueprintPanel.css conforms to Harbor Signal DESIGN.md components.panel', () => {
+  it('DESIGN.md declares the panel contract this CSS implements', () => {
+    expect(dmSpec.radius).toBe('8');
+    expect(dmSpec.border).toBe('1px solid {colors.border}');
+    expect(dmSpec.cornerBracket).toMatch(/seafoam L-bracket, top-left, 18px/);
+    expect(dmSpec.cornerMark).toMatch(/seafoam corner/);
   });
 
   it('border is 1px solid var(--divider) — DESIGN.md border token', () => {
-    expect(dmSpec.border).toMatch(/^1px solid \{colors\.divider\}$/);
+    expect(dmSpec.border).toMatch(/^1px solid \{colors\.border\}$/);
     expect(css).toMatch(/border\s*:\s*1px\s+solid\s+var\(\s*--divider\s*\)\s*;/);
   });
 
-  it('border-radius is 0 — DESIGN.md rounded.DEFAULT', () => {
-    expect(css).toMatch(/border-radius\s*:\s*0\s*;/);
+  it('radius resolves to the DESIGN.md panel radius (8px) via --radius-md', () => {
+    expect(dmSpec.radius).toBe('8');
+    expect(css).toMatch(/border-radius\s*:\s*var\(\s*--radius-md\s*\)\s*;/);
   });
 
-  it(`corner box is ${dmSpec.cornerMarkSize} square — DESIGN.md cornerMarkSize`, () => {
-    const size = dmSpec.cornerMarkSize.replace('px', '');
+  it('the corner bracket is 18px, matching DESIGN.md cornerBracket', () => {
+    const size = dmSpec.cornerBracket.match(/(\d+)px\s*$/)![1];
+    expect(size).toBe('18');
     expect(css).toMatch(
-      new RegExp(
-        `\\.blueprint-panel__corner\\s*\\{[^}]*\\bwidth\\s*:\\s*${size}px\\s*;[^}]*\\bheight\\s*:\\s*${size}px\\s*;`,
-      ),
+      new RegExp(`\\.blueprint-panel::before\\s*\\{[^}]*width\\s*:\\s*${size}px\\s*;`),
     );
-  });
-
-  it(`each corner sits ${dmSpec.cornerMarkOffset} outside its edge — DESIGN.md cornerMarkOffset`, () => {
-    const offset = dmSpec.cornerMarkOffset; // '-6px'
-    for (const suffix of ['tl', 'tr', 'bl', 'br']) {
-      const rule = css.match(
-        new RegExp(`\\.blueprint-panel__corner--${suffix}\\s*\\{([^}]*)\\}`),
-      );
-      expect(rule, `missing rule for --${suffix}`).not.toBeNull();
-      const offsets = [
-        ...rule![1].matchAll(/(?:top|right|bottom|left)\s*:\s*(-?\d+px)/g),
-      ].map((m) => m[1]);
-      expect(offsets).toHaveLength(2);
-      for (const value of offsets) expect(value).toBe(offset);
-    }
   });
 });
 

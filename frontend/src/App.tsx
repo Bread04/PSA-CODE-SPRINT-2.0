@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { AgentRoster } from './components/AgentRoster';
 import { AskPortwatch } from './components/AskPortwatch';
 import { ExecutionTrace } from './components/ExecutionTrace';
 import { IncidentArchive } from './components/IncidentArchive';
@@ -17,17 +18,85 @@ import type { ApprovalAction } from './api/client';
 
 import './App.css';
 
+const RAIL_COLLAPSE_KEY = 'portwatch.rail.collapsed';
+
+export function readCollapsed(): boolean {
+  try {
+    return sessionStorage.getItem(RAIL_COLLAPSE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** 14px line icons — decorative, `aria-hidden`; safe glyphs are tofu-prone. */
+const iconProps = {
+  width: 14,
+  height: 14,
+  viewBox: '0 0 14 14',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.4,
+  'aria-hidden': true,
+} as const;
+
+function LiveConsoleIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect x="1.5" y="1.5" width="11" height="11" rx="1" />
+      <line x1="7" y1="1.5" x2="7" y2="12.5" />
+      <line x1="1.5" y1="7" x2="12.5" y2="7" />
+    </svg>
+  );
+}
+
+function ArchiveIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect x="1.5" y="2" width="11" height="3" rx="0.5" />
+      <rect x="1.5" y="6" width="11" height="3" rx="0.5" />
+      <rect x="1.5" y="10" width="11" height="2.5" rx="0.5" />
+    </svg>
+  );
+}
+
+function BeaconMark() {
+  return (
+    <svg {...iconProps} width={16} height={16} viewBox="0 0 16 16">
+      <path d="M8 1.5 L14 8 L8 14.5 L2 8 Z" />
+      <circle cx="8" cy="8" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function Chevron({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg {...iconProps} width={12} height={12} viewBox="0 0 12 12">
+      {direction === 'left' ? (
+        <path d="M7.5 2.5 L4 6 L7.5 9.5" />
+      ) : (
+        <path d="M4.5 2.5 L8 6 L4.5 9.5" />
+      )}
+    </svg>
+  );
+}
+
 /**
- * Portwatch Console — the real Live Console shell (epic-2 retro item 1).
+ * Portwatch Console — the Live Console shell, re-skinned to "Harbor Signal"
+ * (spec-harbor-signal-reskin).
  *
- * Wires the live data layer end to end: `useIncidents` polls `GET /incidents`
- * every 2-3s and drives the feed / detail / trace / archive; `useApproval`
- * owns the one write path and refetches on success; `useKillSwitch` and
- * `useAskPortwatch` own their own POST/GET. `useHashRoute` swaps between the
- * Live Console and the session-scoped Incident Archive.
+ * Wiring is unchanged: `useIncidents` polls `GET /incidents` every 2-3s and
+ * drives the feed / detail / roster / trace / archive; `useApproval` owns the
+ * one write path and refetches on success; `useKillSwitch` and `useAskPortwatch`
+ * own their own POST/GET. `useHashRoute` swaps between the Live Console and the
+ * session-scoped Incident Archive.
  *
- * Layout follows DESIGN.md: a fixed 54px header + a 296 | flex | 400 three-
- * column body. All chrome styling lives in App.css via Story 2.1 tokens.
+ * Chrome follows DESIGN.md: a persistent left command rail (214 / 74px
+ * collapsed, a 2px seafoam active-edge bar) carrying Dashboard (`#/`) +
+ * Archive (`#/archive`), a 72px topbar (brand lockup + kill switch), and the
+ * 296 | flex | 400 three-column body with the parallel agent roster on a
+ * full-width row beneath it. All chrome styling lives in App.css via Story 2.1
+ * tokens. The KillSwitchBanner is fixed to the viewport top; while engaged the
+ * rail + body are offset by --banner-height so it is never covered.
  */
 function App() {
   const route = useHashRoute();
@@ -41,6 +110,19 @@ function App() {
     () => incidents.find((i) => i.incident_id === selectedId) ?? null,
     [incidents, selectedId],
   );
+
+  const [railCollapsed, setRailCollapsed] = useState<boolean>(readCollapsed);
+  const toggleRail = useCallback(() => {
+    setRailCollapsed((prev) => {
+      const next = !prev;
+      try {
+        sessionStorage.setItem(RAIL_COLLAPSE_KEY, next ? '1' : '0');
+      } catch {
+        /* session storage unavailable — collapse still works for this view */
+      }
+      return next;
+    });
+  }, []);
 
   const onApprovalAction = useCallback(
     (body: ApprovalAction) => {
@@ -62,77 +144,130 @@ function App() {
     routeRef.current?.focus();
   }, [route]);
 
+  const shellClassName = [
+    'app-shell',
+    railCollapsed ? 'app-shell--rail-collapsed' : '',
+    kill.engaged ? 'app-shell--kill-engaged' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div className="app">
       <KillSwitchBanner engaged={kill.engaged} />
 
-      <header className="app-header">
-        <h1 className="app-header__brand">Portwatch Console</h1>
-        <nav className="app-nav" aria-label="Primary">
-          <a
-            className="app-nav__link"
-            href="#/"
-            aria-current={route === 'live' ? 'page' : undefined}
-          >
-            Live Console
-          </a>
-          <a
-            className="app-nav__link"
-            href="#/archive"
-            aria-current={route === 'archive' ? 'page' : undefined}
-          >
-            Archive
-          </a>
-        </nav>
-        <div className="app-header__kill">
-          <KillSwitchControl
-            engaged={kill.engaged}
-            pending={kill.pending}
-            error={kill.error}
-            onChange={kill.setEngaged}
-          />
-        </div>
-      </header>
-
-      <div className="app-route" tabIndex={-1} ref={routeRef}>
-      {route === 'archive' ? (
-        <IncidentArchive incidents={incidents} />
-      ) : (
-        <main className="app-main">
-          <div className="app-col app-col--left">
-            <IncidentFeed
-              incidents={incidents}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              lastUpdatedAt={lastUpdatedAt}
-              isStale={isStale}
-              error={error}
-            />
+      <div className={shellClassName}>
+        <div className="app-rail" id="app-rail">
+          <div className="app-rail__brand">
+            <span className="app-rail__mark" aria-hidden="true">
+              <BeaconMark />
+            </span>
+            <span className="app-rail__wordmark">
+              PORTWATCH
+              <small>TUAS</small>
+            </span>
           </div>
 
-          <section className="app-col app-col--center">
-            <IncidentDetail
-              incident={selected}
-              submitting={approval.submitting}
-              error={approval.error}
-              onApprovalAction={onApprovalAction}
-            />
-            <GeoMapPanel incident={selected} />
-            <StageRail incident={selected} />
-          </section>
+          <button
+            type="button"
+            className="app-rail__collapse"
+            aria-expanded={!railCollapsed}
+            aria-controls="app-rail"
+            aria-label={
+              railCollapsed ? 'Expand navigation rail' : 'Collapse navigation rail'
+            }
+            onClick={toggleRail}
+          >
+            <Chevron direction={railCollapsed ? 'right' : 'left'} />
+          </button>
 
-          <aside className="app-col app-col--right">
-            <ExecutionTrace trace={selected?.trace ?? []} />
-            <AskPortwatch
-              onSubmit={ask.submit}
-              answer={ask.answer}
-              submitting={ask.submitting}
-              error={ask.error}
-              selectedIncidentId={selectedId}
-            />
-          </aside>
-        </main>
-      )}
+          <nav className="app-nav" aria-label="Primary">
+            <a
+              className="app-nav__link"
+              href="#/"
+              aria-label="Live Console"
+              aria-current={route === 'live' ? 'page' : undefined}
+            >
+              <span className="app-nav__icon" aria-hidden="true">
+                <LiveConsoleIcon />
+              </span>
+              <span className="app-nav__text">Live Console</span>
+            </a>
+            <a
+              className="app-nav__link"
+              href="#/archive"
+              aria-label="Archive"
+              aria-current={route === 'archive' ? 'page' : undefined}
+            >
+              <span className="app-nav__icon" aria-hidden="true">
+                <ArchiveIcon />
+              </span>
+              <span className="app-nav__text">Archive</span>
+            </a>
+          </nav>
+        </div>
+
+        <div className="app-body">
+          <header className="app-header">
+            <h1 className="app-header__brand">Portwatch Console</h1>
+            <div className="app-header__kill">
+              <KillSwitchControl
+                engaged={kill.engaged}
+                pending={kill.pending}
+                error={kill.error}
+                onChange={kill.setEngaged}
+              />
+            </div>
+          </header>
+
+          <div className="app-route" tabIndex={-1} ref={routeRef}>
+            {route === 'archive' ? (
+              <IncidentArchive incidents={incidents} />
+            ) : (
+              <div className="app-live">
+                <main className="app-main">
+                  <div className="app-col app-col--left">
+                    <IncidentFeed
+                      incidents={incidents}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                      lastUpdatedAt={lastUpdatedAt}
+                      isStale={isStale}
+                      error={error}
+                    />
+                  </div>
+
+                  <section className="app-col app-col--center">
+                    <IncidentDetail
+                      incident={selected}
+                      submitting={approval.submitting}
+                      error={approval.error}
+                      onApprovalAction={onApprovalAction}
+                    />
+                    <GeoMapPanel incident={selected} />
+                    <StageRail incident={selected} />
+                  </section>
+
+                  <aside className="app-col app-col--right">
+                    <ExecutionTrace trace={selected?.trace ?? []} />
+                    <AskPortwatch
+                      onSubmit={ask.submit}
+                      answer={ask.answer}
+                      submitting={ask.submitting}
+                      error={ask.error}
+                      selectedIncidentId={selectedId}
+                    />
+                  </aside>
+                </main>
+
+                {/* Parallel specialist fan-out — full-width row beneath the
+                    three columns so the chips sit side by side even at the
+                    1280px floor (DESIGN.md "parallel fan-out"). */}
+                <AgentRoster incident={selected} />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

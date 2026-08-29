@@ -33,6 +33,7 @@ function incident(overrides: Partial<Incident> = {}): Incident {
     options: [],
     approval_status: 'n/a',
     blocked_by_kill_switch: false,
+    agents: [],
     trace: [],
     created_at: '2026-08-27T08:00:00Z',
     last_signal_at: '2026-08-27T08:00:00Z',

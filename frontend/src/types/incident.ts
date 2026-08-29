@@ -48,6 +48,24 @@ export interface TraceError {
   fallback_used: boolean;
 }
 
+/** The frozen specialist roster — exactly these three, this order (AD-19). */
+export type AgentName = 'berth' | 'crane' | 'yard';
+
+/**
+ * One specialist's analysis, exposed read-only for the Harbor Signal agent
+ * roster (AD-19). This is the validated bundle the orchestrator already passes
+ * to the arbiter — the same objects, not recomputed — surfaced on
+ * `GET /incidents/{id}`. `[]` until the `AGENT_CALL` stage runs.
+ */
+export interface AgentRecommendation {
+  agent: AgentName;
+  summary: string;
+  actions: string[];
+  /** Limits / preconditions the arbiter must respect. */
+  constraints: string[];
+  rationale: string;
+}
+
 /** One append-only step in an incident's execution trace. */
 export interface TraceEntry {
   /** SCREAMING_SNAKE stage name, e.g. `"CORRELATE"`, `"CONFIDENCE"`. */
@@ -71,6 +89,8 @@ export interface Incident {
   options: RecoveryOption[];
   approval_status: ApprovalStatus;
   blocked_by_kill_switch: boolean;
+  /** Validated specialist bundle, read-only (AD-19); `[]` until AGENT_CALL runs. */
+  agents: AgentRecommendation[];
   trace: TraceEntry[];
   /** ISO 8601 UTC time of the signal that created this incident. */
   created_at: string;

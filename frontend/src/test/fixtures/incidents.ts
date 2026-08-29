@@ -9,7 +9,44 @@
  *   - `tier3PendingNewer` has a later `last_signal_at` than `tier3PendingOlder`.
  */
 
-import type { Incident, RecoveryOption } from '../../types/incident';
+import type {
+  AgentRecommendation,
+  Incident,
+  RecoveryOption,
+} from '../../types/incident';
+
+/**
+ * A realistic berth → crane → yard specialist bundle (AD-19) for the fixtures
+ * the Harbor Signal AgentRoster tests and demo shell render. The per-agent RUN
+ * STATE is derived from the incident's `AGENT_CALL` trace entries, not from
+ * this bundle — see `lib/agentRoster.ts`.
+ */
+export function demoRoster(): AgentRecommendation[] {
+  return [
+    {
+      agent: 'berth',
+      summary: 'Reberth MSC Anna at C7 slot 5; C4 stays clear for the crane fault.',
+      actions: ['Assign berth C7-5', 'Shift EVER LOYAL window +45 min'],
+      constraints: ['C7-5 free from 19:10', 'Air draft OK for C7'],
+      rationale: 'C7-5 is the only slot that clears the SLA without a second move.',
+    },
+    {
+      agent: 'crane',
+      summary:
+        'Crane #7 telemetry timed out — using last known state; assume #4 out for the shift.',
+      actions: ['Route discharge to cranes #5 / #6', 'Flag #4 for maintenance'],
+      constraints: ['#7 state stale (last seen 18:52)', '#5/#6 max 28 moves/hr each'],
+      rationale: 'Two healthy cranes cover the plan; #7 unknown so it is excluded.',
+    },
+    {
+      agent: 'yard',
+      summary: 'Yard C7 block at 71% — accept the reroute; Pasir Panjang P2 as overflow.',
+      actions: ['Stage 60 boxes to C7-B', 'Pre-clear P2 lane 3'],
+      constraints: ['C7-B hard cap 84%', 'P2 reachable within 12 min'],
+      rationale: 'Keeps both blocks under the utilisation ceiling through the peak.',
+    },
+  ];
+}
 
 function option(overrides: Partial<RecoveryOption> = {}): RecoveryOption {
   return {
@@ -38,6 +75,7 @@ export const tier1Resolved: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:50:00Z',
   last_signal_at: '2026-08-27T09:00:00Z',
@@ -54,6 +92,7 @@ export const tier2Resolved: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:35:00Z',
   last_signal_at: '2026-08-27T08:45:00Z',
@@ -70,6 +109,7 @@ export const tier3PendingNewer: Incident = {
   options: [option()],
   approval_status: 'pending',
   blocked_by_kill_switch: false,
+  agents: demoRoster(),
   trace: [],
   created_at: '2026-08-27T08:05:00Z',
   last_signal_at: '2026-08-27T08:20:00Z',
@@ -86,6 +126,7 @@ export const tier3PendingOlder: Incident = {
   options: [],
   approval_status: 'pending',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:00:00Z',
   last_signal_at: '2026-08-27T08:10:00Z',
@@ -102,6 +143,7 @@ export const openInProgress: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:30:00Z',
   last_signal_at: '2026-08-27T08:40:00Z',
@@ -118,6 +160,7 @@ export const degradedConfidenceFallback: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [
     {
       stage: 'AGENT_CALL',
@@ -146,6 +189,7 @@ export const degradedConfidenceNoHint: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:22:00Z',
   last_signal_at: '2026-08-27T08:26:00Z',
@@ -162,6 +206,7 @@ export const mockForced: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [
     {
       stage: 'AGENT_CALL',
@@ -185,6 +230,7 @@ export const killSwitchBlocked: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: true,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:30:00Z',
   last_signal_at: '2026-08-27T08:35:00Z',
@@ -201,6 +247,7 @@ export const unclassified: Incident = {
   options: [],
   approval_status: 'n/a',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:18:00Z',
   last_signal_at: '2026-08-27T08:19:00Z',
@@ -217,6 +264,7 @@ export const openApproved: Incident = {
   options: [],
   approval_status: 'approved',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [],
   created_at: '2026-08-27T08:15:00Z',
   last_signal_at: '2026-08-27T08:17:00Z',
@@ -237,6 +285,7 @@ export const resolvedApproved: Incident = {
   options: [option({ option_id: 'opt-1' })],
   approval_status: 'approved',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [
     {
       stage: 'APPROVAL',
@@ -266,6 +315,7 @@ export const resolvedRejected: Incident = {
   options: [option({ option_id: 'opt-1' })],
   approval_status: 'rejected',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [
     {
       stage: 'APPROVAL',
@@ -332,17 +382,30 @@ export const tier3WithAlternatives: Incident = {
   ],
   approval_status: 'pending',
   blocked_by_kill_switch: false,
+  agents: demoRoster(),
   trace: [
     {
       stage: 'AGENT_CALL',
+      timestamp: '2026-08-27T08:14:01Z',
+      detail: { agent: 'berth', mock_forced: false },
+      error: null,
+    },
+    {
+      stage: 'AGENT_CALL',
       timestamp: '2026-08-27T08:14:02Z',
-      detail: {},
+      detail: { agent: 'crane', mock_forced: false },
       error: {
         stage: 'AGENT_CALL',
         error: 'Crane #7 telemetry timeout',
         retried: true,
         fallback_used: true,
       },
+    },
+    {
+      stage: 'AGENT_CALL',
+      timestamp: '2026-08-27T08:14:02Z',
+      detail: { agent: 'yard', mock_forced: false },
+      error: null,
     },
     {
       stage: 'CONFIDENCE',
@@ -398,6 +461,7 @@ export const tier3DgRejected: Incident = {
   ],
   approval_status: 'pending',
   blocked_by_kill_switch: false,
+  agents: [],
   trace: [
     {
       stage: 'SYNTHESIZE',

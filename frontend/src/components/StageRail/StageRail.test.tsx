@@ -53,6 +53,7 @@ function makeIncident(overrides: Partial<Incident> = {}): Incident {
     options: [],
     approval_status: 'pending',
     blocked_by_kill_switch: false,
+    agents: [],
     trace: trace(['CORRELATE'], ['AGENT_CALL']),
     created_at: '2026-08-28T00:00:00Z',
     last_signal_at: '2026-08-28T00:00:00Z',

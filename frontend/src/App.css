@@ -1,15 +1,34 @@
 /*
- * App shell chrome (epic-2 retro item 1 — the real Live Console layout).
+ * App shell chrome — re-skinned to "Harbor Signal" (spec-harbor-signal-reskin).
  *
- * A fixed 54px header + a 296 | flex | 400 three-column body, per DESIGN.md.
- * Colour, spacing and type route through Story 2.1 tokens; the active-route
- * treatment is perceptible without relying on colour (UX-DR11): heavier weight
- * + underline, not a hue swap. The only bare literals are non-colour layout
- * values (min-width, viewport-relative heights).
+ * A persistent left command rail (--rail-width / --rail-width-collapsed, a 2px
+ * seafoam active-edge bar) + a --topbar-height bar + the 296 | flex | 400
+ * three-column body, per `ux-PSA CODE SPRINT-2026-08-29/DESIGN.md`. Colour,
+ * spacing and type route through Story 2.1 tokens; the active-route treatment
+ * is perceptible without relying on colour (UX-DR11): heavier weight + the
+ * seafoam edge bar + an underline. The only bare literals are non-colour
+ * layout values (min-width, the 2px marker, viewport-relative heights).
  */
 
 .app {
   min-width: 1280px;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* Kill switch engaged: the fixed top banner (KillSwitchControl.css) is
+   --banner-height tall — push the fixed rail and the body clear of it so the
+   safety bar is never covered. */
+.app-shell--kill-engaged .app-rail {
+  top: var(--banner-height);
+}
+
+.app-shell--kill-engaged .app-body {
+  margin-top: var(--banner-height);
 }
 
 /* Programmatic focus target on route change — no visible ring (the view's own
@@ -18,11 +37,175 @@
   outline: none;
 }
 
+/* --- Left command rail ---------------------------------------------------- */
+
+.app-rail {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: var(--rail-width);
+  padding: var(--space-6) var(--space-3);
+  background: var(--surface);
+  border-right: 1px solid var(--divider);
+}
+
+.app-shell--rail-collapsed .app-rail {
+  width: var(--rail-width-collapsed);
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.app-rail__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) var(--space-4);
+}
+
+.app-rail__mark {
+  flex: none;
+  color: var(--accent-500);
+  font-size: var(--font-size-section-title);
+}
+
+.app-rail__wordmark {
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.app-rail__wordmark small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--accent-500);
+  font-size: var(--font-size-caption);
+  letter-spacing: var(--letter-spacing-micro-label);
+}
+
+.app-shell--rail-collapsed .app-rail__wordmark,
+.app-shell--rail-collapsed .app-nav__text {
+  display: none;
+}
+
+.app-shell--rail-collapsed .app-rail__brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.app-rail__collapse {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  color: var(--accent-500);
+  background: var(--surface-elevated);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.app-shell--rail-collapsed .app-rail__collapse {
+  align-self: center;
+}
+
+.app-rail__collapse:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+/* --- Primary nav (kept: role="navigation" aria-label="Primary") ---------- */
+
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-micro-label);
+  letter-spacing: var(--letter-spacing-micro-label);
+  text-transform: uppercase;
+}
+
+.app-nav__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.app-nav__icon {
+  flex: none;
+  font-size: var(--font-size-body);
+}
+
+.app-nav__link:hover {
+  color: var(--text);
+  background: var(--surface-elevated);
+}
+
+.app-nav__link:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+
+/* Active route: weight + underline (colour-independent, IncidentArchive test)
+   PLUS the DESIGN.md 2px seafoam left-edge bar with a soft glow (a position
+   cue, not colour alone). */
+.app-nav__link[aria-current='page'] {
+  font-weight: var(--font-weight-heading);
+  text-decoration: underline;
+  color: var(--text);
+  background: var(--surface-elevated);
+}
+
+.app-nav__link[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 24px;
+  transform: translateY(-50%);
+  background: var(--accent-500);
+  box-shadow: 0 0 12px var(--rail-active-glow);
+}
+
+.app-shell--rail-collapsed .app-nav__link {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* --- Body (offset by the rail) ------------------------------------------- */
+
+.app-body {
+  margin-left: var(--rail-width);
+}
+
+.app-shell--rail-collapsed .app-body {
+  margin-left: var(--rail-width-collapsed);
+}
+
 .app-header {
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  height: var(--header-height);
+  height: var(--topbar-height);
   padding: 0 var(--space-6);
   background: var(--surface);
   border-bottom: 1px solid var(--divider);
@@ -30,7 +213,7 @@
 
 .app-header__brand {
   margin: 0;
-  font-family: var(--font-heading);
+  font-family: var(--font-mono);
   font-weight: var(--font-weight-heading);
   font-size: var(--font-size-micro-label);
   letter-spacing: var(--letter-spacing-micro-label);
@@ -42,40 +225,17 @@
   margin-left: auto;
 }
 
-.app-nav {
+/* Live Console: the three-column grid + the full-width agent roster row. */
+.app-live {
   display: flex;
+  flex-direction: column;
   gap: var(--space-4);
-  font-family: var(--font-heading);
-  font-weight: var(--font-weight-body);
-  font-size: var(--font-size-micro-label);
-  letter-spacing: var(--letter-spacing-micro-label);
-  text-transform: uppercase;
-}
-
-.app-nav__link {
-  color: var(--text-muted);
-  text-decoration: none;
-}
-
-.app-nav__link:hover {
-  color: var(--text);
-}
-
-.app-nav__link:focus-visible {
-  outline: 2px solid var(--accent-700);
-  outline-offset: 2px;
-}
-
-.app-nav__link[aria-current='page'] {
-  font-weight: var(--font-weight-heading);
-  text-decoration: underline;
-  color: var(--text);
+  padding: var(--space-6);
 }
 
 .app-main {
   display: flex;
   gap: var(--space-4);
-  padding: var(--space-6);
   align-items: flex-start;
 }
 

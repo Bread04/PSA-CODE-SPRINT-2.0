@@ -1,84 +1,117 @@
 /*
- * Portwatch Console — Design Token System (Story 2.1)
+ * Portwatch Console — Design Token System (Story 2.1, re-valued to "Harbor
+ * Signal" 2026-08-29).
  *
- * Single source of truth for every design value, transcribed EXACTLY from
- * DESIGN.md front-matter (colors / typography / rounded / spacing / components).
+ * Single source of truth for every design value. Token NAMES are stable across
+ * the blueprint -> Harbor Signal pivot wherever a name still has a counterpart
+ * (spec-harbor-signal-reskin) — only VALUES changed, so component CSS that
+ * consumes `var(--accent-700)`, `var(--space-3)`, `var(--radius-md)`, … rides
+ * along with no edit. New tokens were added for the command rail, the topbar,
+ * panel elevation and the seafoam brackets.
+ *
  * This file and ./tokens.ts expose the same values — a mismatch is a bug
- * (see tokens.test.ts). This is the ONLY file where literal hex / px values
- * for the theme may appear; every component consumes these custom properties.
+ * (see tokens.test.ts). Harbor Signal values are transcribed from
+ * `ux-PSA CODE SPRINT-2026-08-29/DESIGN.md` front-matter. This is the ONLY
+ * file where literal hex / px values for the theme may appear; every component
+ * consumes these custom properties.
  */
 
 :root {
-  /* ---- Color: base surfaces & text ---- */
-  --bg: #f2f2f3;
-  --surface: #e9e9ea;
-  /* DESIGN.md: color-mix(in srgb, #1d1f20 16%, transparent).
-     tokens.ts records the concrete equivalent rgba(29,31,32,0.16) (see live-console.html);
-     the two are intentionally paired. */
-  --divider: color-mix(in srgb, #1d1f20 16%, transparent);
-  --text: #1d1f20;
-  /* Secondary / de-emphasised text. A real colour, NOT `opacity` on --text:
-     WCAG AA (>=4.5:1) against both --bg and --surface. Value tracks --neutral-700. */
-  --text-muted: #585c60;
+  /* ---- Color: base surfaces & text (DESIGN.md colors.background / border / text) ---- */
+  --bg: #07141b;
+  --surface: #0d1c26;
+  --surface-elevated: #122833;
+  --surface-subtle: #183243;
+  --divider: #214459;
+  --text: #eaf7f9;
+  /* Secondary / de-emphasised text. A real colour, NOT `opacity` on --text
+     (WCAG AA discipline carried from epic-2 retro F4). */
+  --text-muted: #a4b8c0;
+  /* Rare intentional high-contrast emphasis only — never a surface. */
+  --paper: #e6f1f3;
 
-  /* ---- Color: primary steel-blue accent ramp (the only hue) ---- */
-  --accent-100: #eef6ff;
-  --accent-200: #d6ebff;
-  --accent-300: #b5d9fd;
-  --accent-400: #94bce3;
-  --accent-500: #749dc4;
-  --accent-600: #597ea3;
-  --accent-700: #416180;
-  --accent-800: #2c455d;
-  --accent-900: #1d2d3d;
+  /* ---- Color: seafoam accent ramp (the signature brand hue) ----
+     Anchored on the DESIGN.md signal seafoam (#66e0d2 == --accent-500).
+     --accent-600 / --accent-700 keep the "primary action / focus ring" role;
+     --accent-900 is repurposed as the critical-surface ink (kill-switch
+     banner, blocked / error markers) and equals --signal-red. */
+  --accent-100: #e6fbf7;
+  --accent-200: #c2f3eb;
+  --accent-300: #9de9df;
+  --accent-400: #79e1d3;
+  --accent-500: #66e0d2;
+  --accent-600: #4fcbbd;
+  --accent-700: #5ad2c4;
+  --accent-800: #2e8e83;
+  --accent-900: #e8695a;
 
-  /* ---- Color: secondary accent (parallel ramp, two-incident distinction) ---- */
-  --accent-2: #728fab;
-  --accent-2-100: #eef6ff;
-  --accent-2-900: #1f2d3a;
+  /* ---- Color: secondary accent — amber (watch / degraded / projected) ---- */
+  --accent-2: #f7b267;
+  --accent-2-100: #fce6cc;
+  --accent-2-900: #6e4620;
 
-  /* ---- Color: neutral ramp (tag backgrounds, progress tracks, disabled) ---- */
-  --neutral-100: #f5f5f8;
-  --neutral-300: #dfe1e4;
-  --neutral-500: #9a9fa3;
-  --neutral-700: #585c60;
-  --neutral-900: #2b2b2d;
+  /* ---- Color: neutral ramp (chips, tracks, disabled, button ink) ----
+     Re-valued for a dark ground: --neutral-100 is the dark "ink" used as text
+     on the seafoam primary button and as a subtle chip fill; --neutral-900 is
+     the rare light. */
+  --neutral-100: #0a1922;
+  --neutral-300: #214459;
+  --neutral-500: #5c7480;
+  --neutral-700: #a4b8c0;
+  --neutral-900: #eaf7f9;
 
-  /* ---- Spacing: 3.4px base scale ---- */
-  --space-1: 3.4px;
-  --space-2: 6.8px;
-  --space-3: 10.2px;
-  --space-4: 13.6px;
-  --space-6: 20.4px;
-  --space-8: 27.2px;
+  /* ---- Color: named signal tokens (clarity for future component .css) ---- */
+  --signal-seafoam: #66e0d2;
+  --signal-amber: #f7b267;
+  --signal-red: #e8695a;
+
+  /* ---- Spacing: 4 / 8 / 12 / 16 / 20 / 24 (DESIGN.md spacing scale) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 20px;
+  --space-8: 24px;
 
   /* ---- Layout dimensions ---- */
-  --header-height: 54px;
+  --topbar-height: 72px;
+  --banner-height: 40px;
+  --rail-width: 214px;
+  --rail-width-collapsed: 74px;
   --col-left: 296px;
   --col-right: 400px;
 
-  /* ---- Radius: everything square except the 3px tag ---- */
-  --radius-sm: 0;
-  --radius-default: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-tag: 3px;
+  /* ---- Elevation: depth from thin borders + one soft ambient shadow with a
+     1px inner top highlight (mirrors portwatch-tuas .panel) ---- */
+  --shadow-panel: 0 14px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(191, 255, 245, 0.03);
+  --shadow-panel-accent: 0 18px 54px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(191, 255, 245, 0.04);
+  --bracket-seafoam: #66e0d2;
+  --rail-active-glow: rgba(102, 224, 210, 0.55);
+
+  /* ---- Radius: softer than a blueprint (DESIGN.md rounded sm/md/lg/xl) ---- */
+  --radius-sm: 4px;
+  --radius-default: 8px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-tag: 4px;
   --radius-full: 9999px;
 
-  /* ---- Typography: families & weights ---- */
-  --font-heading: "Barlow Condensed", "Oswald", "Arial Narrow", sans-serif;
-  --font-body: Barlow, Arial, sans-serif;
+  /* ---- Typography: families & weights (DESIGN.md typography) ---- */
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-weight-heading: 600;
   --font-weight-body: 400;
 
   /* ---- Typography: named type-role tokens ---- */
   --font-size-micro-label: 11px;
-  --letter-spacing-micro-label: 0.14em;
+  --letter-spacing-micro-label: 0.16em;
   --text-transform-micro-label: uppercase;
-  --font-size-incident-title: 29px;
-  --font-size-confidence: 38px;
+  --font-size-incident-title: 28px;
+  --font-size-confidence: 34px;
 
-  /* ---- Typography: body / UI size ramp (12 -> 16px; 11px = --font-size-micro-label) ---- */
+  /* ---- Typography: body / UI size ramp ---- */
   --font-size-caption: 12px;
   --font-size-body: 13px;
   --font-size-body-lg: 14px;
