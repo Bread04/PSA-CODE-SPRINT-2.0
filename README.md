@@ -1,7 +1,7 @@
 # Portwatch — Harbor Signal
 
 **AI-powered disruption orchestration for PSA Tuas Port.** Built for the PSA Code
-Sprint hackathon (6-day, 4-person build).
+Sprint hackathon (6-day, 4-person build, Braedon, Jing Yi, Cai Ying, Komal)
 
 Operational disruptions don't respect system boundaries: a delayed vessel
 cascades into berth, crane, yard, and AGV consequences that no single system owns
